@@ -1,5 +1,5 @@
 # Drachme — run from WSL: ~/Projects/Drachme
-.PHONY: help normalize check build up down dev logs shell composer npm bootstrap env install setup migrate key test analyse typecheck lint quality build-assets
+.PHONY: help normalize check build up down dev logs shell composer npm bootstrap env install setup migrate key test analyse typecheck lint quality build-assets strict-types
 
 # docker compose (plugin) or docker-compose (standalone)
 COMPOSE := $(shell if docker compose version >/dev/null 2>&1; then echo "docker compose"; elif command -v docker-compose >/dev/null 2>&1; then echo "docker-compose"; else echo ""; fi)
@@ -17,6 +17,9 @@ help:
 normalize:
 	@sed -i 's/\r$$//' Makefile scripts/*.sh 2>/dev/null || true
 	@chmod +x scripts/*.sh 2>/dev/null || true
+
+strict-types:
+	@$(COMPOSE) exec -T app php scripts/add-strict-types.php
 
 check: normalize
 	@./scripts/check-env.sh

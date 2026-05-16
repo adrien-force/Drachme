@@ -1,5 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
+
 use App\Http\Controllers\Settings\AppearanceController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
