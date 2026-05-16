@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ImportProviderController;
 use App\Http\Controllers\ShellPlaceholderController;
 use Illuminate\Support\Facades\Route;
 
@@ -24,7 +25,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('accounts/{account}', [AccountController::class, 'update'])->name('accounts.update');
     Route::delete('accounts/{account}', [AccountController::class, 'destroy'])->name('accounts.destroy');
     Route::get('transactions', [ShellPlaceholderController::class, 'transactions'])->name('transactions.index');
-    Route::get('providers', [ShellPlaceholderController::class, 'providers'])->name('providers.index');
+    Route::get('providers', [ImportProviderController::class, 'index'])->name('providers.index');
+    Route::post('providers', [ImportProviderController::class, 'store'])->name('providers.store');
+    Route::put('providers/{importProvider}', [ImportProviderController::class, 'update'])->name('providers.update');
+    Route::delete('providers/{importProvider}', [ImportProviderController::class, 'destroy'])->name('providers.destroy');
     Route::get('import', [ShellPlaceholderController::class, 'import'])->name('import.index');
     Route::get('investments', [ShellPlaceholderController::class, 'investments'])->name('investments.index');
 });

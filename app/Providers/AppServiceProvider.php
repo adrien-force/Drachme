@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Models\Account;
+use App\Models\ImportProvider;
 use App\Policies\AccountPolicy;
+use App\Policies\ImportProviderPolicy;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -28,6 +30,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         Gate::policy(Account::class, AccountPolicy::class);
+        Gate::policy(ImportProvider::class, ImportProviderPolicy::class);
     }
 
     /**
