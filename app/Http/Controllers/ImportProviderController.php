@@ -12,6 +12,7 @@ use App\Models\Account;
 use App\Models\ImportProvider;
 use App\Services\AccountService;
 use App\Services\ImportProviderService;
+use App\Support\DateFormatDetector;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -26,6 +27,7 @@ class ImportProviderController extends Controller
     public function __construct(
         private readonly ImportProviderService $providers,
         private readonly AccountService $accounts,
+        private readonly DateFormatDetector $dateFormats,
     ) {}
 
     public function index(Request $request): Response
@@ -50,6 +52,15 @@ class ImportProviderController extends Controller
         return Inertia::render('providers/providers-form', $this->formPayload(null));
     }
 
+    public function show(ImportProvider $importProvider): Response
+    {
+        $this->authorize('view', $importProvider);
+
+        $importProvider->load('defaultAccount:id,name,logo_path');
+
+        return Inertia::render('providers/providers-show', $this->formPayload($importProvider));
+    }
+
     public function edit(ImportProvider $importProvider): Response
     {
         $this->authorize('update', $importProvider);
@@ -57,6 +68,21 @@ class ImportProviderController extends Controller
         $importProvider->load('defaultAccount:id,name,logo_path');
 
         return Inertia::render('providers/providers-form', $this->formPayload($importProvider));
+    }
+
+    public function detectDateFormat(Request $request): JsonResponse
+    {
+        $this->authorize('create', ImportProvider::class);
+
+        /** @var array{samples: list<string|null>} $validated */
+        $validated = $request->validate([
+            'samples' => ['required', 'array', 'min:1'],
+            'samples.*' => ['nullable', 'string'],
+        ]);
+
+        return response()->json([
+            'suggestion' => $this->dateFormats->detect($validated['samples']),
+        ]);
     }
 
     public function preview(PreviewImportProviderRequest $request): JsonResponse

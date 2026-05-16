@@ -2,16 +2,29 @@
 
 declare(strict_types=1);
 
-
 namespace App\Http\Requests\ImportProviders\Concerns;
 
 use App\Enums\ImportColumnField;
-use App\Http\Requests\Concerns\ValidatesEntityLogo;
+use App\Support\ImportColumnMappingValidator;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Validation\Rule;
 
 trait ValidatesImportProviderPayload
 {
-    use ValidatesEntityLogo;
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            if ($validator->errors()->isNotEmpty()) {
+                return;
+            }
+
+            $mapping = $this->input('column_mapping');
+
+            if (is_array($mapping)) {
+                ImportColumnMappingValidator::validate($mapping, $validator);
+            }
+        });
+    }
     /**
      * @return array<string, mixed>
      */
@@ -45,7 +58,6 @@ trait ValidatesImportProviderPayload
                 'integer',
                 Rule::exists('accounts', 'id')->where(fn ($query) => $query->where('user_id', $userId)),
             ],
-            ...$this->entityLogoRules(),
         ], $this->importProviderMappingRules());
     }
 }

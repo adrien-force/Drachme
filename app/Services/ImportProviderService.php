@@ -42,23 +42,15 @@ class ImportProviderService
      *     csv_options?: array<string, mixed>|null,
      * }  $data
      */
-    public function create(User $user, array $data, ?UploadedFile $logo = null): ImportProvider
+    public function create(User $user, array $data): ImportProvider
     {
-        $provider = ImportProvider::query()->create([
+        return ImportProvider::query()->create([
             'user_id' => $user->id,
             'name' => $data['name'],
             'default_account_id' => $data['default_account_id'] ?? null,
             'column_mapping' => $data['column_mapping'],
             'csv_options' => $this->mergeCsvOptions($data['csv_options'] ?? null),
         ]);
-
-        if ($logo !== null) {
-            $provider->update([
-                'logo_path' => $this->logos->store($logo, "logos/providers/{$user->id}"),
-            ]);
-        }
-
-        return $provider->fresh() ?? $provider;
     }
 
     /**
@@ -115,6 +107,7 @@ class ImportProviderService
                     'date' => $normalized->date->format('Y-m-d'),
                     'label' => $normalized->label,
                     'amount' => $normalized->amount,
+                    'balance' => $normalized->balance,
                 ];
             } catch (\Throwable $exception) {
                 $preview[] = [
@@ -162,7 +155,19 @@ class ImportProviderService
             date: $date,
             label: $label,
             amount: $this->resolveAmount($fields),
+            balance: $this->resolveBalance($fields),
         );
+    }
+
+    public function mapsBalanceColumn(ImportProvider $provider): bool
+    {
+        foreach ($this->resolvedMappingColumns($provider) as $column) {
+            if ($column['field'] === ImportColumnField::Balance->value) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -183,7 +188,7 @@ class ImportProviderService
     }
 
     /**
-     * @return list<array{index: int|string, field: string}>
+     * @return list<array{index: int, field: string}>
      */
     private function resolvedMappingColumns(ImportProvider $provider): array
     {
@@ -193,7 +198,7 @@ class ImportProviderService
             return [];
         }
 
-        /** @var list<array{index: int|string, field: string}> $normalized */
+        /** @var list<array{index: int, field: string}> $normalized */
         $normalized = [];
 
         foreach ($columns as $column) {
@@ -209,7 +214,7 @@ class ImportProviderService
             }
 
             $normalized[] = [
-                'index' => $index,
+                'index' => (int) $index,
                 'field' => $field,
             ];
         }
@@ -284,5 +289,23 @@ class ImportProviderService
         $normalized = str_replace(',', '.', $normalized);
 
         return abs((float) $normalized);
+    }
+
+    /**
+     * @param  array<string, string>  $fields
+     */
+    private function resolveBalance(array $fields): ?float
+    {
+        if (! array_key_exists(ImportColumnField::Balance->value, $fields)) {
+            return null;
+        }
+
+        $rawBalance = trim($fields[ImportColumnField::Balance->value]);
+
+        if ($rawBalance === '' || ! $this->looksLikeAmount($rawBalance)) {
+            return null;
+        }
+
+        return $this->signedAmounts->parse($rawBalance);
     }
 }

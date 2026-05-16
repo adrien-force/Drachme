@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Enums\ImportColumnField;
-use App\Models\Account;
 use App\Models\ImportProvider;
 use App\Models\User;
 use App\Services\ImportProviderService;
@@ -23,28 +21,19 @@ class ImportProviderFactory extends Factory
      */
     public function definition(): array
     {
-        $service = app(ImportProviderService::class);
-
         return [
             'user_id' => User::factory(),
-            'name' => fake()->company().' CSV',
+            'name' => fake()->company(),
+            'logo_path' => null,
             'default_account_id' => null,
             'column_mapping' => [
                 'columns' => [
-                    ['index' => 0, 'field' => ImportColumnField::Date->value],
-                    ['index' => 1, 'field' => ImportColumnField::Label->value],
-                    ['index' => 2, 'field' => ImportColumnField::AmountSigned->value],
+                    ['index' => 0, 'field' => 'date'],
+                    ['index' => 1, 'field' => 'label'],
+                    ['index' => 2, 'field' => 'amount_signed'],
                 ],
             ],
-            'csv_options' => $service->defaultCsvOptions(),
+            'csv_options' => app(ImportProviderService::class)->defaultCsvOptions(),
         ];
-    }
-
-    public function forAccount(Account $account): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'user_id' => $account->user_id,
-            'default_account_id' => $account->id,
-        ]);
     }
 }

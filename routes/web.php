@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ImportController;
 use App\Http\Controllers\ImportProviderController;
 use App\Http\Controllers\ShellPlaceholderController;
 use Illuminate\Support\Facades\Route;
@@ -29,12 +30,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('transactions', [ShellPlaceholderController::class, 'transactions'])->name('transactions.index');
     Route::get('providers', [ImportProviderController::class, 'index'])->name('providers.index');
     Route::get('providers/create', [ImportProviderController::class, 'create'])->name('providers.create');
+    Route::post('providers/detect-date-format', [ImportProviderController::class, 'detectDateFormat'])
+        ->name('providers.detect-date-format');
     Route::post('providers/preview', [ImportProviderController::class, 'preview'])->name('providers.preview');
     Route::post('providers', [ImportProviderController::class, 'store'])->name('providers.store');
+    Route::get('providers/{importProvider}', [ImportProviderController::class, 'show'])->name('providers.show');
     Route::get('providers/{importProvider}/edit', [ImportProviderController::class, 'edit'])->name('providers.edit');
     Route::put('providers/{importProvider}', [ImportProviderController::class, 'update'])->name('providers.update');
     Route::delete('providers/{importProvider}', [ImportProviderController::class, 'destroy'])->name('providers.destroy');
-    Route::get('import', [ShellPlaceholderController::class, 'import'])->name('import.index');
+    Route::get('import', [ImportController::class, 'create'])->name('import.index');
+    Route::post('import', [ImportController::class, 'store'])->name('import.store');
+    Route::get('import/{importBatch}', [ImportController::class, 'show'])->name('import.show');
+    Route::post('import/{importBatch}/parse', [ImportController::class, 'parse'])->name('import.parse');
+    Route::post('import/{importBatch}/commit', [ImportController::class, 'commit'])->name('import.commit');
+    Route::delete('import/{importBatch}', [ImportController::class, 'destroy'])->name('import.destroy');
     Route::get('investments', [ShellPlaceholderController::class, 'investments'])->name('investments.index');
 });
 

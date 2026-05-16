@@ -12,5 +12,6 @@ readonly class NormalizedRow
         public CarbonImmutable $date,
         public string $label,
         public float $amount,
+        public ?float $balance = null,
     ) {}
 }

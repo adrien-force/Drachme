@@ -127,4 +127,34 @@ class ImportProviderServiceTest extends TestCase
 
         $service->normalizeRow(['15/01/2024', 'Sans montant'], $provider);
     }
+
+    public function test_normalize_row_includes_balance_when_mapped(): void
+    {
+        $user = User::factory()->create();
+        $provider = ImportProvider::factory()->for($user)->create([
+            'column_mapping' => [
+                'columns' => [
+                    ['index' => 0, 'field' => ImportColumnField::Date->value],
+                    ['index' => 1, 'field' => ImportColumnField::Label->value],
+                    ['index' => 2, 'field' => ImportColumnField::AmountSigned->value],
+                    ['index' => 3, 'field' => ImportColumnField::Balance->value],
+                ],
+            ],
+            'csv_options' => [
+                'delimiter' => ';',
+                'date_format' => 'd/m/Y',
+            ],
+        ]);
+
+        $service = app(ImportProviderService::class);
+
+        $row = $service->normalizeRow(
+            ['22/07/2022', 'Frais', '-3,00', '1 234,56'],
+            $provider,
+        );
+
+        $this->assertSame(-3.0, $row->amount);
+        $this->assertSame(1234.56, $row->balance);
+        $this->assertTrue($service->mapsBalanceColumn($provider));
+    }
 }

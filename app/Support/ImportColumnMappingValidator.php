@@ -6,7 +6,7 @@ declare(strict_types=1);
 namespace App\Support;
 
 use App\Enums\ImportColumnField;
-use Illuminate\Validation\Validator;
+use Illuminate\Contracts\Validation\Validator;
 
 class ImportColumnMappingValidator
 {

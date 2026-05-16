@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Eye, Pencil, Plus, Trash2 } from 'lucide-react';
 
 import { EntityLogo } from '@/components/entity-logo';
 import { FadeIn } from '@/components/motion/fade-in';
@@ -106,6 +106,17 @@ export default function ProvidersIndex({ providers }: ProvidersIndexPageProps) {
                                             </td>
                                             <td className="px-4 py-3">
                                                 <div className="flex justify-end gap-2">
+                                                    <Button
+                                                        asChild
+                                                        variant="outline"
+                                                        size="sm"
+                                                    >
+                                                        <Link
+                                                            href={`/providers/${provider.id}`}
+                                                        >
+                                                            <Eye className="size-4" />
+                                                        </Link>
+                                                    </Button>
                                                     <Button
                                                         asChild
                                                         variant="outline"

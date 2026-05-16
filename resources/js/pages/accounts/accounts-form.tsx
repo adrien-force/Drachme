@@ -41,24 +41,34 @@ export default function AccountsForm({
         }
 
         const formData = new FormData(form);
+        const payload = new FormData();
 
-        const payload: Record<string, unknown> = {
-            name: accountName,
-            type,
-            institution: (formData.get('institution') as string) || null,
-            opened_at: (formData.get('opened_at') as string) || null,
-        };
+        payload.append('name', accountName);
+        payload.append('type', type);
+
+        const institution = formData.get('institution');
+        if (typeof institution === 'string' && institution !== '') {
+            payload.append('institution', institution);
+        }
+
+        const openedAt = formData.get('opened_at');
+        if (typeof openedAt === 'string' && openedAt !== '') {
+            payload.append('opened_at', openedAt);
+        }
 
         if (!isEditing) {
-            payload.initial_balance = formData.get('initial_balance');
+            const initialBalance = formData.get('initial_balance');
+            if (typeof initialBalance === 'string') {
+                payload.append('initial_balance', initialBalance);
+            }
         }
 
         if (logoFile) {
-            payload.logo = logoFile;
+            payload.append('logo', logoFile);
         }
 
         if (removeLogo) {
-            payload.remove_logo = true;
+            payload.append('remove_logo', '1');
         }
 
         setSubmitting(true);

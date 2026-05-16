@@ -1,0 +1,142 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature\Import;
+
+use App\Enums\ImportBatchStatus;
+use App\Enums\TransactionType;
+use App\Models\Account;
+use App\Models\ImportBatch;
+use App\Models\ImportProvider;
+use App\Models\Transaction;
+use App\Models\User;
+use App\Services\ImportProviderService;
+use App\Support\ImportHash;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use PHPUnit\Framework\Attributes\Test;
+use Tests\TestCase;
+
+class ImportWizardTest extends TestCase
+{
+    use RefreshDatabase;
+
+    #[Test]
+    public function user_can_complete_csv_import_wizard(): void
+    {
+        $user = User::factory()->create();
+        $account = Account::factory()->for($user)->create([
+            'initial_balance' => '1000.00',
+            'current_balance' => '1000.00',
+        ]);
+
+        $provider = ImportProvider::factory()->for($user)->create([
+            'default_account_id' => $account->id,
+            'column_mapping' => [
+                'columns' => [
+                    ['index' => 0, 'field' => 'date'],
+                    ['index' => 1, 'field' => 'label'],
+                    ['index' => 2, 'field' => 'amount_signed'],
+                ],
+            ],
+            'csv_options' => array_merge(
+                app(ImportProviderService::class)->defaultCsvOptions(),
+                ['date_format' => 'd/m/Y'],
+            ),
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('import.store'), [
+                'import_provider_id' => $provider->id,
+                'account_id' => $account->id,
+            ])
+            ->assertRedirect();
+
+        $batch = ImportBatch::query()->first();
+        $this->assertNotNull($batch);
+        $this->assertSame(ImportBatchStatus::Draft, $batch->status);
+
+        $csv = "01/02/2024;Supermarket;-42,50\n";
+        $file = UploadedFile::fake()->createWithContent('releve.csv', $csv);
+
+        $this->actingAs($user)
+            ->post(route('import.parse', $batch), ['file' => $file])
+            ->assertRedirect(route('import.show', $batch));
+
+        $batch->refresh();
+        $this->assertSame(ImportBatchStatus::Preview, $batch->status);
+        $this->assertCount(1, $batch->preview_rows);
+
+        $this->actingAs($user)
+            ->post(route('import.commit', $batch), ['decisions' => []])
+            ->assertRedirect(route('import.show', $batch));
+
+        $batch->refresh();
+        $account->refresh();
+
+        $this->assertSame(ImportBatchStatus::Completed, $batch->status);
+        $this->assertSame(1, $batch->imported_count);
+        $this->assertDatabaseCount('transactions', 1);
+
+        $transaction = Transaction::query()->first();
+        $this->assertNotNull($transaction);
+        $this->assertSame(TransactionType::Expense, $transaction->type);
+        $this->assertSame('-42.50', $transaction->amount);
+        $this->assertSame('957.50', $account->current_balance);
+    }
+
+    #[Test]
+    public function duplicate_rows_can_be_skipped_by_default(): void
+    {
+        $user = User::factory()->create();
+        $account = Account::factory()->for($user)->create([
+            'initial_balance' => '0.00',
+            'current_balance' => '0.00',
+        ]);
+
+        $provider = ImportProvider::factory()->for($user)->create([
+            'csv_options' => array_merge(
+                app(ImportProviderService::class)->defaultCsvOptions(),
+                ['date_format' => 'd/m/Y'],
+            ),
+        ]);
+
+        $existingHash = ImportHash::make(
+            $account->id,
+            now()->setDate(2024, 2, 1),
+            -10.0,
+            'Duplicate',
+        );
+
+        Transaction::factory()->for($user)->for($account)->create([
+            'date' => '2024-02-01',
+            'label' => 'Duplicate',
+            'amount' => '-10.00',
+            'import_hash' => $existingHash,
+        ]);
+
+        $batch = ImportBatch::factory()
+            ->for($user)
+            ->for($provider)
+            ->for($account)
+            ->create(['status' => ImportBatchStatus::Draft]);
+
+        $csv = "01/02/2024;Duplicate;-10,00\n";
+        $file = UploadedFile::fake()->createWithContent('dup.csv', $csv);
+
+        $this->actingAs($user)
+            ->post(route('import.parse', $batch), ['file' => $file]);
+
+        $batch->refresh();
+        $this->assertTrue($batch->preview_rows[0]['is_duplicate']);
+
+        $this->actingAs($user)
+            ->post(route('import.commit', $batch), ['decisions' => []]);
+
+        $batch->refresh();
+        $this->assertSame(0, $batch->imported_count);
+        $this->assertSame(1, $batch->skipped_count);
+        $this->assertDatabaseCount('transactions', 1);
+    }
+}

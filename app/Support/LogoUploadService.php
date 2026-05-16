@@ -26,7 +26,12 @@ class LogoUploadService
         $extension = $file->guessExtension() ?? 'png';
         $filename = Str::uuid()->toString().'.'.$extension;
 
-        return $file->storeAs($folder, $filename, self::DISK);
+        $path = $file->storeAs($folder, $filename, self::DISK);
+        if ($path === false) {
+            throw new \RuntimeException('logo_store_failed');
+        }
+
+        return $path;
     }
 
     public function delete(?string $path): void

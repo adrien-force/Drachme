@@ -58,7 +58,7 @@ class ImportProviderWizardTest extends TestCase
             ->assertOk()
             ->assertJsonPath('rows.0.date', '2024-01-15')
             ->assertJsonPath('rows.0.label', 'Loyer')
-            ->assertJsonPath('rows.0.amount', -850.0);
+            ->assertJsonPath('rows.0.amount', -850);
     }
 
     public function test_detect_date_format_endpoint_returns_suggestion(): void

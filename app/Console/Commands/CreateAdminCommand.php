@@ -76,8 +76,8 @@ class CreateAdminCommand extends Command
             'name' => $name,
             'email' => $email,
             'password' => $plainPassword,
-            'email_verified_at' => now(),
         ]);
+        $user->markEmailAsVerified();
 
         $this->components->info("Compte créé : {$user->email} (id {$user->id})");
         $this->line('Connexion : http://localhost:8080/login');
@@ -90,13 +90,13 @@ class CreateAdminCommand extends Command
      */
     private function validateField(string $field, string $value): ?string
     {
-        $validator = Validator::make(
-            [$field => $value],
-            [
-                'email' => ['required', 'string', 'email', 'max:255'],
-                'password' => ['required', 'string', Password::default()],
-            ],
-        );
+        $rules = match ($field) {
+            'email' => ['required', 'string', 'email', 'max:255'],
+            'password' => ['required', 'string', Password::default()],
+            default => throw new \InvalidArgumentException("Unsupported field [{$field}]."),
+        };
+
+        $validator = Validator::make([$field => $value], [$field => $rules]);
 
         if ($validator->fails()) {
             return $validator->errors()->first($field);

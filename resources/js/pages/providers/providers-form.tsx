@@ -105,6 +105,7 @@ export default function ProvidersForm({
     const hasAmountSignedColumn = columnMappings.some(
         (column) => column.field === 'amount_signed',
     );
+    const mapsBalance = columnMappings.some((column) => column.field === 'balance');
 
     const hasSample = rawRows.length > 0;
 
@@ -587,9 +588,20 @@ export default function ProvidersForm({
                                 <thead>
                                     <tr className="text-muted-foreground border-b text-left text-xs uppercase">
                                         <th className="w-12 py-2 pr-2">#</th>
-                                        <th className="py-2 pr-4">Date</th>
-                                        <th className="py-2 pr-4">Label</th>
-                                        <th className="py-2 text-right">Amount</th>
+                                        <th className="py-2 pr-4">
+                                            {t('providers.fields.date')}
+                                        </th>
+                                        <th className="py-2 pr-4">
+                                            {t('providers.fields.label')}
+                                        </th>
+                                        <th className="py-2 text-right">
+                                            {t('providers.fields.amount_signed')}
+                                        </th>
+                                        {mapsBalance ? (
+                                            <th className="py-2 text-right">
+                                                {t('providers.fields.balance')}
+                                            </th>
+                                        ) : null}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -600,7 +612,7 @@ export default function ProvidersForm({
                                             </td>
                                             {'error' in row ? (
                                                 <td
-                                                    colSpan={3}
+                                                    colSpan={mapsBalance ? 4 : 3}
                                                     className="text-destructive py-2 text-sm leading-relaxed"
                                                 >
                                                     {row.error}
@@ -614,6 +626,18 @@ export default function ProvidersForm({
                                                             precise: true,
                                                         })}
                                                     </td>
+                                                    {mapsBalance ? (
+                                                        <td className="py-2 text-right tabular-nums">
+                                                            {row.balance != null
+                                                                ? formatCurrency(
+                                                                      row.balance,
+                                                                      {
+                                                                          precise: true,
+                                                                      },
+                                                                  )
+                                                                : '—'}
+                                                        </td>
+                                                    ) : null}
                                                 </>
                                             )}
                                         </tr>

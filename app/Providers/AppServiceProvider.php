@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Models\Account;
+use App\Models\ImportBatch;
 use App\Models\ImportProvider;
 use App\Policies\AccountPolicy;
+use App\Policies\ImportBatchPolicy;
 use App\Policies\ImportProviderPolicy;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
@@ -33,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
         Gate::policy(Account::class, AccountPolicy::class);
         Gate::policy(ImportProvider::class, ImportProviderPolicy::class);
+        Gate::policy(ImportBatch::class, ImportBatchPolicy::class);
     }
 
     /**

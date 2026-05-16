@@ -65,8 +65,15 @@ export type ProvidersFormPageProps = {
 };
 
 export type NormalizedPreviewRow =
-    | { line: number; date: string; label: string; amount: number }
+    | { line: number; date: string; label: string; amount: number; balance?: number | null }
     | { line: number; error: string };
+
+export type ProvidersShowPageProps = {
+    provider: ProviderRecord;
+    accounts: ProviderAccountOption[];
+    fieldOptions: ProviderFieldOption[];
+    defaultCsvOptions: CsvOptions;
+};
 
 export type DateFormatSuggestion = {
     format: string;

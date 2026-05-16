@@ -4,27 +4,24 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\ImportProviders;
 
-use Illuminate\Contracts\Validation\ValidationRule;
+use App\Http\Requests\ImportProviders\Concerns\ValidatesImportProviderPayload;
+use App\Models\ImportProvider;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreImportProviderRequest extends FormRequest
 {
+    use ValidatesImportProviderPayload;
+
     public function authorize(): bool
     {
-        return $this->user()?->can('create', \App\Models\ImportProvider::class) ?? false;
+        return $this->user()?->can('create', ImportProvider::class) ?? false;
     }
 
     /**
-     * @return array<string, ValidationRule|array<mixed>|string>
+     * @return array<string, mixed>
      */
     public function rules(): array
     {
-        return [
-            'name' => ['required', 'string', 'max:255'],
-            'default_account_id' => ['nullable', 'integer', 'exists:accounts,id'],
-            'column_mapping' => ['required', 'array'],
-            'column_mapping.columns' => ['required', 'array', 'min:1'],
-            'csv_options' => ['nullable', 'array'],
-        ];
+        return $this->importProviderPayloadRules();
     }
 }

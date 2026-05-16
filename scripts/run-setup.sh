@@ -36,6 +36,7 @@ drachme_compose exec -T -u root app chmod 755 \
   /var/www/html/routes \
   /var/www/html/database 2>/dev/null || true
 drachme_compose exec -T -u root app chmod -R a+rX /var/www/html/public
+drachme_compose exec -T -u root app mkdir -p /var/www/html/storage/app/private/imports
 drachme_compose exec -T -u root app chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 drachme_compose exec -T -u root app chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache 2>/dev/null || true
 
