@@ -1,6 +1,9 @@
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, Pencil, Upload } from 'lucide-react';
+import { ArrowLeft, Pencil, Plus, Upload } from 'lucide-react';
 
+import { AccountBalanceChart } from '@/components/accounts/account-balance-chart';
+import { AccountBalanceDateRange } from '@/components/accounts/account-balance-date-range';
+import { AccountTransactionsPanel } from '@/components/accounts/account-transactions-panel';
 import { AccountTypeBadge } from '@/components/accounts/account-type-badge';
 import { EntityLogo } from '@/components/entity-logo';
 import { FadeIn } from '@/components/motion/fade-in';
@@ -10,7 +13,14 @@ import { useTranslation } from '@/hooks/use-translation';
 import { formatCurrency } from '@/lib/format-currency';
 import type { AccountsShowPageProps } from '@/types/account.types';
 
-export default function AccountsShow({ account, transactions }: AccountsShowPageProps) {
+export default function AccountsShow({
+    account,
+    transactions,
+    transactionFilters,
+    transactionTypeOptions,
+    perPageOptions,
+    balanceHistory,
+}: AccountsShowPageProps) {
     const { t } = useTranslation();
 
     return (
@@ -52,6 +62,14 @@ export default function AccountsShow({ account, transactions }: AccountsShowPage
                         </div>
                         <div className="flex flex-wrap gap-2">
                             <Button asChild variant="outline" size="sm">
+                                <Link
+                                    href={`/transactions/create?account_id=${account.id}`}
+                                >
+                                    <Plus className="mr-2 size-4" />
+                                    {t('accounts.add_transaction')}
+                                </Link>
+                            </Button>
+                            <Button asChild variant="outline" size="sm">
                                 <Link href="/import">
                                     <Upload className="mr-2 size-4" />
                                     {t('accounts.import')}
@@ -78,16 +96,37 @@ export default function AccountsShow({ account, transactions }: AccountsShowPage
                     </GlassPanel>
                 </FadeIn>
 
+                <FadeIn delay={0.03}>
+                    <GlassPanel className="space-y-4 p-6">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <h2 className="text-lg font-semibold">
+                                    {t('accounts.balance_chart.title')}
+                                </h2>
+                                <p className="text-muted-foreground text-sm">
+                                    {t('accounts.balance_chart.description')}
+                                </p>
+                            </div>
+                            <AccountBalanceDateRange
+                                accountId={account.id}
+                                balanceHistory={balanceHistory}
+                                transactionFilters={transactionFilters}
+                            />
+                        </div>
+                        <AccountBalanceChart points={balanceHistory.points} />
+                    </GlassPanel>
+                </FadeIn>
+
                 <FadeIn delay={0.05}>
                     <GlassPanel className="p-6">
-                        <h2 className="text-lg font-semibold">
-                            {t('accounts.recent_transactions')}
-                        </h2>
-                        {transactions.length === 0 ? (
-                            <p className="text-muted-foreground mt-4 text-sm">
-                                {t('accounts.no_transactions')}
-                            </p>
-                        ) : null}
+                        <AccountTransactionsPanel
+                            accountId={account.id}
+                            transactions={transactions}
+                            transactionFilters={transactionFilters}
+                            transactionTypeOptions={transactionTypeOptions}
+                            perPageOptions={perPageOptions}
+                            balanceHistory={balanceHistory}
+                        />
                     </GlassPanel>
                 </FadeIn>
             </div>
@@ -96,7 +135,5 @@ export default function AccountsShow({ account, transactions }: AccountsShowPage
 }
 
 AccountsShow.layout = {
-    breadcrumbs: [
-        { title: 'Comptes', href: '/accounts' },
-    ],
+    breadcrumbs: [{ title: 'Comptes', href: '/accounts' }],
 };

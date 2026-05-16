@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Tests\Feature\Accounts;
 
 use App\Enums\AccountType;
+use App\Enums\TransactionType;
 use App\Models\Account;
+use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -101,6 +103,22 @@ class AccountCrudTest extends TestCase
                 ->where('filters.archived', true));
     }
 
+    public function test_accounts_index_shows_last_activity_from_latest_transaction(): void
+    {
+        $user = User::factory()->create();
+        $account = Account::factory()->for($user)->create(['name' => 'Compte actif']);
+
+        Transaction::factory()->for($user)->for($account)->create(['date' => '2024-03-01']);
+        Transaction::factory()->for($user)->for($account)->create(['date' => '2024-06-15']);
+
+        $this
+            ->actingAs($user)
+            ->get(route('accounts.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('accounts.0.last_activity_at', '2024-06-15'));
+    }
+
     public function test_user_can_view_account_show_page(): void
     {
         $user = User::factory()->create();
@@ -113,7 +131,60 @@ class AccountCrudTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->component('accounts/accounts-show')
                 ->where('account.name', 'Livret A')
-                ->has('transactions', 0));
+                ->has('transactions.data', 0)
+                ->has('balanceHistory.points'));
+    }
+
+    public function test_account_show_balance_history_reflects_transactions(): void
+    {
+        $user = User::factory()->create();
+        $account = Account::factory()->for($user)->create([
+            'initial_balance' => '1000.00',
+            'current_balance' => '950.00',
+        ]);
+
+        Transaction::factory()->for($user)->for($account)->create([
+            'date' => '2024-01-10',
+            'amount' => '-50.00',
+            'type' => TransactionType::Expense,
+        ]);
+
+        $this
+            ->actingAs($user)
+            ->get(route('accounts.show', [
+                'account' => $account,
+                'from' => '2024-01-01',
+                'to' => '2024-01-15',
+            ]))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('balanceHistory.from', '2024-01-01')
+                ->where('balanceHistory.to', '2024-01-15')
+                ->where('balanceHistory.points.8.balance', 1000)
+                ->where('balanceHistory.points.9.balance', 950)
+                ->where('balanceHistory.points.9.date', '2024-01-10')
+                ->where('balanceHistory.points.14.balance', 950));
+    }
+
+    public function test_account_show_chart_all_time_query(): void
+    {
+        $user = User::factory()->create();
+        $account = Account::factory()->for($user)->create([
+            'opened_at' => '2023-06-01',
+        ]);
+
+        Transaction::factory()->for($user)->for($account)->create([
+            'date' => '2024-01-10',
+            'amount' => '-10.00',
+        ]);
+
+        $this
+            ->actingAs($user)
+            ->get(route('accounts.show', ['account' => $account, 'chart_all_time' => 1]))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('balanceHistory.is_all_time', true)
+                ->where('balanceHistory.from', '2023-06-01'));
     }
 
     public function test_user_cannot_update_another_users_account(): void

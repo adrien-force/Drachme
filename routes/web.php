@@ -7,6 +7,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\ImportProviderController;
 use App\Http\Controllers\ShellPlaceholderController;
+use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -27,7 +28,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('accounts/{account}/edit', [AccountController::class, 'edit'])->name('accounts.edit');
     Route::put('accounts/{account}', [AccountController::class, 'update'])->name('accounts.update');
     Route::delete('accounts/{account}', [AccountController::class, 'destroy'])->name('accounts.destroy');
-    Route::get('transactions', [ShellPlaceholderController::class, 'transactions'])->name('transactions.index');
+    Route::get('transactions', [TransactionController::class, 'index'])->name('transactions.index');
+    Route::get('transactions/create', [TransactionController::class, 'create'])->name('transactions.create');
+    Route::post('transactions', [TransactionController::class, 'store'])->name('transactions.store');
+    Route::get('transactions/{transaction}/edit', [TransactionController::class, 'edit'])->name('transactions.edit');
+    Route::put('transactions/{transaction}', [TransactionController::class, 'update'])->name('transactions.update');
     Route::get('providers', [ImportProviderController::class, 'index'])->name('providers.index');
     Route::get('providers/create', [ImportProviderController::class, 'create'])->name('providers.create');
     Route::post('providers/detect-date-format', [ImportProviderController::class, 'detectDateFormat'])

@@ -7,9 +7,11 @@ namespace App\Providers;
 use App\Models\Account;
 use App\Models\ImportBatch;
 use App\Models\ImportProvider;
+use App\Models\Transaction;
 use App\Policies\AccountPolicy;
 use App\Policies\ImportBatchPolicy;
 use App\Policies\ImportProviderPolicy;
+use App\Policies\TransactionPolicy;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -36,6 +38,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Account::class, AccountPolicy::class);
         Gate::policy(ImportProvider::class, ImportProviderPolicy::class);
         Gate::policy(ImportBatch::class, ImportBatchPolicy::class);
+        Gate::policy(Transaction::class, TransactionPolicy::class);
     }
 
     /**

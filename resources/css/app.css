@@ -225,4 +225,11 @@
         justify-content: center !important;
         padding: 0 !important;
     }
+
+    /* react-day-picker: range highlight is on DayButton, not the cell */
+    [data-slot='calendar'] .rdp-range_start,
+    [data-slot='calendar'] .rdp-range_middle,
+    [data-slot='calendar'] .rdp-range_end {
+        background: transparent !important;
+    }
 }

@@ -23,12 +23,22 @@ import type { AccountType, AccountsIndexPageProps } from '@/types/account.types'
 
 const ALL_TYPES = 'all' as const;
 
+function formatLastActivity(iso: string | null, locale: string): string {
+    if (!iso) {
+        return '—';
+    }
+
+    return new Intl.DateTimeFormat(locale === 'en' ? 'en-GB' : 'fr-FR', {
+        dateStyle: 'medium',
+    }).format(new Date(`${iso}T12:00:00`));
+}
+
 export default function AccountsIndex({
     accounts,
     filters,
     accountTypes,
 }: AccountsIndexPageProps) {
-    const { t } = useTranslation();
+    const { t, locale } = useTranslation();
     const [typeFilter, setTypeFilter] = useState<AccountType | typeof ALL_TYPES>(
         ALL_TYPES,
     );
@@ -191,8 +201,11 @@ export default function AccountsIndex({
                                                     precise: true,
                                                 })}
                                             </td>
-                                            <td className="text-muted-foreground px-4 py-3">
-                                                {t('accounts.last_activity_placeholder')}
+                                            <td className="text-muted-foreground px-4 py-3 tabular-nums">
+                                                {formatLastActivity(
+                                                    account.last_activity_at,
+                                                    locale,
+                                                )}
                                             </td>
                                         </tr>
                                     ))}

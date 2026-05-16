@@ -11,9 +11,11 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property string|null $logo_path
+ * @property \Illuminate\Support\Carbon|string|null $transactions_max_date
  */
 #[Fillable([
     'user_id',
@@ -53,5 +55,13 @@ class Account extends Model
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_archived', false);
+    }
+
+    /**
+     * @return HasMany<Transaction, $this>
+     */
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(Transaction::class);
     }
 }

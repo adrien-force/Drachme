@@ -1,3 +1,9 @@
+import type {
+    AccountTransactionItem,
+    TransactionType,
+    TransactionTypeOption,
+} from '@/types/transaction.types';
+
 export type AccountType =
     | 'checking'
     | 'savings'
@@ -34,9 +40,57 @@ export type AccountsIndexPageProps = {
     accountTypes: AccountTypeOption[];
 };
 
+export type AccountBalancePoint = {
+    date: string;
+    balance: number;
+};
+
+export type AccountBalanceHistory = {
+    from: string;
+    to: string;
+    points: AccountBalancePoint[];
+    is_all_time: boolean;
+};
+
+export type TransactionFlow = 'credit' | 'debit';
+
+export type TransactionSortColumn = 'date' | 'label' | 'amount' | 'type';
+
+export type SortOrder = 'asc' | 'desc';
+
+export type AccountTransactionFilters = {
+    search: string;
+    date_from: string | null;
+    date_to: string | null;
+    type: TransactionType | null;
+    flow: TransactionFlow | null;
+    sort: TransactionSortColumn;
+    order: SortOrder;
+    per_page: number;
+    page: number;
+};
+
+export type PaginatedMeta = {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    from: number | null;
+    to: number | null;
+};
+
+export type PaginatedTransactions = {
+    data: AccountTransactionItem[];
+    meta: PaginatedMeta;
+};
+
 export type AccountsShowPageProps = {
     account: AccountRecord;
-    transactions: [];
+    transactions: PaginatedTransactions;
+    transactionFilters: AccountTransactionFilters;
+    transactionTypeOptions: TransactionTypeOption[];
+    perPageOptions: number[];
+    balanceHistory: AccountBalanceHistory;
 };
 
 export type AccountsFormPageProps = {

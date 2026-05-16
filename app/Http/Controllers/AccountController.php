@@ -5,10 +5,15 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Enums\AccountType;
+use App\Enums\TransactionType;
+use App\Http\Requests\Accounts\ShowAccountRequest;
 use App\Http\Requests\Accounts\StoreAccountRequest;
 use App\Http\Requests\Accounts\UpdateAccountRequest;
 use App\Models\Account;
+use App\Models\Transaction;
+use App\Services\AccountBalanceHistoryService;
 use App\Services\AccountService;
+use App\Services\AccountTransactionListService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,6 +26,8 @@ class AccountController extends Controller
 
     public function __construct(
         private readonly AccountService $accounts,
+        private readonly AccountBalanceHistoryService $balanceHistory,
+        private readonly AccountTransactionListService $transactionList,
     ) {}
 
     public function index(Request $request): Response
@@ -29,7 +36,9 @@ class AccountController extends Controller
 
         $showArchived = $request->boolean('archived');
 
-        $query = Account::query()->orderBy('name');
+        $query = Account::query()
+            ->withMax('transactions', 'date')
+            ->orderBy('name');
 
         if (! $showArchived) {
             $query->active();
@@ -48,13 +57,40 @@ class AccountController extends Controller
         ]);
     }
 
-    public function show(Account $account): Response
+    public function show(ShowAccountRequest $request, Account $account): Response
     {
         $this->authorize('view', $account);
 
+        $account->loadMax('transactions', 'date');
+
+        $transactionFilters = $request->transactionFilters();
+        $paginator = $this->transactionList->paginate($account, $transactionFilters);
+
         return Inertia::render('accounts/accounts-show', [
             'account' => $this->serializeAccount($account),
-            'transactions' => [],
+            'transactions' => [
+                'data' => collect($paginator->items())
+                    ->map(fn (Transaction $transaction): array => $this->serializeTransaction($transaction))
+                    ->values()
+                    ->all(),
+                'meta' => [
+                    'current_page' => $paginator->currentPage(),
+                    'last_page' => $paginator->lastPage(),
+                    'per_page' => $paginator->perPage(),
+                    'total' => $paginator->total(),
+                    'from' => $paginator->firstItem(),
+                    'to' => $paginator->lastItem(),
+                ],
+            ],
+            'transactionFilters' => $request->transactionFiltersForFrontend(),
+            'transactionTypeOptions' => $this->transactionTypeOptions(),
+            'perPageOptions' => ShowAccountRequest::perPageOptions(),
+            'balanceHistory' => $this->balanceHistory->build(
+                $account,
+                $request->chartFrom(),
+                $request->chartTo(),
+                $request->chartAllTime(),
+            ),
         ]);
     }
 
@@ -164,7 +200,40 @@ class AccountController extends Controller
                 ? $openedAt->format('Y-m-d')
                 : ($openedAt !== null ? \Illuminate\Support\Carbon::parse((string) $openedAt)->format('Y-m-d') : null),
             'is_archived' => $account->is_archived,
-            'last_activity_at' => null,
+            'last_activity_at' => $this->formatDateField($account->transactions_max_date),
+        ];
+    }
+
+    private function formatDateField(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format('Y-m-d');
+        }
+
+        return \Illuminate\Support\Carbon::parse((string) $value)->format('Y-m-d');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function serializeTransaction(Transaction $transaction): array
+    {
+        $type = $transaction->type;
+        $date = $transaction->date;
+
+        return [
+            'id' => $transaction->id,
+            'date' => $date instanceof \DateTimeInterface
+                ? $date->format('Y-m-d')
+                : (string) $date,
+            'label' => $transaction->label,
+            'amount' => (float) $transaction->amount,
+            'type' => $type instanceof TransactionType ? $type->value : (string) $type,
+            'is_transfer_linked' => $transaction->transfer_pair_id !== null,
         ];
     }
 
@@ -179,6 +248,20 @@ class AccountController extends Controller
                 'label' => (string) __("ui.accounts.types.{$type->value}"),
             ],
             AccountType::cases(),
+        ));
+    }
+
+    /**
+     * @return list<array{value: string, label: string}>
+     */
+    private function transactionTypeOptions(): array
+    {
+        return array_values(array_map(
+            static fn (TransactionType $type): array => [
+                'value' => $type->value,
+                'label' => (string) __("ui.transactions.types.{$type->value}"),
+            ],
+            TransactionType::cases(),
         ));
     }
 }

@@ -19,6 +19,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'label',
     'amount',
     'type',
+    'category_id',
+    'transfer_pair_id',
     'import_batch_id',
     'import_hash',
     'notes',
@@ -54,5 +56,13 @@ class Transaction extends Model
     public function importBatch(): BelongsTo
     {
         return $this->belongsTo(ImportBatch::class);
+    }
+
+    /**
+     * @return BelongsTo<Transaction, $this>
+     */
+    public function transferPair(): BelongsTo
+    {
+        return $this->belongsTo(Transaction::class, 'transfer_pair_id');
     }
 }
