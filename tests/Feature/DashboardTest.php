@@ -23,5 +23,11 @@ class DashboardTest extends TestCase
 
         $response = $this->get(route('dashboard'));
         $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('dashboard/dashboard-index')
+            ->where('isDemoData', true)
+            ->has('kpis')
+            ->has('netWorthHistory', 12)
+            ->has('cashflow', 12));
     }
 }
