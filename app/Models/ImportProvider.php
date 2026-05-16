@@ -9,6 +9,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property array<string, mixed> $column_mapping
+ * @property array<string, mixed> $csv_options
+ */
 #[Fillable([
     'user_id',
     'name',

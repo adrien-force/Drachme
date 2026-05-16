@@ -59,7 +59,7 @@ class ImportProviderService
             'name' => $data['name'],
             'default_account_id' => $data['default_account_id'] ?? null,
             'column_mapping' => $data['column_mapping'],
-            'csv_options' => $this->mergeCsvOptions($data['csv_options'] ?? $provider->csv_options),
+            'csv_options' => $this->mergeCsvOptions($data['csv_options'] ?? $this->resolvedCsvOptions($provider)),
         ]);
 
         $provider->save();
@@ -87,13 +87,13 @@ class ImportProviderService
             throw new InvalidArgumentException('Missing label column in row.');
         }
 
-        $dateFormat = (string) Arr::get($provider->csv_options, 'date_format', 'd/m/Y');
+        $dateFormat = (string) Arr::get($this->resolvedCsvOptions($provider), 'date_format', 'd/m/Y');
         $date = CarbonImmutable::createFromFormat(
             $dateFormat,
             trim((string) $fields[ImportColumnField::Date->value]),
         );
 
-        if ($date === false) {
+        if (! $date instanceof CarbonImmutable) {
             throw new InvalidArgumentException('Invalid date in row.');
         }
 
@@ -114,19 +114,26 @@ class ImportProviderService
     }
 
     /**
-     * @param  list<string|null>  $raw
-     * @return array<string, string>
+     * @return array<string, mixed>
      */
-    private function extractFields(array $raw, ImportProvider $provider): array
+    private function resolvedCsvOptions(ImportProvider $provider): array
     {
-        $mapping = $provider->column_mapping;
-        $columns = $mapping['columns'] ?? [];
+        return $provider->csv_options;
+    }
+
+    /**
+     * @return list<array{index: int|string, field: string}>
+     */
+    private function resolvedMappingColumns(ImportProvider $provider): array
+    {
+        $columns = $provider->column_mapping['columns'] ?? null;
 
         if (! is_array($columns)) {
             return [];
         }
 
-        $fields = [];
+        /** @var list<array{index: int|string, field: string}> $normalized */
+        $normalized = [];
 
         foreach ($columns as $column) {
             if (! is_array($column)) {
@@ -136,13 +143,30 @@ class ImportProviderService
             $index = $column['index'] ?? null;
             $field = $column['field'] ?? null;
 
-            if (! is_int($index) && ! is_numeric($index)) {
+            if ((! is_int($index) && ! is_numeric($index)) || ! is_string($field)) {
                 continue;
             }
 
-            if (! is_string($field)) {
-                continue;
-            }
+            $normalized[] = [
+                'index' => $index,
+                'field' => $field,
+            ];
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * @param  list<string|null>  $raw
+     * @return array<string, string>
+     */
+    private function extractFields(array $raw, ImportProvider $provider): array
+    {
+        $fields = [];
+
+        foreach ($this->resolvedMappingColumns($provider) as $column) {
+            $index = $column['index'];
+            $field = $column['field'];
 
             $fields[$field] = trim((string) ($raw[(int) $index] ?? ''));
         }
