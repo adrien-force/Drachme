@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Enums\AccountType;
@@ -10,10 +12,14 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property string|null $logo_path
+ */
 #[Fillable([
     'user_id',
     'name',
     'institution',
+    'logo_path',
     'type',
     'initial_balance',
     'current_balance',

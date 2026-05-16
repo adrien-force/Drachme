@@ -1,5 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
+
 namespace Tests\Feature\Shell;
 
 use App\Models\User;

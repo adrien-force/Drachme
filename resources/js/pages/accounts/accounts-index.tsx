@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { AccountTypeBadge } from '@/components/accounts/account-type-badge';
+import { EntityLogo } from '@/components/entity-logo';
 import { FadeIn } from '@/components/motion/fade-in';
 import { GlassPanel } from '@/components/glass-panel';
 import { Button } from '@/components/ui/button';
@@ -165,9 +166,13 @@ export default function AccountsIndex({
                                             <td className="px-4 py-3">
                                                 <Link
                                                     href={`/accounts/${account.id}`}
-                                                    className="font-medium hover:underline"
+                                                    className="flex items-center gap-3 font-medium hover:underline"
                                                 >
-                                                    {account.name}
+                                                    <EntityLogo
+                                                        name={account.name}
+                                                        logoUrl={account.logo_url}
+                                                    />
+                                                    <span>{account.name}</span>
                                                 </Link>
                                                 {account.is_archived && (
                                                     <span className="text-muted-foreground ml-2 text-xs">

@@ -2,6 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft, Pencil, Upload } from 'lucide-react';
 
 import { AccountTypeBadge } from '@/components/accounts/account-type-badge';
+import { EntityLogo } from '@/components/entity-logo';
 import { FadeIn } from '@/components/motion/fade-in';
 import { GlassPanel } from '@/components/glass-panel';
 import { Button } from '@/components/ui/button';
@@ -27,7 +28,12 @@ export default function AccountsShow({ account, transactions }: AccountsShowPage
 
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div>
-                            <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-3">
+                                <EntityLogo
+                                    name={account.name}
+                                    logoUrl={account.logo_url}
+                                    className="size-12"
+                                />
                                 <h1 className="text-2xl font-semibold tracking-tight">
                                     {account.name}
                                 </h1>

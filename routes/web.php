@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ImportProviderController;
@@ -26,7 +28,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('accounts/{account}', [AccountController::class, 'destroy'])->name('accounts.destroy');
     Route::get('transactions', [ShellPlaceholderController::class, 'transactions'])->name('transactions.index');
     Route::get('providers', [ImportProviderController::class, 'index'])->name('providers.index');
+    Route::get('providers/create', [ImportProviderController::class, 'create'])->name('providers.create');
+    Route::post('providers/preview', [ImportProviderController::class, 'preview'])->name('providers.preview');
     Route::post('providers', [ImportProviderController::class, 'store'])->name('providers.store');
+    Route::get('providers/{importProvider}/edit', [ImportProviderController::class, 'edit'])->name('providers.edit');
     Route::put('providers/{importProvider}', [ImportProviderController::class, 'update'])->name('providers.update');
     Route::delete('providers/{importProvider}', [ImportProviderController::class, 'destroy'])->name('providers.destroy');
     Route::get('import', [ShellPlaceholderController::class, 'import'])->name('import.index');

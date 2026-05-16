@@ -1,8 +1,9 @@
-import { Form, Head, Link } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, Link, router } from '@inertiajs/react';
+import { useRef, useState } from 'react';
 
 import { FadeIn } from '@/components/motion/fade-in';
 import { GlassPanel } from '@/components/glass-panel';
+import { LogoUploadField } from '@/components/logo-upload-field';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,7 +24,61 @@ export default function AccountsForm({
 }: AccountsFormPageProps) {
     const { t } = useTranslation();
     const isEditing = account !== null;
+    const formRef = useRef<HTMLFormElement>(null);
     const [type, setType] = useState<AccountType>(account?.type ?? 'checking');
+    const [accountName, setAccountName] = useState(account?.name ?? '');
+    const [logoFile, setLogoFile] = useState<File | null>(null);
+    const [removeLogo, setRemoveLogo] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+    const [errors, setErrors] = useState<Record<string, string>>({});
+
+    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+
+        const form = formRef.current;
+        if (!form) {
+            return;
+        }
+
+        const formData = new FormData(form);
+
+        const payload: Record<string, unknown> = {
+            name: accountName,
+            type,
+            institution: (formData.get('institution') as string) || null,
+            opened_at: (formData.get('opened_at') as string) || null,
+        };
+
+        if (!isEditing) {
+            payload.initial_balance = formData.get('initial_balance');
+        }
+
+        if (logoFile) {
+            payload.logo = logoFile;
+        }
+
+        if (removeLogo) {
+            payload.remove_logo = true;
+        }
+
+        setSubmitting(true);
+        setErrors({});
+
+        const options = {
+            preserveScroll: true,
+            forceFormData: true,
+            onFinish: () => setSubmitting(false),
+            onError: (pageErrors: Record<string, string>) => setErrors(pageErrors),
+        };
+
+        if (isEditing && account) {
+            router.put(`/accounts/${account.id}`, payload, options);
+
+            return;
+        }
+
+        router.post('/accounts', payload, options);
+    };
 
     return (
         <>
@@ -47,115 +102,114 @@ export default function AccountsForm({
 
                 <FadeIn>
                     <GlassPanel className="p-6">
-                        <Form
-                            action={
-                                isEditing ? `/accounts/${account.id}` : '/accounts'
-                            }
-                            method={isEditing ? 'put' : 'post'}
+                        <form
+                            ref={formRef}
+                            onSubmit={handleSubmit}
                             className="space-y-6"
-                            options={{ preserveScroll: true }}
                         >
-                            {({ processing, errors }) => (
-                                <>
-                                    <input type="hidden" name="type" value={type} />
+                            <LogoUploadField
+                                name={accountName}
+                                currentLogoUrl={account?.logo_url}
+                                disabled={submitting}
+                                useNativeFormFields={false}
+                                onFileChange={setLogoFile}
+                                onRemoveChange={setRemoveLogo}
+                            />
 
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="name">{t('accounts.name')}</Label>
-                                        <Input
-                                            id="name"
-                                            name="name"
-                                            defaultValue={account?.name ?? ''}
-                                            required
-                                            placeholder={t('accounts.name_placeholder')}
-                                        />
-                                        <InputError message={errors.name} />
-                                    </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="name">{t('accounts.name')}</Label>
+                                <Input
+                                    id="name"
+                                    name="name"
+                                    value={accountName}
+                                    onChange={(event) =>
+                                        setAccountName(event.target.value)
+                                    }
+                                    required
+                                    placeholder={t('accounts.name_placeholder')}
+                                />
+                                <InputError message={errors.name} />
+                            </div>
 
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="institution">
-                                            {t('accounts.institution')}
-                                        </Label>
-                                        <Input
-                                            id="institution"
-                                            name="institution"
-                                            defaultValue={account?.institution ?? ''}
-                                            placeholder={t(
-                                                'accounts.institution_placeholder',
-                                            )}
-                                        />
-                                        <InputError message={errors.institution} />
-                                    </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="institution">
+                                    {t('accounts.institution')}
+                                </Label>
+                                <Input
+                                    id="institution"
+                                    name="institution"
+                                    defaultValue={account?.institution ?? ''}
+                                    placeholder={t('accounts.institution_placeholder')}
+                                />
+                                <InputError message={errors.institution} />
+                            </div>
 
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="type">{t('accounts.type')}</Label>
-                                        <Select
-                                            value={type}
-                                            onValueChange={(value) =>
-                                                setType(value as AccountType)
-                                            }
-                                        >
-                                            <SelectTrigger id="type" className="w-full">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {accountTypes.map((option) => (
-                                                    <SelectItem
-                                                        key={option.value}
-                                                        value={option.value}
-                                                    >
-                                                        {option.label}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <InputError message={errors.type} />
-                                    </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="type">{t('accounts.type')}</Label>
+                                <Select
+                                    value={type}
+                                    onValueChange={(value) =>
+                                        setType(value as AccountType)
+                                    }
+                                >
+                                    <SelectTrigger id="type" className="w-full">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {accountTypes.map((option) => (
+                                            <SelectItem
+                                                key={option.value}
+                                                value={option.value}
+                                            >
+                                                {option.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <InputError message={errors.type} />
+                            </div>
 
-                                    {!isEditing && (
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="initial_balance">
-                                                {t('accounts.initial_balance')}
-                                            </Label>
-                                            <Input
-                                                id="initial_balance"
-                                                name="initial_balance"
-                                                type="number"
-                                                step="0.01"
-                                                defaultValue="0"
-                                                required
-                                            />
-                                            <InputError message={errors.initial_balance} />
-                                        </div>
-                                    )}
-
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="opened_at">
-                                            {t('accounts.opened_at')}
-                                        </Label>
-                                        <Input
-                                            id="opened_at"
-                                            name="opened_at"
-                                            type="date"
-                                            defaultValue={account?.opened_at ?? ''}
-                                        />
-                                        <InputError message={errors.opened_at} />
-                                    </div>
-
-                                    <div className="flex flex-wrap gap-3">
-                                        <Button type="submit" disabled={processing}>
-                                            {isEditing
-                                                ? t('accounts.save')
-                                                : t('accounts.create')}
-                                        </Button>
-                                        <Button type="button" variant="outline" asChild>
-                                            <Link href="/accounts">
-                                                {t('accounts.cancel')}
-                                            </Link>
-                                        </Button>
-                                    </div>
-                                </>
+                            {!isEditing && (
+                                <div className="grid gap-2">
+                                    <Label htmlFor="initial_balance">
+                                        {t('accounts.initial_balance')}
+                                    </Label>
+                                    <Input
+                                        id="initial_balance"
+                                        name="initial_balance"
+                                        type="number"
+                                        step="0.01"
+                                        defaultValue="0"
+                                        required
+                                    />
+                                    <InputError message={errors.initial_balance} />
+                                </div>
                             )}
-                        </Form>
+
+                            <div className="grid gap-2">
+                                <Label htmlFor="opened_at">{t('accounts.opened_at')}</Label>
+                                <Input
+                                    id="opened_at"
+                                    name="opened_at"
+                                    type="date"
+                                    defaultValue={account?.opened_at ?? ''}
+                                />
+                                <InputError message={errors.opened_at} />
+                            </div>
+
+                            <InputError message={errors.logo} />
+
+                            <div className="flex flex-wrap gap-3">
+                                <Button type="submit" disabled={submitting}>
+                                    {isEditing
+                                        ? t('accounts.save')
+                                        : t('accounts.create')}
+                                </Button>
+                                <Button type="button" variant="outline" asChild>
+                                    <Link href="/accounts">{t('accounts.cancel')}</Link>
+                                </Button>
+                            </div>
+                        </form>
                     </GlassPanel>
                 </FadeIn>
             </div>

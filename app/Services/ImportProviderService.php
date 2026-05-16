@@ -1,17 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Data\NormalizedRow;
 use App\Enums\ImportColumnField;
 use App\Models\ImportProvider;
 use App\Models\User;
-use Carbon\CarbonImmutable;
+use App\Support\DateFormatDetector;
+use App\Support\ImportRowError;
+use App\Support\SignedAmountParser;
 use Illuminate\Support\Arr;
 use InvalidArgumentException;
 
 class ImportProviderService
 {
+    public function __construct(
+        private readonly DateFormatDetector $dateFormats,
+        private readonly SignedAmountParser $signedAmounts,
+    ) {}
     /**
      * @return array<string, mixed>
      */
@@ -34,15 +42,23 @@ class ImportProviderService
      *     csv_options?: array<string, mixed>|null,
      * }  $data
      */
-    public function create(User $user, array $data): ImportProvider
+    public function create(User $user, array $data, ?UploadedFile $logo = null): ImportProvider
     {
-        return ImportProvider::query()->create([
+        $provider = ImportProvider::query()->create([
             'user_id' => $user->id,
             'name' => $data['name'],
             'default_account_id' => $data['default_account_id'] ?? null,
             'column_mapping' => $data['column_mapping'],
             'csv_options' => $this->mergeCsvOptions($data['csv_options'] ?? null),
         ]);
+
+        if ($logo !== null) {
+            $provider->update([
+                'logo_path' => $this->logos->store($logo, "logos/providers/{$user->id}"),
+            ]);
+        }
+
+        return $provider->fresh() ?? $provider;
     }
 
     /**
@@ -73,33 +89,78 @@ class ImportProviderService
     }
 
     /**
+     * @param  list<list<string|null>>  $sampleRows
+     * @param  array<string, mixed>  $columnMapping
+     * @param  array<string, mixed>  $csvOptions
+     * @return list<array{date: string, label: string, amount: float}|array{error: string}>
+     */
+    public function previewNormalizedRows(array $sampleRows, array $columnMapping, array $csvOptions): array
+    {
+        $provider = new ImportProvider([
+            'column_mapping' => $columnMapping,
+            'csv_options' => $this->mergeCsvOptions($csvOptions),
+        ]);
+
+        $preview = [];
+        $skipRows = (int) Arr::get($this->mergeCsvOptions($csvOptions), 'skip_rows', 0);
+
+        foreach (array_slice($sampleRows, 0, 3) as $index => $raw) {
+            $lineNumber = $skipRows + $index + 1;
+
+            try {
+                $normalized = $this->normalizeRow($raw, $provider);
+
+                $preview[] = [
+                    'line' => $lineNumber,
+                    'date' => $normalized->date->format('Y-m-d'),
+                    'label' => $normalized->label,
+                    'amount' => $normalized->amount,
+                ];
+            } catch (\Throwable $exception) {
+                $preview[] = [
+                    'line' => $lineNumber,
+                    'error' => ImportRowError::wrapLine($lineNumber, $exception->getMessage()),
+                ];
+            }
+        }
+
+        return $preview;
+    }
+
+    /**
      * @param  list<string|null>  $raw
      */
     public function normalizeRow(array $raw, ImportProvider $provider): NormalizedRow
     {
         $fields = $this->extractFields($raw, $provider);
 
-        if (! isset($fields[ImportColumnField::Date->value])) {
-            throw new InvalidArgumentException('Missing date column in row.');
+        if (! array_key_exists(ImportColumnField::Date->value, $fields)) {
+            throw new InvalidArgumentException(
+                ImportRowError::fieldNotMapped(ImportColumnField::Date),
+            );
         }
 
-        if (! isset($fields[ImportColumnField::Label->value])) {
-            throw new InvalidArgumentException('Missing label column in row.');
+        if (! array_key_exists(ImportColumnField::Label->value, $fields)) {
+            throw new InvalidArgumentException(
+                ImportRowError::fieldNotMapped(ImportColumnField::Label),
+            );
         }
 
         $dateFormat = (string) Arr::get($this->resolvedCsvOptions($provider), 'date_format', 'd/m/Y');
-        $date = CarbonImmutable::createFromFormat(
+        $date = $this->dateFormats->parse(
+            (string) $fields[ImportColumnField::Date->value],
             $dateFormat,
-            trim((string) $fields[ImportColumnField::Date->value]),
         );
 
-        if (! $date instanceof CarbonImmutable) {
-            throw new InvalidArgumentException('Invalid date in row.');
+        $label = trim((string) $fields[ImportColumnField::Label->value]);
+
+        if ($label === '') {
+            throw new InvalidArgumentException(ImportRowError::labelEmpty());
         }
 
         return new NormalizedRow(
             date: $date,
-            label: trim((string) $fields[ImportColumnField::Label->value]),
+            label: $label,
             amount: $this->resolveAmount($fields),
         );
     }
@@ -179,30 +240,49 @@ class ImportProviderService
      */
     private function resolveAmount(array $fields): float
     {
-        if (isset($fields[ImportColumnField::AmountSigned->value])) {
-            return $this->parseNumber($fields[ImportColumnField::AmountSigned->value]);
+        if (array_key_exists(ImportColumnField::AmountSigned->value, $fields)) {
+            $rawAmount = trim($fields[ImportColumnField::AmountSigned->value]);
+
+            if ($rawAmount === '') {
+                throw new InvalidArgumentException(ImportRowError::amountSignedEmpty());
+            }
+
+            if (! $this->looksLikeAmount($rawAmount)) {
+                throw new InvalidArgumentException(
+                    ImportRowError::amountSignedInvalid($rawAmount),
+                );
+            }
+
+            return $this->signedAmounts->parse($rawAmount);
         }
 
         $debit = isset($fields[ImportColumnField::Debit->value])
-            ? abs($this->parseNumber($fields[ImportColumnField::Debit->value]))
+            ? abs($this->parseUnsignedNumber($fields[ImportColumnField::Debit->value]))
             : 0.0;
 
         $credit = isset($fields[ImportColumnField::Credit->value])
-            ? abs($this->parseNumber($fields[ImportColumnField::Credit->value]))
+            ? abs($this->parseUnsignedNumber($fields[ImportColumnField::Credit->value]))
             : 0.0;
 
         if ($debit === 0.0 && $credit === 0.0) {
-            throw new InvalidArgumentException('Missing amount columns in row.');
+            throw new InvalidArgumentException(ImportRowError::amountMissing($fields));
         }
 
         return $credit - $debit;
     }
 
-    private function parseNumber(string $value): float
+    private function looksLikeAmount(string $value): bool
+    {
+        $normalized = str_replace([' ', "\u{00A0}"], '', trim($value));
+
+        return $normalized !== '' && preg_match('/^[-+]?[\d.,()]+$/u', $normalized) === 1;
+    }
+
+    private function parseUnsignedNumber(string $value): float
     {
         $normalized = str_replace([' ', "\u{00A0}"], '', trim($value));
         $normalized = str_replace(',', '.', $normalized);
 
-        return (float) $normalized;
+        return abs((float) $normalized);
     }
 }

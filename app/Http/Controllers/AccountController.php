@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Enums\AccountType;
@@ -82,7 +84,7 @@ class AccountController extends Controller
          * } $data */
         $data = $request->validated();
 
-        $account = $this->accounts->create($user, $data);
+        $account = $this->accounts->create($user, $data, $request->file('logo'));
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -112,7 +114,12 @@ class AccountController extends Controller
          * } $data */
         $data = $request->validated();
 
-        $this->accounts->update($account, $data);
+        $this->accounts->update(
+            $account,
+            $data,
+            $request->file('logo'),
+            $request->boolean('remove_logo'),
+        );
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -147,6 +154,7 @@ class AccountController extends Controller
         return [
             'id' => $account->id,
             'name' => $account->name,
+            'logo_url' => $this->accounts->logoUrl($account),
             'institution' => $account->institution,
             'type' => $type instanceof AccountType ? $type->value : (string) $type,
             'initial_balance' => (float) $account->initial_balance,

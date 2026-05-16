@@ -7,11 +7,11 @@ namespace App\Http\Requests\ImportProviders;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreImportProviderRequest extends FormRequest
+class PreviewImportProviderRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('create', \App\Models\ImportProvider::class) ?? false;
+        return $this->user() !== null;
     }
 
     /**
@@ -20,8 +20,8 @@ class StoreImportProviderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
-            'default_account_id' => ['nullable', 'integer', 'exists:accounts,id'],
+            'sample_rows' => ['required', 'array', 'min:1'],
+            'sample_rows.*' => ['array'],
             'column_mapping' => ['required', 'array'],
             'column_mapping.columns' => ['required', 'array', 'min:1'],
             'csv_options' => ['nullable', 'array'],

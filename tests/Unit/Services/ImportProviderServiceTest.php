@@ -1,5 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
+
 namespace Tests\Unit\Services;
 
 use App\Enums\ImportColumnField;
@@ -75,6 +78,35 @@ class ImportProviderServiceTest extends TestCase
         );
 
         $this->assertSame(200.0, $creditRow->amount);
+    }
+
+    public function test_normalize_row_with_plus_and_minus_in_same_column(): void
+    {
+        $user = User::factory()->create();
+        $provider = ImportProvider::factory()->for($user)->create([
+            'column_mapping' => [
+                'columns' => [
+                    ['index' => 0, 'field' => ImportColumnField::Date->value],
+                    ['index' => 1, 'field' => ImportColumnField::Label->value],
+                    ['index' => 2, 'field' => ImportColumnField::AmountSigned->value],
+                ],
+            ],
+        ]);
+
+        $service = app(ImportProviderService::class);
+
+        $credit = $service->normalizeRow(
+            ['15/01/2024', 'Virement reçu', '+2 500,00'],
+            $provider,
+        );
+
+        $debit = $service->normalizeRow(
+            ['16/01/2024', 'Prélèvement', '-850,00'],
+            $provider,
+        );
+
+        $this->assertSame(2500.0, $credit->amount);
+        $this->assertSame(-850.0, $debit->amount);
     }
 
     public function test_normalize_row_throws_when_amount_missing(): void

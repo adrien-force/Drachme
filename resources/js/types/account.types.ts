@@ -9,6 +9,7 @@ export type AccountRecord = {
     id: number;
     name: string;
     institution: string | null;
+    logo_url: string | null;
     type: AccountType;
     initial_balance: number;
     current_balance: number;
