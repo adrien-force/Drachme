@@ -1,0 +1,11 @@
+{
+  "terminal.integrated.profiles.windows": {
+    "Drachme (WSL)": {
+      "path": "C:\\WINDOWS\\System32\\wsl.exe",
+      "args": ["-d", "Ubuntu", "--cd", "/home/adrie/Projects/Drachme"]
+    }
+  },
+  "terminal.integrated.defaultProfile.windows": "Drachme (WSL)",
+  "remote.WSL.fileWatcher.polling": false,
+  "files.eol": "\n"
+}

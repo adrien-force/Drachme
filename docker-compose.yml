@@ -1,0 +1,69 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    volumes:
+      - .:/var/www/html
+    environment:
+      APP_ENV: local
+      APP_URL: http://localhost:8080
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - drachme
+
+  web:
+    image: nginx:1.27-alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html:ro
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      app:
+        condition: service_started
+    networks:
+      - drachme
+
+  db:
+    image: postgres:16-alpine
+    networks:
+      - drachme
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: drachme
+      POSTGRES_USER: drachme
+      POSTGRES_PASSWORD: drachme
+    volumes:
+      - drachme-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U drachme -d drachme"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  vite:
+    image: node:22-bookworm
+    working_dir: /var/www/html
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/var/www/html
+    environment:
+      VITE_DEV_SERVER_URL: http://localhost:5173
+      WAYFINDER_SKIP_PLUGIN: "1"
+    profiles:
+      - dev
+    networks:
+      - drachme
+
+networks:
+  drachme:
+    driver: bridge
+
+volumes:
+  drachme-pgdata:

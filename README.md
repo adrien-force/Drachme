@@ -4,51 +4,67 @@ Application locale de gestion de patrimoine et de dépenses — alternative pers
 
 ## Stack
 
-
 | Couche   | Technologie                                        |
 | -------- | -------------------------------------------------- |
-| Backend  | PHP 8.3+, Laravel 11+                              |
-| Frontend | React 18+, Inertia.js, **TypeScript strict**, Tailwind |
+| Backend  | PHP 8.4 (Docker), **Laravel 13**                   |
+| Frontend | React 19, Inertia.js, **TypeScript strict**, Tailwind 4 |
+| UI       | shadcn/ui, thème sombre, effet glass ([UI-DESIGN](docs/UI-DESIGN.md)) |
 | Qualité  | PHPStan + Larastan **niveau 8**, Pint, ESLint      |
 | Base     | PostgreSQL 16                                      |
-| Runtime  | Docker Compose (recommandé sur Windows)            |
-
+| Runtime  | Docker Compose (WSL2 + Docker Desktop)             |
 
 ## Documentation
 
-- **[Contrat de développement](docs/DEVELOPMENT_CONTRACT.md)** — normes obligatoires (PHPStan 8, TS strict, nommage, workflow commit)
-- [Cahier des charges](docs/CAHIER-DES-CHARGES.md) — vision, décisions produit, hors scope
-- [Architecture](docs/ARCHITECTURE.md) — stack, multi-tenant, conventions
-- [Master TODO](docs/MASTER-TODO.md) — plan de build et liens vers les subs
+- **[Contrat de développement](docs/DEVELOPMENT_CONTRACT.md)** — normes obligatoires
+- **[Setup Windows + WSL](docs/SETUP-WINDOWS-WSL.md)** — environnement recommandé
+- [Cahier des charges](docs/CAHIER-DES-CHARGES.md) · [Architecture](docs/ARCHITECTURE.md) · [Master TODO](docs/MASTER-TODO.md)
+- Tâches détaillées : `docs/subs/SUB-*.md`
 
-Chaque tâche détaillée : `docs/subs/SUB-*.md`.
+## Premier démarrage (WSL)
 
-## Développement (Windows)
+Code canonique : `/home/adrie/Projects/Drachme` — ouvrir dans Cursor via `\\wsl$\Ubuntu\home\adrie\Projects\Drachme`.
 
-### Option A — Docker (recommandé)
+```bash
+cd ~/Projects/Drachme
+make normalize          # CRLF → LF (Windows/WSL)
+make check
 
-À venir dans `SUB-00-infra` : `docker compose up` lance PHP, Postgres, Vite.
+make bootstrap          # Laravel 13 + react-starter-kit (une seule fois)
+make build && make up   # Docker : nginx, PHP, Postgres
+make setup              # .env, composer, build Vite, migrations
 
-### Option B — WSL2
+make dev                # optionnel : Vite HMR sur :5173
+make quality            # PHPStan 8 + TypeScript + tests
+```
 
-Si tu préfères le workflow macOS-like :
+| URL | Service |
+|-----|---------|
+| http://localhost:8080 | Application (nginx) |
+| http://localhost:5173 | Vite dev (`make dev`) |
 
-1. Installer [WSL2](https://learn.microsoft.com/fr-fr/windows/wsl/install) + Ubuntu.
-2. Cloner ou monter le repo : `\\wsl$\Ubuntu\home\<user>\Projects\Drachme` ou travailler directement dans le filesystem Linux (`~/Projects/Drachme`).
-3. Docker Desktop avec backend WSL2 pour les conteneurs.
+> Ne pas développer au quotidien sur `C:\Users\adrie\Projects\Drachme` (lent sous `/mnt/c/`).
 
-Le code vit sous `C:\Users\adrie\Projects\Drachme` ; les commandes `php`, `composer`, `npm` tournent dans le conteneur ou WSL, pas besoin d’installer PHP sur Windows.
+### Dépannage rapide
+
+| Problème | Action |
+|----------|--------|
+| HTTP 404 sur :8080 | `chmod 755 ~/Projects/Drachme` puis `make setup` |
+| Page sans styles | `make build-assets` |
+| `APP_KEY` vide | `make key` |
+| Voir [SETUP-WINDOWS-WSL.md](docs/SETUP-WINDOWS-WSL.md) | Docker, ports, CRLF |
+
+## Commandes utiles
+
+```bash
+make up / make down / make logs
+make migrate
+make build-assets      # après changement de routes PHP (Wayfinder)
+make quality
+```
 
 ## Ordre de build V1
 
-1. Infra + Inertia shell
-2. Dashboard (données factices)
-3. Comptes
-4. Providers + import CSV
-5. Transactions, catégories, investissements
-6. Moteur de soldes réels + dashboards live
-
-Voir [docs/MASTER-TODO.md](docs/MASTER-TODO.md).
+Voir [docs/MASTER-TODO.md](docs/MASTER-TODO.md) — infra (SUB-00) → dashboard factice (SUB-41) → comptes → …
 
 ## Licence
 
