@@ -11,7 +11,7 @@ class AccountTenantIsolationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_user_cannot_view_another_users_account(): void
+    public function test_user_cannot_edit_another_users_account(): void
     {
         $owner = User::factory()->create();
         $intruder = User::factory()->create();
@@ -19,18 +19,18 @@ class AccountTenantIsolationTest extends TestCase
 
         $this
             ->actingAs($intruder)
-            ->get(route('accounts.show', $account))
+            ->get(route('accounts.edit', $account))
             ->assertForbidden();
     }
 
-    public function test_user_can_view_own_account(): void
+    public function test_user_can_edit_own_account(): void
     {
         $user = User::factory()->create();
         $account = Account::factory()->for($user)->create();
 
         $this
             ->actingAs($user)
-            ->get(route('accounts.show', $account))
+            ->get(route('accounts.edit', $account))
             ->assertOk();
     }
 
@@ -53,7 +53,13 @@ class AccountTenantIsolationTest extends TestCase
 
         $this->actingAs($user);
 
-        $account = Account::query()->create(['name' => 'Test account']);
+        $account = Account::query()->create([
+            'name' => 'Test account',
+            'type' => 'checking',
+            'initial_balance' => 0,
+            'current_balance' => 0,
+            'currency' => 'EUR',
+        ]);
 
         $this->assertSame($user->id, $account->user_id);
     }
