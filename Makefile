@@ -12,6 +12,7 @@ endif
 help:
 	@echo "Compose: $(COMPOSE)"
 	@echo "Targets: bootstrap, build, up, setup, dev, down, build-assets, quality, check"
+	@echo "  admin       - Create admin user (drachme:create-admin)"
 
 normalize:
 	@sed -i 's/\r$$//' Makefile scripts/*.sh 2>/dev/null || true
@@ -82,6 +83,9 @@ lint: normalize
 build-assets: normalize
 	$(COMPOSE) exec -T app php artisan wayfinder:generate --with-form
 	$(COMPOSE) exec -T app npm run build
+
+admin: normalize
+	$(COMPOSE) exec app php artisan drachme:create-admin
 
 quality: normalize
 	$(COMPOSE) exec -T app git config --global --add safe.directory /var/www/html

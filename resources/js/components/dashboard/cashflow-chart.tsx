@@ -91,13 +91,13 @@ export function CashflowChart({ data }: CashflowChartProps) {
                             <Bar
                                 dataKey="income"
                                 name="income"
-                                fill="var(--primary)"
+                                fill="var(--chart-income)"
                                 radius={[4, 4, 0, 0]}
                             />
                             <Bar
                                 dataKey="expense"
                                 name="expense"
-                                fill="var(--chart-2)"
+                                fill="var(--chart-expense)"
                                 radius={[4, 4, 0, 0]}
                             />
                         </BarChart>

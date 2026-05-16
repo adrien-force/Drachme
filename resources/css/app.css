@@ -124,12 +124,16 @@
     --destructive-foreground: oklch(0.637 0.237 25.331);
     --border: oklch(0.269 0 0);
     --input: oklch(0.269 0 0);
-    --chart-1: oklch(0.488 0.243 264.376);
-    --chart-2: oklch(0.696 0.17 162.48);
-    --chart-3: oklch(0.769 0.188 70.08);
+    --chart-income: #4ade80;
+    --chart-expense: #f87171;
+    --chart-net-worth: #4ade80;
+    --chart-secondary: #94a3b8;
+    --chart-1: var(--chart-net-worth);
+    --chart-2: var(--chart-expense);
+    --chart-3: var(--chart-secondary);
     --chart-4: oklch(0.627 0.265 303.9);
     --chart-5: oklch(0.645 0.246 16.439);
-    --sidebar: oklch(0.205 0 0);
+    --sidebar: oklch(0.2 0.02 260 / 0.55);
     --sidebar-foreground: oklch(0.985 0 0);
     --sidebar-primary: oklch(0.985 0 0);
     --sidebar-primary-foreground: oklch(0.985 0 0);
@@ -177,5 +181,48 @@
             background: var(--card);
             border-color: var(--border);
         }
+    }
+
+    .drachme-sidebar-panel {
+        background: var(--glass-bg);
+        border-color: var(--glass-border);
+        backdrop-filter: blur(var(--glass-blur)) saturate(1.2);
+        -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.2);
+        box-shadow: 0 0 0 1px oklch(1 0 0 / 0.04);
+    }
+
+    [data-slot='sidebar-wrapper'] {
+        background: transparent !important;
+    }
+
+    [data-slot='sidebar-inset'] {
+        background: transparent !important;
+    }
+
+    [data-sidebar='sidebar'] {
+        border-radius: 0;
+    }
+
+    /* Collapsed sidebar: shadcn forces size-8 menu buttons — recenter logo + user */
+    .group[data-collapsible='icon'] [data-sidebar='header'],
+    .group[data-collapsible='icon'] [data-sidebar='footer'] {
+        align-items: center;
+        padding-inline: 0;
+    }
+
+    .group[data-collapsible='icon'] [data-sidebar='menu-item'] {
+        display: flex;
+        justify-content: center;
+        width: 100%;
+    }
+
+    .group[data-collapsible='icon'] [data-sidebar='menu-button'] {
+        box-sizing: border-box;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        height: 2.75rem !important;
+        justify-content: center !important;
+        padding: 0 !important;
     }
 }

@@ -80,10 +80,10 @@ export function NetWorthChart({ data }: NetWorthChartProps) {
                             <Line
                                 type="monotone"
                                 dataKey="value"
-                                stroke="var(--primary)"
+                                stroke="var(--chart-net-worth)"
                                 strokeWidth={2}
                                 dot={false}
-                                activeDot={{ r: 4, fill: 'var(--primary)' }}
+                                activeDot={{ r: 4, fill: 'var(--chart-net-worth)' }}
                             />
                         </LineChart>
                     </ResponsiveContainer>

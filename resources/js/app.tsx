@@ -2,6 +2,10 @@ import { createInertiaApp } from '@inertiajs/react';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
+import {
+    DEFAULT_THEME_COLORS,
+    initializeThemeColors,
+} from '@/lib/theme-colors';
 import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import SettingsLayout from '@/layouts/settings/layout';
@@ -36,5 +40,6 @@ createInertiaApp({
     },
 });
 
-// This will set light / dark mode on load...
+// Theme mode + brand colors (defaults until shared props hydrate on first paint)
 initializeTheme();
+initializeThemeColors(DEFAULT_THEME_COLORS);

@@ -19,6 +19,9 @@ class ProfileUpdateRequest extends FormRequest
      */
     public function rules(): array
     {
-        return $this->profileRules($this->authenticatedUser()->id);
+        return [
+            ...$this->profileRules($this->authenticatedUser()->id),
+            'locale' => $this->localeRules(),
+        ];
     }
 }
