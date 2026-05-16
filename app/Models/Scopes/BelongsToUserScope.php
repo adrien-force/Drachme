@@ -11,9 +11,6 @@ use Illuminate\Database\Eloquent\Scope;
  */
 class BelongsToUserScope implements Scope
 {
-    /**
-     * @param  Builder<Model>  $builder
-     */
     public function apply(Builder $builder, Model $model): void
     {
         if (! auth()->check()) {

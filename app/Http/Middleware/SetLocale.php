@@ -16,7 +16,11 @@ class SetLocale
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $locale = $request->user()?->locale ?? $request->session()->get('locale');
+        $locale = $request->session()->get('locale');
+
+        if (! is_string($locale) && $request->user() !== null) {
+            $locale = $request->user()->locale;
+        }
 
         if (! is_string($locale) || ! in_array($locale, self::SUPPORTED, true)) {
             $locale = config('app.locale', 'fr');

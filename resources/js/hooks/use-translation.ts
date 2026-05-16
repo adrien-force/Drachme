@@ -1,6 +1,8 @@
 import { usePage } from '@inertiajs/react';
 
-type TranslationTree = Record<string, string | TranslationTree>;
+interface TranslationTree {
+    [key: string]: string | TranslationTree;
+}
 
 function resolveTranslation(
     tree: TranslationTree,
