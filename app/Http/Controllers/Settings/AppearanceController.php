@@ -23,6 +23,10 @@ class AppearanceController extends Controller
     public function update(AppearanceUpdateRequest $request): RedirectResponse
     {
         $user = $request->user();
+        if ($user === null) {
+            abort(401);
+        }
+
         $user->theme_colors = $request->validatedColors();
         $user->save();
 
@@ -37,6 +41,10 @@ class AppearanceController extends Controller
     public function reset(Request $request): RedirectResponse
     {
         $user = $request->user();
+        if ($user === null) {
+            abort(401);
+        }
+
         $user->theme_colors = null;
         $user->save();
 

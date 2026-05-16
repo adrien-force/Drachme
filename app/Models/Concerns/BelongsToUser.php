@@ -51,6 +51,7 @@ trait BelongsToUser
             abort(403);
         }
 
+        /** @var static $model */
         return $model;
     }
 }

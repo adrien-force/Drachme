@@ -15,6 +15,7 @@ export type AccountRecord = {
     currency: string;
     opened_at: string | null;
     is_archived: boolean;
+    last_activity_at: string | null;
 };
 
 export type AccountTypeOption = {
@@ -22,8 +23,19 @@ export type AccountTypeOption = {
     label: string;
 };
 
+export type AccountsIndexFilters = {
+    archived: boolean;
+};
+
 export type AccountsIndexPageProps = {
     accounts: AccountRecord[];
+    filters: AccountsIndexFilters;
+    accountTypes: AccountTypeOption[];
+};
+
+export type AccountsShowPageProps = {
+    account: AccountRecord;
+    transactions: [];
 };
 
 export type AccountsFormPageProps = {

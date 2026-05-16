@@ -9,6 +9,7 @@ use App\Models\Account;
 use App\Services\AccountService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -20,18 +21,38 @@ class AccountController extends Controller
         private readonly AccountService $accounts,
     ) {}
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
         $this->authorize('viewAny', Account::class);
 
-        $accounts = Account::query()
-            ->active()
-            ->orderBy('name')
+        $showArchived = $request->boolean('archived');
+
+        $query = Account::query()->orderBy('name');
+
+        if (! $showArchived) {
+            $query->active();
+        }
+
+        $accounts = $query
             ->get()
             ->map(fn (Account $account): array => $this->serializeAccount($account));
 
         return Inertia::render('accounts/accounts-index', [
             'accounts' => $accounts,
+            'filters' => [
+                'archived' => $showArchived,
+            ],
+            'accountTypes' => $this->accountTypeOptions(),
+        ]);
+    }
+
+    public function show(Account $account): Response
+    {
+        $this->authorize('view', $account);
+
+        return Inertia::render('accounts/accounts-show', [
+            'account' => $this->serializeAccount($account),
+            'transactions' => [],
         ]);
     }
 
@@ -47,14 +68,28 @@ class AccountController extends Controller
 
     public function store(StoreAccountRequest $request): RedirectResponse
     {
-        $this->accounts->create($request->user(), $request->validated());
+        $user = $request->user();
+        if ($user === null) {
+            abort(401);
+        }
+
+        /** @var array{
+         *     name: string,
+         *     institution?: string|null,
+         *     type: AccountType|string,
+         *     initial_balance: float|string,
+         *     opened_at?: string|null,
+         * } $data */
+        $data = $request->validated();
+
+        $account = $this->accounts->create($user, $data);
 
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => __('ui.accounts.created'),
         ]);
 
-        return to_route('accounts.index');
+        return to_route('accounts.show', $account);
     }
 
     public function edit(Account $account): Response
@@ -69,14 +104,22 @@ class AccountController extends Controller
 
     public function update(UpdateAccountRequest $request, Account $account): RedirectResponse
     {
-        $this->accounts->update($account, $request->validated());
+        /** @var array{
+         *     name: string,
+         *     institution?: string|null,
+         *     type: AccountType|string,
+         *     opened_at?: string|null,
+         * } $data */
+        $data = $request->validated();
+
+        $this->accounts->update($account, $data);
 
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => __('ui.accounts.updated'),
         ]);
 
-        return to_route('accounts.index');
+        return to_route('accounts.show', $account);
     }
 
     public function destroy(Account $account): RedirectResponse
@@ -98,16 +141,22 @@ class AccountController extends Controller
      */
     private function serializeAccount(Account $account): array
     {
+        $type = $account->type;
+        $openedAt = $account->opened_at;
+
         return [
             'id' => $account->id,
             'name' => $account->name,
             'institution' => $account->institution,
-            'type' => $account->type->value,
+            'type' => $type instanceof AccountType ? $type->value : (string) $type,
             'initial_balance' => (float) $account->initial_balance,
             'current_balance' => (float) $account->current_balance,
             'currency' => $account->currency,
-            'opened_at' => $account->opened_at?->format('Y-m-d'),
+            'opened_at' => $openedAt instanceof \DateTimeInterface
+                ? $openedAt->format('Y-m-d')
+                : ($openedAt !== null ? \Illuminate\Support\Carbon::parse((string) $openedAt)->format('Y-m-d') : null),
             'is_archived' => $account->is_archived,
+            'last_activity_at' => null,
         ];
     }
 
@@ -116,12 +165,12 @@ class AccountController extends Controller
      */
     private function accountTypeOptions(): array
     {
-        return collect(AccountType::cases())
-            ->map(fn (AccountType $type): array => [
+        return array_values(array_map(
+            static fn (AccountType $type): array => [
                 'value' => $type->value,
-                'label' => __("ui.accounts.types.{$type->value}"),
-            ])
-            ->values()
-            ->all();
+                'label' => (string) __("ui.accounts.types.{$type->value}"),
+            ],
+            AccountType::cases(),
+        ));
     }
 }

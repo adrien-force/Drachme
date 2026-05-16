@@ -18,6 +18,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('accounts', [AccountController::class, 'index'])->name('accounts.index');
     Route::get('accounts/create', [AccountController::class, 'create'])->name('accounts.create');
+    Route::get('accounts/{account}', [AccountController::class, 'show'])->name('accounts.show');
     Route::post('accounts', [AccountController::class, 'store'])->name('accounts.store');
     Route::get('accounts/{account}/edit', [AccountController::class, 'edit'])->name('accounts.edit');
     Route::put('accounts/{account}', [AccountController::class, 'update'])->name('accounts.update');
