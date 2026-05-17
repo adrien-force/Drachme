@@ -13,6 +13,8 @@ use App\Models\Account;
 use App\Models\Transaction;
 use App\Services\AccountService;
 use App\Services\CategoryService;
+use App\Http\Requests\Transactions\MarkTransactionRecurringRequest;
+use App\Services\RecurringPatternService;
 use App\Services\TransactionCategoryRuleApplier;
 use App\Services\TransactionFormPresenter;
 use App\Services\TransactionListService;
@@ -35,6 +37,7 @@ class TransactionController extends Controller
         private readonly TransactionListService $transactionList,
         private readonly CategoryService $categories,
         private readonly TransactionCategoryRuleApplier $categoryRuleApplier,
+        private readonly RecurringPatternService $recurringPatterns,
         private readonly AccountService $accounts,
     ) {}
 
@@ -108,6 +111,54 @@ class TransactionController extends Controller
                 'matched' => $result['matched'],
                 'scanned' => $result['scanned'],
             ]),
+        ]);
+
+        return back();
+    }
+
+    public function markRecurring(
+        MarkTransactionRecurringRequest $request,
+        Transaction $transaction,
+    ): RedirectResponse {
+        $this->authorize('update', $transaction);
+
+        $user = $request->user();
+        abort_if($user === null, 403);
+
+        try {
+            $this->recurringPatterns->confirmFromTransaction(
+                $user,
+                $transaction,
+                $request->frequency(),
+            );
+        } catch (InvalidArgumentException $exception) {
+            return back()->withErrors($this->mapRecurringError($exception));
+        }
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('ui.transactions.marked_recurring'),
+        ]);
+
+        return back();
+    }
+
+    public function unmarkRecurring(Transaction $transaction): RedirectResponse
+    {
+        $this->authorize('update', $transaction);
+
+        $user = Auth::user();
+        abort_if($user === null, 403);
+
+        try {
+            $this->recurringPatterns->removeForTransaction($user, $transaction);
+        } catch (InvalidArgumentException $exception) {
+            return back()->withErrors($this->mapRecurringError($exception));
+        }
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('ui.transactions.unmarked_recurring'),
         ]);
 
         return back();
@@ -271,5 +322,21 @@ class TransactionController extends Controller
             'transaction_category_forbidden' => ['category_id' => __('ui.transactions.errors.category_forbidden')],
             default => ['transaction' => __('ui.transactions.errors.generic')],
         };
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function mapRecurringError(InvalidArgumentException $exception): array
+    {
+        $key = $exception->getMessage();
+        $messageKey = 'ui.recurring.errors.'.$key;
+        $translated = __($messageKey);
+
+        $message = $translated !== $messageKey
+            ? $translated
+            : __('ui.transactions.errors.generic');
+
+        return ['transaction' => $message];
     }
 }

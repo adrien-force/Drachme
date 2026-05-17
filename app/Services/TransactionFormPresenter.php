@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Enums\TransactionType;
 use App\Models\Account;
 use App\Models\Transaction;
+use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 
@@ -16,6 +17,7 @@ class TransactionFormPresenter
         private readonly AccountService $accounts,
         private readonly CategoryService $categories,
         private readonly CategoryMatcher $categoryMatcher,
+        private readonly RecurringPatternService $recurringPatterns,
     ) {}
 
     /**
@@ -79,10 +81,19 @@ class TransactionFormPresenter
      */
     public function serializePaginator(LengthAwarePaginator $paginator): array
     {
+        $items = collect($paginator->items());
+        $user = $items->first()?->user;
+        $recurringIndexed = $user instanceof User
+            ? $this->recurringPatterns->confirmedPatternsIndexed($user)
+            : [];
+
         return [
             'data' => array_values(
-                collect($paginator->items())
-                    ->map(fn (Transaction $transaction): array => $this->serializeTransaction($transaction))
+                $items
+                    ->map(fn (Transaction $transaction): array => $this->serializeTransaction(
+                        $transaction,
+                        $recurringIndexed,
+                    ))
                     ->all(),
             ),
             'meta' => [
@@ -97,13 +108,26 @@ class TransactionFormPresenter
     }
 
     /**
+     * @param  array<string, \App\Models\RecurringPattern>  $recurringIndexed
+     *
      * @return array<string, mixed>
      */
-    public function serializeTransaction(Transaction $transaction): array
+    public function serializeTransaction(Transaction $transaction, array $recurringIndexed = []): array
     {
         $account = $transaction->account;
         $type = $transaction->type;
         $date = $transaction->date;
+
+        $recurringMatch = $recurringIndexed !== []
+            ? $this->recurringPatterns->matchIndexed($transaction, $recurringIndexed)
+            : null;
+
+        if ($recurringMatch === null && $transaction->user !== null && $recurringIndexed === []) {
+            $recurringMatch = $this->recurringPatterns->matchesConfirmedPattern(
+                $transaction->user,
+                $transaction,
+            );
+        }
 
         return [
             'id' => $transaction->id,
@@ -122,6 +146,8 @@ class TransactionFormPresenter
             'category_id' => $transaction->category_id,
             'category_name' => $transaction->category?->name,
             'category_color' => $transaction->category?->color,
+            'recurring_pattern_id' => $recurringMatch?->id,
+            'recurring_display_label' => $recurringMatch?->display_label,
         ];
     }
 

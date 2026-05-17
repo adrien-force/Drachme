@@ -39,7 +39,7 @@ class TransactionListService
     public function paginateForUser(User $user, array $filterParams): LengthAwarePaginator
     {
         $query = Transaction::query()
-            ->with(['account:id,name,logo_path', 'category:id,name,color'])
+            ->with(['user:id', 'account:id,name,logo_path', 'category:id,name,color'])
             ->where('user_id', $user->id);
 
         $this->filters->apply($query, $user, $filterParams);

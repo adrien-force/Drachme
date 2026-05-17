@@ -40,6 +40,8 @@ export type TransactionListItem = {
     category_id: number | null;
     category_name?: string | null;
     category_color?: string | null;
+    recurring_pattern_id?: number | null;
+    recurring_display_label?: string | null;
 };
 
 export type AccountTransactionItem = {

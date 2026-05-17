@@ -8,7 +8,6 @@ import {
 import {
     Dialog,
     DialogContent,
-    DialogDescription,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
@@ -39,7 +38,7 @@ export function TransactionEditModal({
         type: transaction?.type ?? 'expense',
         notes: transaction?.notes ?? '',
         category_id: transaction?.category_id ?? null,
-        apply_category_rules: false,
+        apply_category_rules: true,
     });
 
     useEffect(() => {
@@ -55,7 +54,7 @@ export function TransactionEditModal({
             type: transaction.type,
             notes: transaction.notes ?? '',
             category_id: transaction.category_id,
-            apply_category_rules: false,
+            apply_category_rules: true,
         });
         form.clearErrors();
     }, [open, transaction?.id]);
@@ -70,7 +69,7 @@ export function TransactionEditModal({
             account_id: Number(form.data.account_id),
             type: form.data.type,
             category_id: form.data.category_id,
-            apply_category_rules: form.data.apply_category_rules,
+            apply_category_rules: true,
         };
 
         form.transform(() => payload);
@@ -83,14 +82,12 @@ export function TransactionEditModal({
     return (
         <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
             <DialogContent
+                aria-describedby={undefined}
                 overlayClassName="bg-black/60 backdrop-blur-sm"
                 className="bg-card border-border max-h-[min(90vh,820px)] overflow-y-auto shadow-xl sm:max-w-xl"
             >
                 <DialogHeader>
                     <DialogTitle>{t('transactions.edit_title')}</DialogTitle>
-                    <DialogDescription>
-                        {t('transactions.edit_description')}
-                    </DialogDescription>
                 </DialogHeader>
 
                 <TransactionFormPanel

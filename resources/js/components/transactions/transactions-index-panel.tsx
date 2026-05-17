@@ -11,6 +11,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { CategoryFilterSelect } from '@/components/categories/category-select';
 import { EntityLogo } from '@/components/entity-logo';
+import { RecurringBadge } from '@/components/recurring/recurring-badge';
 import { ApplyCategoryRulesButton } from '@/components/transactions/apply-category-rules-button';
 import { TransactionInlineCategorySelect } from '@/components/transactions/transaction-inline-category-select';
 import { TransactionTypeBadge } from '@/components/transactions/transaction-type-badge';
@@ -553,9 +554,16 @@ export function TransactionsIndexPanel({
                                                     filters,
                                                 )}
                                                 preserveScroll
-                                                className="font-medium hover:underline"
+                                                className="inline-flex items-center font-medium hover:underline"
                                             >
                                                 {transaction.label}
+                                                {transaction.recurring_display_label ? (
+                                                    <RecurringBadge
+                                                        label={
+                                                            transaction.recurring_display_label
+                                                        }
+                                                    />
+                                                ) : null}
                                             </Link>
                                         </td>
                                         <td className="px-4 py-3">

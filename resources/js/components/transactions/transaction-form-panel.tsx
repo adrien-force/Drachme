@@ -1,14 +1,14 @@
-import { Tags } from 'lucide-react';
+import { Repeat, Tags } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { CreateRuleFromLabelDialog } from '@/components/category-rules/create-rule-from-label-dialog';
+import { TransactionRecurringDialog } from '@/components/transactions/transaction-recurring-dialog';
 import { CategoryBadge } from '@/components/categories/category-badge';
 import { CategorySelect } from '@/components/categories/category-select';
 import { EntityLogo } from '@/components/entity-logo';
 import { TransactionTypeBadge } from '@/components/transactions/transaction-type-badge';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -83,6 +83,7 @@ export function TransactionFormPanel({
 }: TransactionFormPanelProps) {
     const { t } = useTranslation();
     const [ruleDialogOpen, setRuleDialogOpen] = useState(false);
+    const [recurringDialogOpen, setRecurringDialogOpen] = useState(false);
 
     const previewType = useMemo(() => {
         if (form.data.type !== TYPE_AUTO) {
@@ -102,29 +103,44 @@ export function TransactionFormPanel({
             <div className={cn('space-y-6', compact && 'space-y-5')}>
                 <div className="space-y-2">
                     <Label>{t('transactions.account')}</Label>
-                    <Select
-                        value={form.data.account_id}
-                        onValueChange={(value) => form.setData('account_id', value)}
-                    >
-                        <SelectTrigger>
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {accounts.map((account) => (
-                                <SelectItem key={account.id} value={String(account.id)}>
-                                    <span className="flex items-center gap-2">
-                                        <EntityLogo
-                                            name={account.name}
-                                            logoUrl={account.logo_url}
-                                            className="size-5"
-                                        />
-                                        {account.name}
-                                    </span>
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <InputError message={form.errors.account_id} />
+                    {isEditing && transaction ? (
+                        <div className="border-input bg-muted/30 flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
+                            <EntityLogo
+                                name={transaction.account_name ?? ''}
+                                logoUrl={transaction.account_logo_url ?? null}
+                                className="size-5 shrink-0"
+                            />
+                            <span className="min-w-0 truncate font-medium">
+                                {transaction.account_name ?? '—'}
+                            </span>
+                        </div>
+                    ) : (
+                        <>
+                            <Select
+                                value={form.data.account_id}
+                                onValueChange={(value) => form.setData('account_id', value)}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {accounts.map((account) => (
+                                        <SelectItem key={account.id} value={String(account.id)}>
+                                            <span className="flex items-center gap-2">
+                                                <EntityLogo
+                                                    name={account.name}
+                                                    logoUrl={account.logo_url}
+                                                    className="size-5"
+                                                />
+                                                {account.name}
+                                            </span>
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <InputError message={form.errors.account_id} />
+                        </>
+                    )}
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -146,9 +162,6 @@ export function TransactionFormPanel({
                             value={form.data.amount}
                             onChange={(event) => form.setData('amount', event.target.value)}
                         />
-                        <p className="text-muted-foreground text-xs">
-                            {t('transactions.amount_hint')}
-                        </p>
                         <InputError message={form.errors.amount} />
                     </div>
                 </div>
@@ -215,32 +228,9 @@ export function TransactionFormPanel({
                         {t('transactions.auto_rules_hint')}
                     </p>
                 ) : form.data.category_id === null ? (
-                    <div className="border-border/60 bg-muted/20 space-y-2 rounded-md border px-3 py-2.5">
-                        <div className="flex items-start gap-3">
-                            <Checkbox
-                                id="apply-category-rules"
-                                checked={form.data.apply_category_rules}
-                                onCheckedChange={(checked) =>
-                                    form.setData(
-                                        'apply_category_rules',
-                                        checked === true,
-                                    )
-                                }
-                                className="mt-0.5"
-                            />
-                            <div className="space-y-1">
-                                <Label
-                                    htmlFor="apply-category-rules"
-                                    className="cursor-pointer font-normal"
-                                >
-                                    {t('transactions.apply_rules_on_save')}
-                                </Label>
-                                <p className="text-muted-foreground text-xs leading-relaxed">
-                                    {t('transactions.apply_rules_on_save_hint')}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
+                    <p className="text-muted-foreground text-xs leading-relaxed">
+                        {t('transactions.apply_rules_implicit')}
+                    </p>
                 ) : (
                     <p className="text-muted-foreground text-xs">
                         {t('transactions.manual_category_hint')}
@@ -273,6 +263,31 @@ export function TransactionFormPanel({
                         </div>
                     ) : null}
                 </div>
+
+                {isEditing &&
+                transaction &&
+                !transaction.is_transfer_linked &&
+                transaction.type !== 'transfer' ? (
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="space-y-0.5">
+                            <p className="text-sm font-medium">{t('transactions.recurring_title')}</p>
+                            <p className="text-muted-foreground text-xs">
+                                {t('transactions.recurring_manage_hint')}
+                            </p>
+                        </div>
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setRecurringDialogOpen(true)}
+                        >
+                            <Repeat className="mr-1 size-4" />
+                            {transaction.recurring_pattern_id != null
+                                ? t('transactions.recurring_edit')
+                                : t('transactions.recurring_set')}
+                        </Button>
+                    </div>
+                ) : null}
 
                 <div className="space-y-2">
                     <Label htmlFor="transaction-notes">{t('transactions.notes')}</Label>
@@ -314,6 +329,14 @@ export function TransactionFormPanel({
                 categoryOptions={categoryOptions}
                 applyToTransactionId={transaction?.id ?? null}
             />
+
+            {isEditing && transaction ? (
+                <TransactionRecurringDialog
+                    open={recurringDialogOpen}
+                    onOpenChange={setRecurringDialogOpen}
+                    transaction={transaction}
+                />
+            ) : null}
         </>
     );
 }
