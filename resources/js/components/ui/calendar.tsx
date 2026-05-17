@@ -19,19 +19,36 @@ function Calendar({
   className,
   classNames,
   showOutsideDays = true,
-  captionLayout = "label",
+  captionLayout = "dropdown",
   buttonVariant = "ghost",
   formatters,
   components,
+  startMonth,
+  endMonth,
+  reverseYears,
+  navLayout,
   ...props
 }: React.ComponentProps<typeof DayPicker> & {
   buttonVariant?: React.ComponentProps<typeof Button>["variant"]
 }) {
   const defaultClassNames = getDefaultClassNames()
+  const today = new Date()
+  const resolvedStartMonth =
+    startMonth ?? new Date(today.getFullYear() - 100, 0, 1)
+  const resolvedEndMonth =
+    endMonth ?? new Date(today.getFullYear() + 1, 11, 31)
+  const usesDropdownCaption =
+    captionLayout === "dropdown" ||
+    captionLayout === "dropdown-months" ||
+    captionLayout === "dropdown-years"
 
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
+      startMonth={resolvedStartMonth}
+      endMonth={resolvedEndMonth}
+      reverseYears={reverseYears ?? (usesDropdownCaption ? true : undefined)}
+      navLayout={navLayout ?? (usesDropdownCaption ? "around" : undefined)}
       className={cn(
         "group/calendar bg-background p-3 [--cell-size:--spacing(8)] [[data-slot=card-content]_&]:bg-transparent [[data-slot=popover-content]_&]:bg-transparent",
         String.raw`rtl:**:[.rdp-button\_next>svg]:rotate-180`,
@@ -41,7 +58,12 @@ function Calendar({
       captionLayout={captionLayout}
       formatters={{
         formatMonthDropdown: (date) =>
-          date.toLocaleString("default", { month: "short" }),
+          date.toLocaleString(
+            props.locale && typeof props.locale === "object" && "code" in props.locale
+              ? String(props.locale.code)
+              : undefined,
+            { month: usesDropdownCaption ? "long" : "short" },
+          ),
         ...formatters,
       }}
       classNames={{

@@ -1,4 +1,51 @@
-import type { ColumnMappingEntry, ImportColumnField } from '@/types/provider.types';
+import type {
+    ColumnMappingEntry,
+    ColumnMappingField,
+    ImportColumnField,
+} from '@/types/provider.types';
+
+function normalizeHeader(value: string): string {
+    return value.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+export function guessTransactionFieldFromHeader(header: string): ImportColumnField {
+    const key = normalizeHeader(header);
+
+    if (key.includes('date') || key === 'jour') {
+        return 'date';
+    }
+
+    if (
+        key.includes('libelle') ||
+        key.includes('label') ||
+        key.includes('description') ||
+        key.includes('wording')
+    ) {
+        return 'label';
+    }
+
+    if (key.includes('debit')) {
+        return 'debit';
+    }
+
+    if (key.includes('credit')) {
+        return 'credit';
+    }
+
+    if (key.includes('solde') || key.includes('balance')) {
+        return 'balance';
+    }
+
+    if (
+        key.includes('montant') ||
+        key.includes('amount') ||
+        key.includes('somme')
+    ) {
+        return 'amount_signed';
+    }
+
+    return 'skip';
+}
 
 export function buildColumnMappings(
     columnCount: number,
@@ -53,7 +100,7 @@ export function mappingPayload(columns: ColumnMappingEntry[]): {
     return {
         columns: columns.map((column) => ({
             index: column.index,
-            field: column.field as ImportColumnField,
+            field: column.field,
         })),
     };
 }

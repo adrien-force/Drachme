@@ -29,13 +29,25 @@ function delimiterLabel(delimiter: string, t: (key: string) => string): string {
     return delimiter;
 }
 
-function formatCsvOptions(options: CsvOptions, t: (key: string) => string) {
-    return [
+function formatCsvOptions(
+    options: CsvOptions,
+    t: (key: string) => string,
+    includeDateFormat: boolean,
+) {
+    const rows = [
         { label: t('providers.delimiter'), value: delimiterLabel(options.delimiter, t) },
         { label: t('providers.encoding'), value: options.encoding },
         { label: t('providers.skip_rows'), value: String(options.skip_rows) },
-        { label: t('providers.date_format'), value: options.date_format },
     ];
+
+    if (includeDateFormat) {
+        rows.push({
+            label: t('providers.date_format'),
+            value: options.date_format,
+        });
+    }
+
+    return rows;
 }
 
 export function ProviderSetupSummary({
@@ -46,7 +58,11 @@ export function ProviderSetupSummary({
     const sortedColumns = [...provider.column_mapping.columns].sort(
         (a, b) => a.index - b.index,
     );
-    const csvOptions = formatCsvOptions(provider.csv_options, t);
+    const csvOptions = formatCsvOptions(
+        provider.csv_options,
+        t,
+        provider.import_type !== 'positions',
+    );
 
     return (
         <div className="space-y-6">

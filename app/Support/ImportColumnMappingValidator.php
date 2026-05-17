@@ -6,6 +6,7 @@ declare(strict_types=1);
 namespace App\Support;
 
 use App\Enums\ImportColumnField;
+use App\Enums\ImportProviderType;
 use Illuminate\Contracts\Validation\Validator;
 
 class ImportColumnMappingValidator
@@ -13,7 +14,33 @@ class ImportColumnMappingValidator
     /**
      * @param  array<string, mixed>  $mapping
      */
+    public static function validateForType(
+        array $mapping,
+        ImportProviderType $importType,
+        Validator $validator,
+        string $attribute = 'column_mapping',
+    ): void {
+        if ($importType === ImportProviderType::Positions) {
+            ImportPositionColumnMappingValidator::validate($mapping, $validator, $attribute);
+
+            return;
+        }
+
+        self::validateTransactions($mapping, $validator, $attribute);
+    }
+
+    /**
+     * @param  array<string, mixed>  $mapping
+     */
     public static function validate(array $mapping, Validator $validator, string $attribute = 'column_mapping'): void
+    {
+        self::validateTransactions($mapping, $validator, $attribute);
+    }
+
+    /**
+     * @param  array<string, mixed>  $mapping
+     */
+    private static function validateTransactions(array $mapping, Validator $validator, string $attribute): void
     {
         $columns = $mapping['columns'] ?? null;
 

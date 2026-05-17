@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\ImportProviderType;
 use App\Models\ImportProvider;
 use App\Models\User;
 use App\Services\ImportProviderService;
@@ -26,6 +27,7 @@ class ImportProviderFactory extends Factory
             'name' => fake()->company(),
             'logo_path' => null,
             'default_account_id' => null,
+            'import_type' => ImportProviderType::Transactions,
             'column_mapping' => [
                 'columns' => [
                     ['index' => 0, 'field' => 'date'],
@@ -35,5 +37,21 @@ class ImportProviderFactory extends Factory
             ],
             'csv_options' => app(ImportProviderService::class)->defaultCsvOptions(),
         ];
+    }
+
+    public function positions(): static
+    {
+        return $this->state(fn (): array => [
+            'import_type' => ImportProviderType::Positions,
+            'column_mapping' => [
+                'columns' => [
+                    ['index' => 0, 'field' => 'position_label'],
+                    ['index' => 1, 'field' => 'isin'],
+                    ['index' => 2, 'field' => 'quantity'],
+                    ['index' => 3, 'field' => 'average_price'],
+                    ['index' => 4, 'field' => 'last_price'],
+                ],
+            ],
+        ]);
     }
 }

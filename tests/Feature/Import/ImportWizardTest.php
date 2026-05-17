@@ -42,7 +42,7 @@ class ImportWizardTest extends TestCase
             ],
             'csv_options' => array_merge(
                 app(ImportProviderService::class)->defaultCsvOptions(),
-                ['date_format' => 'd/m/Y'],
+                ['date_format' => 'd/m/Y', 'skip_rows' => 0],
             ),
         ]);
 
@@ -98,7 +98,7 @@ class ImportWizardTest extends TestCase
         $provider = ImportProvider::factory()->for($user)->create([
             'csv_options' => array_merge(
                 app(ImportProviderService::class)->defaultCsvOptions(),
-                ['date_format' => 'd/m/Y'],
+                ['date_format' => 'd/m/Y', 'skip_rows' => 0],
             ),
         ]);
 
@@ -138,5 +138,169 @@ class ImportWizardTest extends TestCase
         $this->assertSame(0, $batch->imported_count);
         $this->assertSame(1, $batch->skipped_count);
         $this->assertDatabaseCount('transactions', 1);
+    }
+
+    #[Test]
+    public function commit_skips_rows_already_in_database_when_preview_missed_duplicate(): void
+    {
+        $user = User::factory()->create();
+        $account = Account::factory()->for($user)->create();
+        $provider = ImportProvider::factory()->for($user)->create([
+            'csv_options' => array_merge(
+                app(ImportProviderService::class)->defaultCsvOptions(),
+                ['date_format' => 'd/m/Y', 'skip_rows' => 0],
+            ),
+        ]);
+
+        $hash = ImportHash::make(
+            $account->id,
+            now()->setDate(2024, 6, 4),
+            -7.99,
+            'PayPal',
+        );
+
+        Transaction::factory()->for($user)->for($account)->create([
+            'date' => '2024-06-04',
+            'label' => 'PayPal',
+            'amount' => '-7.99',
+            'import_hash' => $hash,
+        ]);
+
+        $batch = ImportBatch::factory()
+            ->for($user)
+            ->for($provider)
+            ->for($account)
+            ->create([
+                'status' => ImportBatchStatus::Preview,
+                'preview_rows' => [[
+                    'line' => 2,
+                    'date' => '2024-06-04',
+                    'label' => 'PayPal',
+                    'amount' => -7.99,
+                    'import_hash' => $hash,
+                    'is_duplicate' => false,
+                    'status' => 'ok',
+                ]],
+            ]);
+
+        $this->actingAs($user)
+            ->post(route('import.commit', $batch), ['decisions' => []])
+            ->assertRedirect();
+
+        $batch->refresh();
+        $this->assertSame(0, $batch->imported_count);
+        $this->assertSame(1, $batch->skipped_count);
+        $this->assertDatabaseCount('transactions', 1);
+    }
+
+    #[Test]
+    public function commit_imports_identical_csv_lines_with_distinct_hashes(): void
+    {
+        $user = User::factory()->create();
+        $account = Account::factory()->for($user)->create();
+        $provider = ImportProvider::factory()->for($user)->create([
+            'csv_options' => array_merge(
+                app(ImportProviderService::class)->defaultCsvOptions(),
+                ['date_format' => 'd/m/Y', 'skip_rows' => 0],
+            ),
+        ]);
+
+        $hash = ImportHash::make(
+            $account->id,
+            now()->setDate(2024, 6, 4),
+            -7.99,
+            'PayPal',
+        );
+
+        $batch = ImportBatch::factory()
+            ->for($user)
+            ->for($provider)
+            ->for($account)
+            ->create([
+                'status' => ImportBatchStatus::Preview,
+                'preview_rows' => [
+                    [
+                        'line' => 2,
+                        'date' => '2024-06-04',
+                        'label' => 'PayPal',
+                        'amount' => -7.99,
+                        'import_hash' => $hash,
+                        'is_duplicate' => false,
+                        'status' => 'ok',
+                    ],
+                    [
+                        'line' => 3,
+                        'date' => '2024-06-04',
+                        'label' => 'PayPal',
+                        'amount' => -7.99,
+                        'import_hash' => $hash,
+                        'is_duplicate' => false,
+                        'status' => 'ok',
+                    ],
+                ],
+            ]);
+
+        $this->actingAs($user)
+            ->post(route('import.commit', $batch), ['decisions' => []])
+            ->assertRedirect();
+
+        $batch->refresh();
+        $this->assertSame(2, $batch->imported_count);
+        $this->assertDatabaseCount('transactions', 2);
+        $this->assertSame(2, Transaction::query()->where('account_id', $account->id)->count());
+    }
+
+    #[Test]
+    public function commit_removes_orphan_transactions_from_same_preview_batch(): void
+    {
+        $user = User::factory()->create();
+        $account = Account::factory()->for($user)->create();
+        $provider = ImportProvider::factory()->for($user)->create([
+            'csv_options' => array_merge(
+                app(ImportProviderService::class)->defaultCsvOptions(),
+                ['date_format' => 'd/m/Y', 'skip_rows' => 0],
+            ),
+        ]);
+
+        $hash = ImportHash::make(
+            $account->id,
+            now()->setDate(2024, 6, 4),
+            -7.99,
+            'PayPal',
+        );
+
+        $batch = ImportBatch::factory()
+            ->for($user)
+            ->for($provider)
+            ->for($account)
+            ->create([
+                'status' => ImportBatchStatus::Preview,
+                'preview_rows' => [[
+                    'line' => 2,
+                    'date' => '2024-06-04',
+                    'label' => 'PayPal',
+                    'amount' => -7.99,
+                    'import_hash' => $hash,
+                    'is_duplicate' => false,
+                    'status' => 'ok',
+                ]],
+            ]);
+
+        Transaction::factory()->for($user)->for($account)->create([
+            'date' => '2024-06-04',
+            'label' => 'PayPal',
+            'amount' => '-7.99',
+            'import_hash' => $hash,
+            'import_batch_id' => $batch->id,
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('import.commit', $batch), ['decisions' => []])
+            ->assertRedirect();
+
+        $batch->refresh();
+        $this->assertSame(1, $batch->imported_count);
+        $this->assertDatabaseCount('transactions', 1);
+        $this->assertSame($batch->id, Transaction::query()->value('import_batch_id'));
     }
 }

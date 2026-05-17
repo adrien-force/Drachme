@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\CsvImport;
 
+use App\Support\Utf8Normalizer;
 use Illuminate\Http\UploadedFile;
 use InvalidArgumentException;
 use RuntimeException;
@@ -29,7 +30,7 @@ class CsvParser
         $skipRows = max(0, (int) ($options['skip_rows'] ?? 0));
 
         $content = $this->stripBom($content);
-        $content = $this->convertEncoding($content, $encoding);
+        $content = Utf8Normalizer::ensureValid($this->convertEncoding($content, $encoding));
 
         $rows = [];
         $lineNumber = 0;
@@ -50,7 +51,7 @@ class CsvParser
 
             $cells = str_getcsv($line, $delimiter, '"', '\\');
             $rows[] = new CsvRow($lineNumber, array_map(
-                static fn (?string $cell): string => trim((string) $cell),
+                static fn (?string $cell): string => Utf8Normalizer::ensureValid(trim((string) $cell)),
                 $cells,
             ));
 
@@ -107,22 +108,29 @@ class CsvParser
 
     private function convertEncoding(string $content, string $encoding): string
     {
-        $normalized = strtoupper(str_replace('_', '-', $encoding));
+        $normalized = strtoupper(str_replace(['_', ' '], '-', $encoding));
 
         if (in_array($normalized, ['UTF-8', 'UTF8'], true)) {
             return $content;
         }
 
-        if (in_array($normalized, ['ISO-8859-1', 'ISO8859-1', 'LATIN1', 'WINDOWS-1252'], true)) {
-            $converted = iconv('ISO-8859-1', 'UTF-8//IGNORE', $content);
-            if ($converted === false) {
-                throw new InvalidArgumentException('csv_encoding_failed');
-            }
+        $sourceEncoding = match ($normalized) {
+            'ISO-8859-1', 'ISO8859-1', 'LATIN1', 'LATIN-1' => 'ISO-8859-1',
+            'WINDOWS-1252', 'CP1252' => 'Windows-1252',
+            default => null,
+        };
 
-            return $converted;
+        if ($sourceEncoding === null) {
+            throw new InvalidArgumentException('csv_encoding_unsupported');
         }
 
-        throw new InvalidArgumentException('csv_encoding_unsupported');
+        $converted = iconv($sourceEncoding, 'UTF-8//IGNORE', $content);
+
+        if ($converted === false) {
+            throw new InvalidArgumentException('csv_encoding_failed');
+        }
+
+        return $converted;
     }
 
     private function resolveDelimiter(string $delimiter): string

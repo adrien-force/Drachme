@@ -14,6 +14,8 @@ class AccountService
 {
     public function __construct(
         private readonly LogoUploadService $logos,
+        private readonly BalanceEngine $balanceEngine,
+        private readonly NetWorthSnapshotService $netWorthSnapshots,
     ) {}
 
     /**
@@ -58,6 +60,7 @@ class AccountService
      *     institution?: string|null,
      *     type: AccountType|string,
      *     opened_at?: string|null,
+     *     actual_balance?: float|string|null,
      * }  $data
      */
     public function update(
@@ -83,7 +86,17 @@ class AccountService
 
         $account->save();
 
-        return $account;
+        if (array_key_exists('actual_balance', $data) && $data['actual_balance'] !== null && $data['actual_balance'] !== '') {
+            $this->balanceEngine->reconcileActualBalance($account, (float) $data['actual_balance']);
+            $account->loadMissing('user');
+            $owner = $account->user;
+
+            if ($owner !== null) {
+                $this->netWorthSnapshots->recordForUser($owner);
+            }
+        }
+
+        return $account->fresh() ?? $account;
     }
 
     public function archive(Account $account): void

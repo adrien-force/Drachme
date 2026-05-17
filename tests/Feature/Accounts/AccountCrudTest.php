@@ -187,6 +187,35 @@ class AccountCrudTest extends TestCase
                 ->where('balanceHistory.from', '2023-06-01'));
     }
 
+    public function test_user_can_reconcile_account_balance_on_update(): void
+    {
+        $user = User::factory()->create();
+        $account = Account::factory()->for($user)->create([
+            'initial_balance' => '1000.00',
+            'current_balance' => '950.00',
+        ]);
+
+        Transaction::factory()->for($user)->for($account)->create([
+            'date' => '2024-01-10',
+            'amount' => '-50.00',
+            'type' => TransactionType::Expense,
+        ]);
+
+        $this
+            ->actingAs($user)
+            ->put(route('accounts.update', $account), [
+                'name' => $account->name,
+                'type' => $account->type->value,
+                'actual_balance' => '1000',
+            ])
+            ->assertRedirect(route('accounts.show', $account));
+
+        $account->refresh();
+
+        $this->assertSame('1050.00', $account->initial_balance);
+        $this->assertSame('1000.00', $account->current_balance);
+    }
+
     public function test_user_cannot_update_another_users_account(): void
     {
         $owner = User::factory()->create();

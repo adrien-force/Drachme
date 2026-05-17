@@ -7,6 +7,9 @@ namespace App\Models;
 use App\Models\Concerns\BelongsToUser;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property \Carbon\CarbonImmutable|\Illuminate\Support\Carbon|string $date
+ */
 class NetWorthSnapshot extends Model
 {
     use BelongsToUser;

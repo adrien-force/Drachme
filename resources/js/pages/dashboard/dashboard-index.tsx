@@ -3,6 +3,7 @@ import { Info } from 'lucide-react';
 
 import { CashflowChart } from '@/components/dashboard/cashflow-chart';
 import { NetWorthChart } from '@/components/dashboard/net-worth-chart';
+import { PortfolioEvolutionChart } from '@/components/dashboard/portfolio-evolution-chart';
 import { GlassPanel } from '@/components/glass-panel';
 import { FadeIn } from '@/components/motion/fade-in';
 import {
@@ -20,11 +21,14 @@ import type { DashboardPageProps } from '@/types/dashboard.types';
 export default function DashboardIndex({
     kpis,
     netWorthHistory,
+    portfolioHistory,
     cashflow,
     isDemoData,
 }: DashboardPageProps) {
     const { t } = useTranslation();
     const cashflowPositive = kpis.monthly_cashflow >= 0;
+    const showPortfolioKpi = kpis.portfolio_value > 0 || portfolioHistory.length > 0;
+    const portfolioPositive = kpis.portfolio_change_pct >= 0;
 
     return (
         <>
@@ -47,7 +51,9 @@ export default function DashboardIndex({
                     </FadeIn>
                 )}
 
-                <div className="grid gap-4 md:grid-cols-3">
+                <div
+                    className={`grid gap-4 ${showPortfolioKpi ? 'md:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-3'}`}
+                >
                     <FadeIn delay={0.05}>
                         <GlassPanel className="p-0">
                             <Card className="border-0 bg-transparent shadow-none">
@@ -77,6 +83,40 @@ export default function DashboardIndex({
                             </Card>
                         </GlassPanel>
                     </FadeIn>
+
+                    {showPortfolioKpi ? (
+                        <FadeIn delay={0.08}>
+                            <GlassPanel className="p-0">
+                                <Card className="border-0 bg-transparent shadow-none">
+                                    <CardHeader className="pb-2">
+                                        <CardDescription>
+                                            {t('dashboard.portfolio_value')}
+                                        </CardDescription>
+                                        <CardTitle className="text-2xl tabular-nums">
+                                            {formatCurrency(kpis.portfolio_value)}
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        {portfolioHistory.length >= 2 ? (
+                                            <p
+                                                className={
+                                                    portfolioPositive
+                                                        ? 'text-primary text-sm font-medium'
+                                                        : 'text-destructive text-sm font-medium'
+                                                }
+                                            >
+                                                {t('dashboard.portfolio_change', {
+                                                    value: formatPercent(
+                                                        kpis.portfolio_change_pct,
+                                                    ),
+                                                })}
+                                            </p>
+                                        ) : null}
+                                    </CardContent>
+                                </Card>
+                            </GlassPanel>
+                        </FadeIn>
+                    ) : null}
 
                     <FadeIn delay={0.1}>
                         <GlassPanel className="p-0">
@@ -130,6 +170,11 @@ export default function DashboardIndex({
                     <FadeIn delay={0.25}>
                         <CashflowChart data={cashflow} />
                     </FadeIn>
+                    {portfolioHistory.length > 0 ? (
+                        <FadeIn delay={0.3} className="lg:col-span-2">
+                            <PortfolioEvolutionChart data={portfolioHistory} />
+                        </FadeIn>
+                    ) : null}
                 </div>
             </div>
         </>

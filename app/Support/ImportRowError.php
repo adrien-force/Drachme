@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Support;
 
 use App\Enums\ImportColumnField;
+use App\Enums\ImportPositionColumnField;
 
 class ImportRowError
 {
@@ -90,9 +91,41 @@ class ImportRowError
         ]);
     }
 
+    public static function positionFieldNotMapped(ImportPositionColumnField $field): string
+    {
+        return (string) __('ui.providers.errors.field_not_mapped', [
+            'field' => self::positionFieldLabel($field),
+        ]);
+    }
+
+    public static function positionIsinEmpty(): string
+    {
+        return (string) __('ui.providers.errors.position_isin_empty');
+    }
+
+    public static function positionIsinInvalid(string $value): string
+    {
+        return (string) __('ui.providers.errors.position_isin_invalid', ['value' => $value]);
+    }
+
+    public static function positionQuantityInvalid(string $value): string
+    {
+        return (string) __('ui.providers.errors.position_quantity_invalid', ['value' => $value]);
+    }
+
+    public static function positionPriceMissing(): string
+    {
+        return (string) __('ui.providers.errors.position_price_missing');
+    }
+
     private static function fieldLabel(ImportColumnField $field): string
     {
         return (string) __("ui.providers.fields.{$field->value}");
+    }
+
+    private static function positionFieldLabel(ImportPositionColumnField $field): string
+    {
+        return (string) __("ui.providers.position_fields.{$field->value}");
     }
 
     private static function formatExpectsTime(string $format): bool

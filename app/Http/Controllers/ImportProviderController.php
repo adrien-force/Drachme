@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Enums\ImportColumnField;
+use App\Enums\ImportPositionColumnField;
+use App\Enums\ImportProviderType;
 use App\Http\Requests\ImportProviders\PreviewImportProviderRequest;
 use App\Http\Requests\ImportProviders\StoreImportProviderRequest;
 use App\Http\Requests\ImportProviders\UpdateImportProviderRequest;
@@ -96,13 +98,13 @@ class ImportProviderController extends Controller
         /** @var array<string, mixed>|null $csvOptions */
         $csvOptions = $request->validated('csv_options');
 
-        $rows = $this->providers->previewNormalizedRows(
-            $sampleRows,
-            $columnMapping,
-            $csvOptions ?? [],
-        );
+        $importType = ImportProviderType::from((string) $request->validated('import_type'));
 
-        return response()->json(['rows' => $rows]);
+        $rows = $importType === ImportProviderType::Positions
+            ? $this->providers->previewPositionRows($sampleRows, $columnMapping, $csvOptions ?? [])
+            : $this->providers->previewNormalizedRows($sampleRows, $columnMapping, $csvOptions ?? []);
+
+        return response()->json(['rows' => $rows, 'import_type' => $importType->value]);
     }
 
     public function store(StoreImportProviderRequest $request): RedirectResponse
@@ -179,6 +181,7 @@ class ImportProviderController extends Controller
             'logo_url' => $account !== null ? $this->accounts->logoUrl($account) : null,
             'default_account_id' => $provider->default_account_id,
             'default_account_name' => $account?->name,
+            'import_type' => $provider->import_type->value,
             'column_mapping' => $provider->column_mapping,
             'csv_options' => $provider->csv_options,
             'updated_at' => $provider->updated_at?->toIso8601String(),
@@ -205,7 +208,8 @@ class ImportProviderController extends Controller
         return [
             'provider' => $provider !== null ? $this->serializeProvider($provider) : null,
             'accounts' => $accounts,
-            'fieldOptions' => $this->fieldOptions(),
+            'fieldOptions' => $this->transactionFieldOptions(),
+            'positionFieldOptions' => $this->positionFieldOptions(),
             'defaultCsvOptions' => $this->providers->defaultCsvOptions(),
         ];
     }
@@ -213,7 +217,7 @@ class ImportProviderController extends Controller
     /**
      * @return list<array{value: string, label: string}>
      */
-    private function fieldOptions(): array
+    private function transactionFieldOptions(): array
     {
         return array_values(array_map(
             static fn (ImportColumnField $field): array => [
@@ -221,6 +225,20 @@ class ImportProviderController extends Controller
                 'label' => (string) __("ui.providers.fields.{$field->value}"),
             ],
             ImportColumnField::cases(),
+        ));
+    }
+
+    /**
+     * @return list<array{value: string, label: string}>
+     */
+    private function positionFieldOptions(): array
+    {
+        return array_values(array_map(
+            static fn (ImportPositionColumnField $field): array => [
+                'value' => $field->value,
+                'label' => (string) __("ui.providers.position_fields.{$field->value}"),
+            ],
+            ImportPositionColumnField::cases(),
         ));
     }
 }

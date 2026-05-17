@@ -40,7 +40,7 @@ class DashboardCashflowTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
             ->component('dashboard/dashboard-index')
-            ->where('isDemoData', true)
+            ->where('isDemoData', false)
             ->has('cashflow', 12)
             ->where('kpis.monthly_cashflow', 900)
             ->where('cashflow.11.month', '2026-05')

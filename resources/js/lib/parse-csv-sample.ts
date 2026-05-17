@@ -4,12 +4,37 @@ export type ParseCsvOptions = {
     skipRows: number;
 };
 
-export function parseCsvSample(text: string, options: ParseCsvOptions): string[][] {
-    const lines = text
+function splitCsvLines(text: string): string[] {
+    return text
         .split(/\r?\n/)
         .map((line) => line.trimEnd())
         .filter((line) => line.length > 0);
+}
 
+/** Header row taken from skipped lines (last skipped line when skipRows > 0). */
+export function parseCsvHeaderRow(
+    text: string,
+    options: ParseCsvOptions,
+): string[] | null {
+    if (options.skipRows <= 0) {
+        return null;
+    }
+
+    const lines = splitCsvLines(text);
+
+    if (lines.length < options.skipRows) {
+        return null;
+    }
+
+    return parseCsvLine(
+        lines[options.skipRows - 1],
+        options.delimiter,
+        options.enclosure,
+    );
+}
+
+export function parseCsvSample(text: string, options: ParseCsvOptions): string[][] {
+    const lines = splitCsvLines(text);
     const dataLines = lines.slice(options.skipRows);
 
     return dataLines.map((line) => parseCsvLine(line, options.delimiter, options.enclosure));

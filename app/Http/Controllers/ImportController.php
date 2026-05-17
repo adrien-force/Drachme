@@ -131,6 +131,7 @@ class ImportController extends Controller
                 'id' => $provider->id,
                 'name' => $provider->name,
                 'default_account_id' => $provider->default_account_id,
+                'import_type' => $provider->import_type->value,
                 'logo_url' => $provider->defaultAccount !== null
                     ? $this->accounts->logoUrl($provider->defaultAccount)
                     : null,
@@ -143,6 +144,7 @@ class ImportController extends Controller
             ->map(fn (Account $account): array => [
                 'id' => $account->id,
                 'name' => $account->name,
+                'type' => $account->type->value,
                 'institution' => $account->institution,
                 'logo_url' => $this->accounts->logoUrl($account),
             ]);
@@ -169,6 +171,8 @@ class ImportController extends Controller
             'account_current_balance' => $batch->account?->current_balance,
             'original_filename' => $batch->original_filename,
             'preview_rows' => $batch->preview_rows ?? [],
+            'import_type' => $batch->importProvider?->import_type->value ?? 'transactions',
+            'is_positions_import' => $batch->importProvider?->isPositionsImport() ?? false,
             'maps_balance' => $batch->importProvider !== null
                 && $this->importProviders->mapsBalanceColumn($batch->importProvider),
             'imported_count' => $batch->imported_count,

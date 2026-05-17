@@ -89,7 +89,8 @@ export function DatePicker({
                     <Calendar
                         mode="single"
                         locale={dateLocale}
-                        defaultMonth={selected}
+                        captionLayout="dropdown"
+                        defaultMonth={selected ?? new Date()}
                         selected={selected}
                         onSelect={pick}
                     />

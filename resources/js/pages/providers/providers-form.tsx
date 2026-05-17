@@ -1,12 +1,16 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Upload } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { FadeIn } from '@/components/motion/fade-in';
 import { GlassPanel } from '@/components/glass-panel';
 import { EntityLogo } from '@/components/entity-logo';
+import { CsvSampleDropzone } from '@/components/providers/csv-sample-dropzone';
 import { DateFormatConfirmPanel } from '@/components/providers/date-format-confirm-panel';
+import { ProviderCsvMappingTable } from '@/components/providers/provider-csv-mapping-table';
+import { ProviderNormalizedPositionPreviewTable } from '@/components/providers/provider-normalized-position-preview-table';
+import { ProviderNormalizedPreviewTable } from '@/components/providers/provider-normalized-preview-table';
 import { Button } from '@/components/ui/button';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -19,21 +23,24 @@ import {
 import { useTranslation } from '@/hooks/use-translation';
 import { readCsrfToken } from '@/lib/csrf';
 import { detectDateFormat } from '@/lib/detect-date-format';
-import { formatCurrency } from '@/lib/format-currency';
 import {
-    buildColumnMappings,
     extractDateSamples,
     getDateColumnIndex,
-    isImportMappingValid,
     mappingPayload,
 } from '@/lib/import-mapping';
-import { parseCsvSample } from '@/lib/parse-csv-sample';
-import { cn } from '@/lib/utils';
+import {
+    buildColumnMappingsForType,
+    isMappingValidForType,
+    rowLooksLikePositionHeader,
+} from '@/lib/import-position-mapping';
+import { parseCsvHeaderRow, parseCsvSample } from '@/lib/parse-csv-sample';
 import type {
     ColumnMappingEntry,
+    ColumnMappingField,
     CsvOptions,
     DateFormatSuggestion,
-    ImportColumnField,
+    ImportProviderType,
+    NormalizedPositionPreviewRow,
     NormalizedPreviewRow,
     ProvidersFormPageProps,
 } from '@/types/provider.types';
@@ -44,11 +51,15 @@ export default function ProvidersForm({
     provider,
     accounts,
     fieldOptions,
+    positionFieldOptions,
     defaultCsvOptions,
 }: ProvidersFormPageProps) {
     const { t } = useTranslation();
     const isEditing = provider !== null;
 
+    const [importType, setImportType] = useState<ImportProviderType>(
+        provider?.import_type ?? 'transactions',
+    );
     const [name, setName] = useState(provider?.name ?? '');
     const [defaultAccountId, setDefaultAccountId] = useState<string>(
         provider?.default_account_id ? String(provider.default_account_id) : NONE_ACCOUNT,
@@ -60,7 +71,13 @@ export default function ProvidersForm({
         provider?.column_mapping.columns ?? [],
     );
     const [sampleText, setSampleText] = useState('');
-    const [previewRows, setPreviewRows] = useState<NormalizedPreviewRow[]>([]);
+    const [sampleFileName, setSampleFileName] = useState<string | null>(null);
+    const [transactionPreviewRows, setTransactionPreviewRows] = useState<
+        NormalizedPreviewRow[]
+    >([]);
+    const [positionPreviewRows, setPositionPreviewRows] = useState<
+        NormalizedPositionPreviewRow[]
+    >([]);
     const [previewLoading, setPreviewLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [dateSuggestion, setDateSuggestion] = useState<DateFormatSuggestion | null>(
@@ -69,27 +86,46 @@ export default function ProvidersForm({
     const [dateFormatConfirmed, setDateFormatConfirmed] = useState(isEditing);
     const [dateFormatManual, setDateFormatManual] = useState(isEditing);
 
-    const rawRows = useMemo(
-        () =>
-            parseCsvSample(sampleText, {
-                delimiter: csvOptions.delimiter,
-                enclosure: csvOptions.enclosure,
-                skipRows: csvOptions.skip_rows,
-            }),
-        [sampleText, csvOptions.delimiter, csvOptions.enclosure, csvOptions.skip_rows],
+    const csvParseOptions = useMemo(
+        () => ({
+            delimiter: csvOptions.delimiter,
+            enclosure: csvOptions.enclosure,
+            skipRows: csvOptions.skip_rows,
+        }),
+        [csvOptions.delimiter, csvOptions.enclosure, csvOptions.skip_rows],
     );
 
-    const columnCount = rawRows[0]?.length ?? 0;
+    const headerCells = useMemo(
+        () => parseCsvHeaderRow(sampleText, csvParseOptions),
+        [sampleText, csvParseOptions],
+    );
+
+    const rawRows = useMemo(
+        () => parseCsvSample(sampleText, csvParseOptions),
+        [sampleText, csvParseOptions],
+    );
+
+    const columnCount = rawRows[0]?.length ?? headerCells?.length ?? 0;
+    const isPositionsImport = importType === 'positions';
+    const activeFieldOptions = isPositionsImport ? positionFieldOptions : fieldOptions;
 
     useEffect(() => {
-        setColumnMappings((current) => buildColumnMappings(columnCount, current));
-    }, [columnCount]);
+        setColumnMappings((current) =>
+            buildColumnMappingsForType(
+                columnCount,
+                current,
+                importType,
+                headerCells ?? undefined,
+            ),
+        );
+    }, [columnCount, importType, headerCells]);
 
-    const dateColumnIndex = getDateColumnIndex(columnMappings);
+    const dateColumnIndex = isPositionsImport ? null : getDateColumnIndex(columnMappings);
     const hasDateSamples =
         dateColumnIndex !== null && extractDateSamples(rawRows, dateColumnIndex).length > 0;
 
-    const mappingValid = isImportMappingValid(columnMappings);
+    const mappingValid = isMappingValidForType(columnMappings, importType);
+    const previewRows = isPositionsImport ? positionPreviewRows : transactionPreviewRows;
     const previewReady =
         mappingValid &&
         rawRows.length > 0 &&
@@ -97,6 +133,7 @@ export default function ProvidersForm({
         previewRows.every((row) => !('error' in row));
 
     const needsDateFormatConfirm =
+        !isPositionsImport &&
         hasDateSamples &&
         dateSuggestion !== null &&
         dateSuggestion.format !== csvOptions.date_format &&
@@ -171,7 +208,8 @@ export default function ProvidersForm({
 
     useEffect(() => {
         if (!mappingValid || rawRows.length === 0) {
-            setPreviewRows([]);
+            setTransactionPreviewRows([]);
+            setPositionPreviewRows([]);
             return;
         }
 
@@ -189,6 +227,7 @@ export default function ProvidersForm({
                     },
                     credentials: 'same-origin',
                     body: JSON.stringify({
+                        import_type: importType,
                         sample_rows: rawRows.slice(0, 10),
                         column_mapping: mappingPayload(columnMappings),
                         csv_options: csvOptions,
@@ -196,23 +235,65 @@ export default function ProvidersForm({
                 });
 
                 if (!response.ok) {
-                    setPreviewRows([]);
+                    setTransactionPreviewRows([]);
+                    setPositionPreviewRows([]);
                     return;
                 }
 
-                const data = (await response.json()) as { rows: NormalizedPreviewRow[] };
-                setPreviewRows(data.rows);
+                const data = (await response.json()) as {
+                    rows: NormalizedPreviewRow[] | NormalizedPositionPreviewRow[];
+                    import_type: ImportProviderType;
+                };
+
+                if (data.import_type === 'positions') {
+                    setPositionPreviewRows(
+                        data.rows as NormalizedPositionPreviewRow[],
+                    );
+                    setTransactionPreviewRows([]);
+                } else {
+                    setTransactionPreviewRows(data.rows as NormalizedPreviewRow[]);
+                    setPositionPreviewRows([]);
+                }
             } catch {
-                setPreviewRows([]);
+                setTransactionPreviewRows([]);
+                setPositionPreviewRows([]);
             } finally {
                 setPreviewLoading(false);
             }
         }, 400);
 
         return () => window.clearTimeout(timer);
-    }, [columnMappings, csvOptions, rawRows, mappingValid]);
+    }, [columnMappings, csvOptions, rawRows, mappingValid, importType]);
 
-    const updateMappingField = (index: number, field: ImportColumnField) => {
+    const handleImportTypeChange = (nextType: ImportProviderType) => {
+        setImportType(nextType);
+        setTransactionPreviewRows([]);
+        setPositionPreviewRows([]);
+        setColumnMappings((current) =>
+            buildColumnMappingsForType(
+                columnCount,
+                current,
+                nextType,
+                headerCells ?? undefined,
+            ),
+        );
+    };
+
+    const handleSampleChange = (text: string) => {
+        setSampleText(text);
+        if (!isEditing && text.trim() !== '') {
+            const headerRow = parseCsvHeaderRow(text, {
+                delimiter: csvOptions.delimiter,
+                enclosure: csvOptions.enclosure,
+                skipRows: csvOptions.skip_rows,
+            });
+            if (headerRow && rowLooksLikePositionHeader(headerRow)) {
+                setImportType('positions');
+            }
+        }
+    };
+
+    const updateMappingField = (index: number, field: ColumnMappingField) => {
         const nextMappings = columnMappings.map((column) =>
             column.index === index ? { ...column, field } : column,
         );
@@ -229,17 +310,6 @@ export default function ProvidersForm({
         }
     };
 
-    const handleSampleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) {
-            return;
-        }
-
-        const text = await file.text();
-        setSampleText(text);
-        event.target.value = '';
-    };
-
     const handleSubmit = () => {
         if (!canSave) {
             return;
@@ -249,6 +319,7 @@ export default function ProvidersForm({
 
         const payload = {
             name: name.trim(),
+            import_type: importType,
             default_account_id:
                 defaultAccountId === NONE_ACCOUNT ? null : Number(defaultAccountId),
             column_mapping: mappingPayload(columnMappings),
@@ -324,6 +395,32 @@ export default function ProvidersForm({
                                 </Select>
                             </div>
                         </div>
+                        <div className="grid gap-2">
+                            <Label>{t('providers.import_type_label')}</Label>
+                            <ToggleGroup
+                                type="single"
+                                variant="outline"
+                                value={importType}
+                                onValueChange={(value) => {
+                                    if (value === 'transactions' || value === 'positions') {
+                                        handleImportTypeChange(value);
+                                    }
+                                }}
+                                className="flex w-full flex-wrap justify-start"
+                            >
+                                <ToggleGroupItem value="transactions" className="flex-1 sm:flex-none">
+                                    {t('providers.import_type_transactions')}
+                                </ToggleGroupItem>
+                                <ToggleGroupItem value="positions" className="flex-1 sm:flex-none">
+                                    {t('providers.import_type_positions')}
+                                </ToggleGroupItem>
+                            </ToggleGroup>
+                            {isPositionsImport ? (
+                                <p className="text-muted-foreground text-xs">
+                                    {t('providers.import_type_positions_hint')}
+                                </p>
+                            ) : null}
+                        </div>
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
                             <EntityLogo
                                 name={displayLogoName || '?'}
@@ -349,116 +446,34 @@ export default function ProvidersForm({
                                 {t('providers.sample_description')}
                             </p>
                         </div>
-                        <div className="flex flex-wrap items-center gap-3">
-                            <Button type="button" variant="outline" asChild>
-                                <label className="cursor-pointer">
-                                    <Upload className="mr-2 size-4" />
-                                    {t('providers.upload_file')}
-                                    <input
-                                        type="file"
-                                        accept=".csv,.txt,text/csv"
-                                        className="sr-only"
-                                        onChange={handleSampleFileChange}
-                                    />
-                                </label>
-                            </Button>
-                        </div>
-                        <textarea
+                        <CsvSampleDropzone
                             value={sampleText}
-                            onChange={(event) => setSampleText(event.target.value)}
-                            placeholder={t('providers.sample_placeholder')}
-                            rows={6}
-                            className={cn(
-                                'border-input placeholder:text-muted-foreground w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none',
-                                'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
-                            )}
+                            onChange={handleSampleChange}
+                            fileName={sampleFileName}
+                            onFileNameChange={setSampleFileName}
+                            disabled={submitting}
                         />
-                        {rawRows.length > 0 && (
-                            <div className="overflow-x-auto">
-                                <p className="text-muted-foreground mb-2 text-xs font-medium uppercase">
-                                    {t('providers.raw_preview')}
-                                </p>
-                                <table className="w-full min-w-[480px] text-sm">
-                                    <tbody>
-                                        {rawRows.slice(0, 5).map((row, rowIndex) => (
-                                            <tr
-                                                key={rowIndex}
-                                                className="border-border/40 border-b last:border-0"
-                                            >
-                                                {row.map((cell, cellIndex) => (
-                                                    <td
-                                                        key={cellIndex}
-                                                        className="px-3 py-2"
-                                                    >
-                                                        {cell}
-                                                    </td>
-                                                ))}
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                        {columnCount > 0 && (
+                            <ProviderCsvMappingTable
+                                rows={rawRows}
+                                columnMappings={columnMappings}
+                                columnHeaders={headerCells}
+                                fieldOptions={activeFieldOptions}
+                                onMappingChange={updateMappingField}
+                            />
+                        )}
+                        {columnCount > 0 && !mappingValid && (
+                            <p className="text-destructive text-sm">
+                                {t('providers.mapping_incomplete')}
+                            </p>
+                        )}
+                        {columnCount > 0 && !isPositionsImport && hasAmountSignedColumn && (
+                            <p className="text-muted-foreground text-xs">
+                                {t('providers.amount_signed_hint')}
+                            </p>
                         )}
                     </GlassPanel>
                 </FadeIn>
-
-                {columnCount > 0 && (
-                    <FadeIn delay={0.1}>
-                        <GlassPanel className="space-y-4 p-6">
-                            <div>
-                                <h2 className="font-semibold">{t('providers.mapping_title')}</h2>
-                                <p className="text-muted-foreground text-sm">
-                                    {t('providers.mapping_description')}
-                                </p>
-                            </div>
-                            <div className="grid gap-3">
-                                {columnMappings.map((column) => (
-                                    <div
-                                        key={column.index}
-                                        className="grid gap-2 sm:grid-cols-[120px_1fr]"
-                                    >
-                                        <Label>
-                                            {t('providers.column')} {column.index + 1}
-                                        </Label>
-                                        <Select
-                                            value={column.field}
-                                            onValueChange={(value) =>
-                                                updateMappingField(
-                                                    column.index,
-                                                    value as ImportColumnField,
-                                                )
-                                            }
-                                        >
-                                            <SelectTrigger className="w-full">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {fieldOptions.map((option) => (
-                                                    <SelectItem
-                                                        key={option.value}
-                                                        value={option.value}
-                                                    >
-                                                        {option.label}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                ))}
-                            </div>
-                            {!mappingValid && (
-                                <p className="text-destructive text-sm">
-                                    {t('providers.mapping_incomplete')}
-                                </p>
-                            )}
-                            {hasAmountSignedColumn && (
-                                <p className="text-muted-foreground text-xs">
-                                    {t('providers.amount_signed_hint')}
-                                </p>
-                            )}
-                        </GlassPanel>
-                    </FadeIn>
-                )}
 
                 <FadeIn delay={0.15}>
                     <GlassPanel className="grid gap-4 p-6 sm:grid-cols-2">
@@ -524,6 +539,7 @@ export default function ProvidersForm({
                                 }
                             />
                         </div>
+                        {!isPositionsImport ? (
                         <div className="grid gap-2 sm:col-span-2">
                             <Label htmlFor="date-format">{t('providers.date_format')}</Label>
                             <Input
@@ -567,12 +583,20 @@ export default function ProvidersForm({
                                 </p>
                             )}
                         </div>
+                        ) : null}
                     </GlassPanel>
                 </FadeIn>
 
                 <FadeIn delay={0.2}>
                     <GlassPanel className="space-y-4 p-6">
-                        <h2 className="font-semibold">{t('providers.normalized_preview')}</h2>
+                        <div>
+                            <h2 className="font-semibold">
+                                {t('providers.normalized_preview')}
+                            </h2>
+                            <p className="text-muted-foreground text-sm">
+                                {t('providers.normalized_preview_description')}
+                            </p>
+                        </div>
                         {previewLoading && (
                             <p className="text-muted-foreground text-sm">
                                 {t('providers.preview_loading')}
@@ -583,68 +607,17 @@ export default function ProvidersForm({
                                 {t('providers.preview_empty')}
                             </p>
                         )}
-                        {previewRows.length > 0 && (
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="text-muted-foreground border-b text-left text-xs uppercase">
-                                        <th className="w-12 py-2 pr-2">#</th>
-                                        <th className="py-2 pr-4">
-                                            {t('providers.fields.date')}
-                                        </th>
-                                        <th className="py-2 pr-4">
-                                            {t('providers.fields.label')}
-                                        </th>
-                                        <th className="py-2 text-right">
-                                            {t('providers.fields.amount_signed')}
-                                        </th>
-                                        {mapsBalance ? (
-                                            <th className="py-2 text-right">
-                                                {t('providers.fields.balance')}
-                                            </th>
-                                        ) : null}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {previewRows.map((row, index) => (
-                                        <tr key={index} className="border-border/40 border-b">
-                                            <td className="text-muted-foreground py-2 pr-2 tabular-nums">
-                                                {row.line}
-                                            </td>
-                                            {'error' in row ? (
-                                                <td
-                                                    colSpan={mapsBalance ? 4 : 3}
-                                                    className="text-destructive py-2 text-sm leading-relaxed"
-                                                >
-                                                    {row.error}
-                                                </td>
-                                            ) : (
-                                                <>
-                                                    <td className="py-2 pr-4">{row.date}</td>
-                                                    <td className="py-2 pr-4">{row.label}</td>
-                                                    <td className="py-2 text-right tabular-nums">
-                                                        {formatCurrency(row.amount, {
-                                                            precise: true,
-                                                        })}
-                                                    </td>
-                                                    {mapsBalance ? (
-                                                        <td className="py-2 text-right tabular-nums">
-                                                            {row.balance != null
-                                                                ? formatCurrency(
-                                                                      row.balance,
-                                                                      {
-                                                                          precise: true,
-                                                                      },
-                                                                  )
-                                                                : '—'}
-                                                        </td>
-                                                    ) : null}
-                                                </>
-                                            )}
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        )}
+                        {!previewLoading && previewRows.length > 0 && isPositionsImport ? (
+                            <ProviderNormalizedPositionPreviewTable
+                                rows={positionPreviewRows}
+                            />
+                        ) : null}
+                        {!previewLoading && previewRows.length > 0 && !isPositionsImport ? (
+                            <ProviderNormalizedPreviewTable
+                                rows={transactionPreviewRows}
+                                mapsBalance={mapsBalance}
+                            />
+                        ) : null}
                     </GlassPanel>
                 </FadeIn>
 

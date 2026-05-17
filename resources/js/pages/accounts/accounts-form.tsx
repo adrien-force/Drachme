@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 import { FadeIn } from '@/components/motion/fade-in';
 import { GlassPanel } from '@/components/glass-panel';
@@ -17,6 +17,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/use-translation';
+import { formatCurrency } from '@/lib/format-currency';
 import type { AccountType, AccountsFormPageProps } from '@/types/account.types';
 
 export default function AccountsForm({
@@ -31,8 +32,41 @@ export default function AccountsForm({
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [removeLogo, setRemoveLogo] = useState(false);
     const [openedAt, setOpenedAt] = useState<string | null>(account?.opened_at ?? null);
+    const [actualBalance, setActualBalance] = useState(
+        account !== null ? String(account.current_balance) : '',
+    );
     const [submitting, setSubmitting] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
+
+    const balanceReconcile = useMemo(() => {
+        if (account === null) {
+            return null;
+        }
+
+        const computedBalance = account.current_balance;
+        const initialBalance = account.initial_balance;
+        const parsedActual = Number.parseFloat(actualBalance);
+
+        if (Number.isNaN(parsedActual)) {
+            return {
+                computedBalance,
+                initialBalance,
+                adjustment: 0,
+                newInitialBalance: initialBalance,
+            };
+        }
+
+        const adjustment = Math.round((parsedActual - computedBalance) * 100) / 100;
+        const newInitialBalance =
+            Math.round((initialBalance + adjustment) * 100) / 100;
+
+        return {
+            computedBalance,
+            initialBalance,
+            adjustment,
+            newInitialBalance,
+        };
+    }, [account, actualBalance]);
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -62,6 +96,8 @@ export default function AccountsForm({
             if (typeof initialBalance === 'string') {
                 payload.append('initial_balance', initialBalance);
             }
+        } else if (actualBalance !== '') {
+            payload.append('actual_balance', actualBalance);
         }
 
         if (logoFile) {
@@ -181,7 +217,7 @@ export default function AccountsForm({
                             </div>
 
 
-                            {!isEditing && (
+                            {!isEditing ? (
                                 <div className="grid gap-2">
                                     <Label htmlFor="initial_balance">
                                         {t('accounts.initial_balance')}
@@ -196,7 +232,93 @@ export default function AccountsForm({
                                     />
                                     <InputError message={errors.initial_balance} />
                                 </div>
-                            )}
+                            ) : null}
+
+                            {isEditing && account && balanceReconcile ? (
+                                <div className="space-y-4 rounded-lg border border-white/10 bg-white/5 p-4">
+                                    <div>
+                                        <p className="text-sm font-medium">
+                                            {t('accounts.balance_reconcile_title')}
+                                        </p>
+                                        <p className="text-muted-foreground mt-1 text-xs">
+                                            {t('accounts.balance_reconcile_hint')}
+                                        </p>
+                                    </div>
+
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                        <div className="space-y-1">
+                                            <p className="text-muted-foreground text-xs">
+                                                {t('accounts.initial_balance')}
+                                            </p>
+                                            <p className="font-mono text-sm tabular-nums">
+                                                {formatCurrency(
+                                                    balanceReconcile.initialBalance,
+                                                    { precise: true },
+                                                )}
+                                            </p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-muted-foreground text-xs">
+                                                {t('accounts.computed_balance')}
+                                            </p>
+                                            <p className="font-mono text-sm tabular-nums">
+                                                {formatCurrency(
+                                                    balanceReconcile.computedBalance,
+                                                    { precise: true },
+                                                )}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="actual_balance">
+                                            {t('accounts.actual_balance')}
+                                        </Label>
+                                        <Input
+                                            id="actual_balance"
+                                            name="actual_balance"
+                                            type="number"
+                                            step="0.01"
+                                            value={actualBalance}
+                                            onChange={(event) =>
+                                                setActualBalance(event.target.value)
+                                            }
+                                        />
+                                        <InputError message={errors.actual_balance} />
+                                    </div>
+
+                                    {actualBalance !== '' &&
+                                    !Number.isNaN(Number.parseFloat(actualBalance)) ? (
+                                        <div className="grid gap-2 text-sm sm:grid-cols-2">
+                                            <div className="rounded-md border border-white/10 px-3 py-2">
+                                                <p className="text-muted-foreground text-xs">
+                                                    {t('accounts.balance_adjustment')}
+                                                </p>
+                                                <p className="mt-1 font-mono tabular-nums">
+                                                    {balanceReconcile.adjustment >= 0
+                                                        ? '+'
+                                                        : ''}
+                                                    {formatCurrency(
+                                                        balanceReconcile.adjustment,
+                                                        { precise: true },
+                                                    )}
+                                                </p>
+                                            </div>
+                                            <div className="rounded-md border border-white/10 px-3 py-2">
+                                                <p className="text-muted-foreground text-xs">
+                                                    {t('accounts.initial_balance_after')}
+                                                </p>
+                                                <p className="mt-1 font-mono tabular-nums">
+                                                    {formatCurrency(
+                                                        balanceReconcile.newInitialBalance,
+                                                        { precise: true },
+                                                    )}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ) : null}
+                                </div>
+                            ) : null}
 
                             <div className="grid gap-2">
                                 <Label htmlFor="opened_at">{t('accounts.opened_at')}</Label>

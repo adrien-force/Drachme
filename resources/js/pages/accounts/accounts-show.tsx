@@ -74,6 +74,13 @@ export default function AccountsShow({
                             )}
                         </div>
                         <div className="flex flex-wrap gap-2">
+                            {account.type === 'invest' && (
+                                <Button asChild variant="outline" size="sm">
+                                    <Link href={`/accounts/${account.id}/positions`}>
+                                        {t('accounts.view_positions')}
+                                    </Link>
+                                </Button>
+                            )}
                             <Button asChild variant="outline" size="sm">
                                 <Link
                                     href={`/transactions/create?account_id=${account.id}`}

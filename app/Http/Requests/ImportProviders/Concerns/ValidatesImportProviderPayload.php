@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Requests\ImportProviders\Concerns;
 
 use App\Enums\ImportColumnField;
+use App\Enums\ImportPositionColumnField;
+use App\Enums\ImportProviderType;
 use App\Support\ImportColumnMappingValidator;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Validation\Rule;
@@ -20,9 +22,17 @@ trait ValidatesImportProviderPayload
 
             $mapping = $this->input('column_mapping');
 
-            if (is_array($mapping)) {
-                ImportColumnMappingValidator::validate($mapping, $validator);
+            if (! is_array($mapping)) {
+                return;
             }
+
+            $importType = ImportProviderType::tryFrom((string) $this->input('import_type', ''));
+
+            if ($importType === null) {
+                return;
+            }
+
+            ImportColumnMappingValidator::validateForType($mapping, $importType, $validator);
         });
     }
     /**
@@ -30,11 +40,19 @@ trait ValidatesImportProviderPayload
      */
     protected function importProviderMappingRules(): array
     {
+        $importType = ImportProviderType::tryFrom((string) $this->input('import_type', ''))
+            ?? ImportProviderType::Transactions;
+
+        $fieldRule = $importType === ImportProviderType::Positions
+            ? Rule::enum(ImportPositionColumnField::class)
+            : Rule::enum(ImportColumnField::class);
+
         return [
+            'import_type' => ['required', Rule::enum(ImportProviderType::class)],
             'column_mapping' => ['required', 'array'],
             'column_mapping.columns' => ['required', 'array', 'min:1'],
             'column_mapping.columns.*.index' => ['required', 'integer', 'min:0'],
-            'column_mapping.columns.*.field' => ['required', Rule::enum(ImportColumnField::class)],
+            'column_mapping.columns.*.field' => ['required', $fieldRule],
             'csv_options' => ['nullable', 'array'],
             'csv_options.delimiter' => ['sometimes', 'string', 'max:1'],
             'csv_options.enclosure' => ['sometimes', 'string', 'max:1'],

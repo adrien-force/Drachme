@@ -11,6 +11,8 @@ use App\Models\Category;
 use App\Models\CategoryRule;
 use App\Models\ImportBatch;
 use App\Models\ImportProvider;
+use App\Models\PortfolioSnapshot;
+use App\Models\Position;
 use App\Models\RecurringPattern;
 use App\Models\Transaction;
 use App\Policies\AccountPolicy;
@@ -18,6 +20,8 @@ use App\Policies\CategoryPolicy;
 use App\Policies\CategoryRulePolicy;
 use App\Policies\ImportBatchPolicy;
 use App\Policies\ImportProviderPolicy;
+use App\Policies\PortfolioSnapshotPolicy;
+use App\Policies\PositionPolicy;
 use App\Policies\RecurringPatternPolicy;
 use App\Policies\TransactionPolicy;
 use Carbon\CarbonImmutable;
@@ -52,6 +56,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Transaction::class, TransactionPolicy::class);
         Gate::policy(Category::class, CategoryPolicy::class);
         Gate::policy(CategoryRule::class, CategoryRulePolicy::class);
+        Gate::policy(Position::class, PositionPolicy::class);
+        Gate::policy(PortfolioSnapshot::class, PortfolioSnapshotPolicy::class);
         Gate::policy(RecurringPattern::class, RecurringPatternPolicy::class);
 
         Event::listen(TransactionChanged::class, RecalculateAccountBalance::class);

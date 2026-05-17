@@ -12,6 +12,7 @@ import type { ProvidersShowPageProps } from '@/types/provider.types';
 export default function ProvidersShow({
     provider,
     fieldOptions,
+    positionFieldOptions,
 }: ProvidersShowPageProps) {
     const { t } = useTranslation();
 
@@ -67,6 +68,16 @@ export default function ProvidersShow({
                         <dl className="grid gap-4 sm:grid-cols-2">
                             <div>
                                 <dt className="text-muted-foreground text-xs uppercase tracking-wide">
+                                    {t('providers.import_type_label')}
+                                </dt>
+                                <dd className="mt-1 text-sm font-medium">
+                                    {provider.import_type === 'positions'
+                                        ? t('providers.import_type_positions')
+                                        : t('providers.import_type_transactions')}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt className="text-muted-foreground text-xs uppercase tracking-wide">
                                     {t('providers.default_account')}
                                 </dt>
                                 <dd className="mt-1 text-sm font-medium">
@@ -78,7 +89,11 @@ export default function ProvidersShow({
 
                         <ProviderSetupSummary
                             provider={provider}
-                            fieldOptions={fieldOptions}
+                            fieldOptions={
+                                provider.import_type === 'positions'
+                                    ? positionFieldOptions
+                                    : fieldOptions
+                            }
                         />
                     </GlassPanel>
                 </FadeIn>

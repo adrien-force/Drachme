@@ -6,6 +6,7 @@ declare(strict_types=1);
 namespace Tests\Feature\ImportProviders;
 
 use App\Enums\ImportColumnField;
+use App\Enums\ImportProviderType;
 use App\Models\Account;
 use App\Models\ImportProvider;
 use App\Models\User;
@@ -24,6 +25,7 @@ class ImportProviderCrudTest extends TestCase
         return [
             'name' => 'BNP relevé courant',
             'default_account_id' => $defaultAccountId,
+            'import_type' => ImportProviderType::Transactions->value,
             'column_mapping' => [
                 'columns' => [
                     ['index' => 0, 'field' => ImportColumnField::Date->value],
@@ -75,6 +77,7 @@ class ImportProviderCrudTest extends TestCase
             ->actingAs($user)
             ->post(route('providers.store'), [
                 'name' => 'Invalid mapping',
+                'import_type' => ImportProviderType::Transactions->value,
                 'column_mapping' => [
                     'columns' => [
                         ['index' => 0, 'field' => ImportColumnField::Skip->value],

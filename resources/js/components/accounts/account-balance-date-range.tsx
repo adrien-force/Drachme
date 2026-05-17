@@ -123,10 +123,12 @@ export function AccountBalanceDateRange({
                 <Calendar
                     mode="range"
                     locale={dateLocale}
+                    captionLayout="dropdown"
                     defaultMonth={pendingRange?.from ?? selectedRange.from}
                     selected={pendingRange}
                     onSelect={setPendingRange}
                     numberOfMonths={2}
+                    endMonth={new Date()}
                     disabled={{ after: new Date() }}
                 />
                 <div className="flex items-center justify-between gap-2 border-t p-3">

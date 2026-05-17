@@ -13,6 +13,7 @@ use App\Models\Account;
 use App\Models\Transaction;
 use App\Services\AccountBalanceHistoryService;
 use App\Services\AccountService;
+use App\Services\BalanceEngine;
 use App\Services\TransactionListService;
 use App\Services\CategoryService;
 use App\Services\TransactionCategoryRuleApplier;
@@ -34,6 +35,7 @@ class AccountController extends Controller
         private readonly CategoryService $categories,
         private readonly TransactionFormPresenter $transactionForm,
         private readonly TransactionCategoryRuleApplier $categoryRuleApplier,
+        private readonly BalanceEngine $balanceEngine,
     ) {}
 
     public function index(Request $request): Response
@@ -174,6 +176,8 @@ class AccountController extends Controller
     public function edit(Account $account): Response
     {
         $this->authorize('update', $account);
+        $this->balanceEngine->recalculateAccount($account);
+        $account->refresh();
 
         return Inertia::render('accounts/accounts-form', [
             'account' => $this->serializeAccount($account),
@@ -188,6 +192,7 @@ class AccountController extends Controller
          *     institution?: string|null,
          *     type: AccountType|string,
          *     opened_at?: string|null,
+         *     actual_balance?: float|string|null,
          * } $data */
         $data = $request->validated();
 
@@ -236,6 +241,7 @@ class AccountController extends Controller
             'type' => $type instanceof AccountType ? $type->value : (string) $type,
             'initial_balance' => (float) $account->initial_balance,
             'current_balance' => (float) $account->current_balance,
+            'transactions_net' => (float) $this->balanceEngine->transactionSum($account),
             'currency' => $account->currency,
             'opened_at' => $openedAt instanceof \DateTimeInterface
                 ? $openedAt->format('Y-m-d')

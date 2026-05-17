@@ -6,6 +6,7 @@ declare(strict_types=1);
 namespace Tests\Feature\ImportProviders;
 
 use App\Enums\ImportColumnField;
+use App\Enums\ImportPositionColumnField;
 use App\Models\Account;
 use App\Models\ImportProvider;
 use App\Models\User;
@@ -29,7 +30,8 @@ class ImportProviderWizardTest extends TestCase
                 ->component('providers/providers-form')
                 ->where('provider', null)
                 ->has('accounts', 1)
-                ->has('fieldOptions', 7));
+                ->has('fieldOptions', 7)
+                ->has('positionFieldOptions', 6));
     }
 
     public function test_preview_returns_normalized_rows(): void
@@ -39,6 +41,7 @@ class ImportProviderWizardTest extends TestCase
         $this
             ->actingAs($user)
             ->postJson(route('providers.preview'), [
+                'import_type' => 'transactions',
                 'sample_rows' => [
                     ['15/01/2024', 'Loyer', '850,00', ''],
                 ],
@@ -90,6 +93,51 @@ class ImportProviderWizardTest extends TestCase
             ->assertOk()
             ->assertJsonPath('suggestion.format', 'Y-m-d H:i:s')
             ->assertJsonPath('suggestion.matched', 2);
+    }
+
+    public function test_preview_returns_normalized_position_rows(): void
+    {
+        $user = User::factory()->create();
+
+        $this
+            ->actingAs($user)
+            ->postJson(route('providers.preview'), [
+                'import_type' => 'positions',
+                'sample_rows' => [
+                    [
+                        'Apple Inc',
+                        'US0378331005',
+                        '10',
+                        '150,00',
+                        '175,50',
+                        '',
+                        '',
+                        '',
+                        '',
+                    ],
+                ],
+                'column_mapping' => [
+                    'columns' => [
+                        ['index' => 0, 'field' => ImportPositionColumnField::PositionLabel->value],
+                        ['index' => 1, 'field' => ImportPositionColumnField::Isin->value],
+                        ['index' => 2, 'field' => ImportPositionColumnField::Quantity->value],
+                        ['index' => 3, 'field' => ImportPositionColumnField::AveragePrice->value],
+                        ['index' => 4, 'field' => ImportPositionColumnField::LastPrice->value],
+                        ['index' => 5, 'field' => ImportPositionColumnField::Skip->value],
+                        ['index' => 6, 'field' => ImportPositionColumnField::Skip->value],
+                        ['index' => 7, 'field' => ImportPositionColumnField::Skip->value],
+                        ['index' => 8, 'field' => ImportPositionColumnField::Skip->value],
+                    ],
+                ],
+                'csv_options' => [
+                    'delimiter' => ';',
+                ],
+            ])
+            ->assertOk()
+            ->assertJsonPath('import_type', 'positions')
+            ->assertJsonPath('rows.0.isin', 'US0378331005')
+            ->assertJsonPath('rows.0.quantity', 10)
+            ->assertJsonPath('rows.0.label', 'Apple Inc');
     }
 
     public function test_edit_page_loads_existing_provider(): void

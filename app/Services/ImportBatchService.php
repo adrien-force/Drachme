@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\AccountType;
 use App\Enums\ImportBatchStatus;
 use App\Enums\ImportDuplicateAction;
+use App\Enums\ImportProviderType;
 use App\Enums\TransactionType;
 use App\Models\Account;
+use App\Models\Position;
 use App\Events\TransactionChanged;
 use App\Models\ImportBatch;
 use App\Models\ImportProvider;
@@ -17,6 +20,8 @@ use App\Services\CsvImport\CsvParser;
 use App\Services\CsvImport\CsvRow;
 use App\Support\ImportHash;
 use App\Support\ImportRowError;
+use App\Support\Isin;
+use App\Support\Utf8Normalizer;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -28,6 +33,9 @@ class ImportBatchService
         private readonly CsvParser $csvParser,
         private readonly ImportProviderService $providers,
         private readonly CategoryMatcher $categoryMatcher,
+        private readonly PositionService $positions,
+        private readonly PortfolioSnapshotService $portfolioSnapshots,
+        private readonly NetWorthSnapshotService $netWorthSnapshots,
     ) {}
 
     public function createDraft(
@@ -69,14 +77,18 @@ class ImportBatchService
         $errorCount = 0;
 
         foreach ($table->rows as $row) {
-            $previewRows[] = $this->previewRow($row, $provider, $account, $errorCount);
+            $previewRows[] = $provider->isPositionsImport()
+                ? $this->previewPositionRow($row, $provider, $account, $errorCount)
+                : $this->previewRow($row, $provider, $account, $errorCount);
         }
 
         $batch->update([
             'status' => ImportBatchStatus::Preview,
-            'original_filename' => $file->getClientOriginalName(),
+            'original_filename' => Utf8Normalizer::ensureValid(
+                (string) $file->getClientOriginalName(),
+            ),
             'stored_path' => $storedPath,
-            'preview_rows' => $previewRows,
+            'preview_rows' => Utf8Normalizer::sanitizeArray($previewRows),
             'error_count' => $errorCount,
             'duplicate_decisions' => null,
         ]);
@@ -116,15 +128,28 @@ class ImportBatchService
         $skipped = 0;
         $replaced = 0;
 
+        $isPositionsImport = $provider->isPositionsImport();
+
         DB::transaction(function () use (
             $batch,
             $account,
             $previewRows,
             $decisionMap,
+            $isPositionsImport,
             &$imported,
             &$skipped,
             &$replaced,
         ): void {
+            if (! $isPositionsImport) {
+                Transaction::query()
+                    ->where('account_id', $account->id)
+                    ->where('import_batch_id', $batch->id)
+                    ->delete();
+            }
+
+            /** @var array<string, true> $hashesCommittedInBatch */
+            $hashesCommittedInBatch = [];
+
             foreach ($previewRows as $row) {
                 if (($row['status'] ?? '') === 'error') {
                     continue;
@@ -132,8 +157,12 @@ class ImportBatchService
 
                 $line = (int) ($row['line'] ?? 0);
                 $isDuplicate = ($row['is_duplicate'] ?? false) === true;
+                $defaultDuplicateAction = $isPositionsImport
+                    ? ImportDuplicateAction::Import
+                    : ImportDuplicateAction::Skip;
+
                 $action = $decisionMap[$line]
-                    ?? ($isDuplicate ? ImportDuplicateAction::Skip : ImportDuplicateAction::Import);
+                    ?? ($isDuplicate ? $defaultDuplicateAction : ImportDuplicateAction::Import);
 
                 if ($action === ImportDuplicateAction::Skip) {
                     $skipped++;
@@ -141,26 +170,50 @@ class ImportBatchService
                     continue;
                 }
 
-                if ($isDuplicate && $action === ImportDuplicateAction::Replace) {
-                    $existingId = $row['existing_transaction_id'] ?? null;
-                    if (is_int($existingId)) {
-                        Transaction::query()
-                            ->where('account_id', $account->id)
-                            ->whereKey($existingId)
-                            ->delete();
+                if ($isPositionsImport) {
+                    if ($isDuplicate) {
+                        $replaced++;
                     }
+
+                    $this->upsertPosition($batch, $account, $row);
+                    $imported++;
+
+                    continue;
+                }
+
+                if ($isDuplicate && $action === ImportDuplicateAction::Replace) {
                     $replaced++;
                 }
 
-                if ($isDuplicate && $action === ImportDuplicateAction::Import) {
-                    $row['import_hash'] = ($row['import_hash'] ?? '').':'.$batch->id.':'.$line;
+                $resolvedHash = $this->resolveTransactionImportHash(
+                    $account,
+                    $batch,
+                    $row,
+                    $line,
+                    $isDuplicate,
+                    $action,
+                    $hashesCommittedInBatch,
+                );
+
+                if ($resolvedHash === null) {
+                    $skipped++;
+
+                    continue;
                 }
+
+                $row['import_hash'] = $resolvedHash;
 
                 $this->insertTransaction($batch, $account, $row);
                 $imported++;
             }
 
-            TransactionChanged::dispatch($account);
+            if ($isPositionsImport) {
+                $this->syncPositionsToImportFile($account, (int) $batch->user_id, $previewRows);
+            }
+
+            if (! $isPositionsImport) {
+                TransactionChanged::dispatch($account);
+            }
 
             $storedDecisions = [];
             foreach ($decisionMap as $line => $action) {
@@ -180,7 +233,19 @@ class ImportBatchService
             ]);
         });
 
-        return $batch->fresh() ?? $batch;
+        $batch = $batch->fresh() ?? $batch;
+
+        if ($isPositionsImport && $this->hasValidPreviewRows($previewRows)) {
+            $batch->load('importProvider');
+            $this->portfolioSnapshots->recordFromImport($batch, $account);
+            $owner = User::query()->find($batch->user_id);
+
+            if ($owner !== null) {
+                $this->netWorthSnapshots->recordForUser($owner);
+            }
+        }
+
+        return $batch;
     }
 
     public function cancel(ImportBatch $batch): void
@@ -190,6 +255,126 @@ class ImportBatchService
         }
 
         $batch->update(['status' => ImportBatchStatus::Cancelled]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    /**
+     * @return array<string, mixed>
+     */
+    private function previewPositionRow(
+        CsvRow $row,
+        ImportProvider $provider,
+        Account $account,
+        int &$errorCount,
+    ): array {
+        $line = $row->lineNumber;
+
+        try {
+            $normalized = $this->providers->normalizePositionRow($row->cells, $provider);
+            $isin = $normalized['isin'];
+
+            $existing = Position::query()
+                ->where('account_id', $account->id)
+                ->where('isin', $isin)
+                ->first();
+
+            $quantity = (float) $normalized['quantity'];
+            $unitPrice = $normalized['last_price'] !== null
+                ? (float) $normalized['last_price']
+                : (float) $normalized['average_price'];
+
+            return [
+                'line' => $line,
+                'label' => $normalized['label'],
+                'isin' => $isin,
+                'quantity' => $quantity,
+                'average_price' => (float) $normalized['average_price'],
+                'last_price' => $normalized['last_price'] !== null
+                    ? (float) $normalized['last_price']
+                    : null,
+                'market_value' => $quantity * $unitPrice,
+                'is_duplicate' => $existing !== null,
+                'existing_position_id' => $existing?->id,
+                'status' => 'ok',
+            ];
+        } catch (\Throwable $exception) {
+            $errorCount++;
+
+            return [
+                'line' => $line,
+                'status' => 'error',
+                'error' => ImportRowError::wrapLine($line, $exception->getMessage()),
+            ];
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     */
+    /**
+     * @param  list<array<string, mixed>>  $previewRows
+     */
+    private function syncPositionsToImportFile(Account $account, int $userId, array $previewRows): void
+    {
+        $isinsInFile = [];
+
+        foreach ($previewRows as $row) {
+            if (($row['status'] ?? '') !== 'ok') {
+                continue;
+            }
+
+            $isinRaw = trim((string) ($row['isin'] ?? ''));
+
+            if ($isinRaw === '' || ! Isin::isValid($isinRaw)) {
+                continue;
+            }
+
+            $isinsInFile[] = Isin::normalize($isinRaw);
+        }
+
+        if ($isinsInFile === []) {
+            return;
+        }
+
+        Position::query()
+            ->where('account_id', $account->id)
+            ->where('user_id', $userId)
+            ->whereNotIn('isin', array_values(array_unique($isinsInFile)))
+            ->delete();
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $previewRows
+     */
+    private function hasValidPreviewRows(array $previewRows): bool
+    {
+        foreach ($previewRows as $row) {
+            if (($row['status'] ?? '') === 'ok') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     */
+    private function upsertPosition(ImportBatch $batch, Account $account, array $row): void
+    {
+        $user = User::query()->findOrFail($batch->user_id);
+
+        $this->positions->upsertFromImport($user, $account, [
+            'isin' => (string) ($row['isin'] ?? ''),
+            'label' => (string) ($row['label'] ?? ''),
+            'quantity' => (string) ($row['quantity'] ?? '0'),
+            'average_price' => (string) ($row['average_price'] ?? '0'),
+            'last_price' => array_key_exists('last_price', $row) && $row['last_price'] !== null
+                ? (string) $row['last_price']
+                : null,
+        ]);
     }
 
     /**
@@ -237,6 +422,55 @@ class ImportBatchService
                 'error' => ImportRowError::wrapLine($line, $exception->getMessage()),
             ];
         }
+    }
+
+    /**
+     * Resolves a unique import hash, or null when the row should be skipped (already in DB).
+     *
+     * @param  array<string, mixed>  $row
+     * @param  array<string, true>  $hashesCommittedInBatch
+     */
+    private function resolveTransactionImportHash(
+        Account $account,
+        ImportBatch $batch,
+        array $row,
+        int $line,
+        bool $isDuplicate,
+        ImportDuplicateAction $action,
+        array &$hashesCommittedInBatch,
+    ): ?string {
+        $hash = (string) ($row['import_hash'] ?? '');
+
+        if ($hash === '') {
+            return '';
+        }
+
+        $existsInDb = Transaction::query()
+            ->where('account_id', $account->id)
+            ->where('import_hash', $hash)
+            ->exists();
+        $existsInBatch = isset($hashesCommittedInBatch[$hash]);
+
+        if ($action === ImportDuplicateAction::Replace && ($existsInDb || $existsInBatch)) {
+            Transaction::query()
+                ->where('account_id', $account->id)
+                ->where('import_hash', $hash)
+                ->delete();
+
+            unset($hashesCommittedInBatch[$hash]);
+            $existsInDb = false;
+            $existsInBatch = false;
+        }
+
+        if ($existsInBatch || ($existsInDb && $isDuplicate)) {
+            $hash = ImportHash::disambiguate($hash, $batch->id, $line);
+        } elseif ($existsInDb) {
+            return null;
+        }
+
+        $hashesCommittedInBatch[$hash] = true;
+
+        return $hash;
     }
 
     /**
@@ -299,6 +533,10 @@ class ImportBatchService
     ): void {
         if ($provider->user_id !== $user->id || $account->user_id !== $user->id) {
             throw new InvalidArgumentException('import_forbidden');
+        }
+
+        if ($provider->import_type === ImportProviderType::Positions && $account->type !== AccountType::Invest) {
+            throw new InvalidArgumentException('import_account_must_be_invest');
         }
     }
 }

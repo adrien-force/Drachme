@@ -1,5 +1,5 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { FileUp, Upload } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FileUp, Upload } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { EntityLogo } from '@/components/entity-logo';
@@ -21,11 +21,25 @@ import { cn } from '@/lib/utils';
 import type {
     ImportBatchPayload,
     ImportDuplicateAction,
+    ImportPositionPreviewRow,
     ImportPreviewRow,
+    ImportTransactionPreviewRow,
     ImportWizardPageProps,
 } from '@/types/import.types';
 
+function isTransactionPreviewRow(
+    row: ImportPreviewRow,
+): row is ImportTransactionPreviewRow {
+    return 'date' in row || (row.status === 'error' && !('isin' in row));
+}
+
+function isPositionPreviewRow(row: ImportPreviewRow): row is ImportPositionPreviewRow {
+    return 'isin' in row;
+}
+
 type Step = 'setup' | 'upload' | 'review' | 'done';
+
+const PREVIEW_PAGE_SIZE = 50;
 
 function resolveStep(status: ImportWizardPageProps['batch']): Step {
     if (status === null) {
@@ -73,7 +87,7 @@ export default function ImportWizard({
         const defaults: Record<number, ImportDuplicateAction> = {};
         for (const row of batch.preview_rows) {
             if (row.is_duplicate) {
-                defaults[row.line] = 'skip';
+                defaults[row.line] = batch.is_positions_import ? 'import' : 'skip';
             }
         }
         setDecisions(defaults);
@@ -84,15 +98,46 @@ export default function ImportWizard({
         [providers, providerId],
     );
 
+    const isPositionsProvider = selectedProvider?.import_type === 'positions';
+
+    const eligibleAccounts = useMemo(() => {
+        if (!isPositionsProvider) {
+            return accounts;
+        }
+
+        return accounts.filter((account) => account.type === 'invest');
+    }, [accounts, isPositionsProvider]);
+
     useEffect(() => {
         if (
             selectedProvider?.default_account_id &&
             accountId === '' &&
             step === 'setup'
         ) {
-            setAccountId(String(selectedProvider.default_account_id));
+            const defaultAccount = accounts.find(
+                (account) => account.id === selectedProvider.default_account_id,
+            );
+
+            if (
+                defaultAccount &&
+                (!isPositionsProvider || defaultAccount.type === 'invest')
+            ) {
+                setAccountId(String(selectedProvider.default_account_id));
+            }
         }
-    }, [selectedProvider, accountId, step]);
+    }, [selectedProvider, accountId, step, accounts, isPositionsProvider]);
+
+    useEffect(() => {
+        if (!isPositionsProvider || accountId === '') {
+            return;
+        }
+
+        const account = accounts.find((item) => String(item.id) === accountId);
+
+        if (account && account.type !== 'invest') {
+            setAccountId('');
+        }
+    }, [isPositionsProvider, accountId, accounts]);
 
     const duplicateCount = useMemo(() => {
         if (!batch?.preview_rows) {
@@ -236,7 +281,7 @@ export default function ImportWizard({
                                         />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {accounts.map((account) => (
+                                        {eligibleAccounts.map((account) => (
                                             <SelectItem
                                                 key={account.id}
                                                 value={String(account.id)}
@@ -312,7 +357,9 @@ export default function ImportWizard({
 
                 {step === 'review' && batch ? (
                     <GlassPanel className="space-y-4 p-6">
-                        <AccountBalanceSummary batch={batch} variant="before" />
+                        {!batch.is_positions_import ? (
+                            <AccountBalanceSummary batch={batch} variant="before" />
+                        ) : null}
                         <div className="flex flex-wrap gap-3 text-sm">
                             {batch.error_count > 0 ? (
                                 <span className="text-destructive">
@@ -333,6 +380,7 @@ export default function ImportWizard({
                         <PreviewTable
                             rows={batch.preview_rows}
                             decisions={decisions}
+                            isPositionsImport={batch.is_positions_import}
                             showBalance={batch.maps_balance}
                             onDecisionChange={updateDecision}
                         />
@@ -355,12 +403,18 @@ export default function ImportWizard({
 
                 {step === 'done' && batch ? (
                     <GlassPanel className="space-y-4 p-6">
-                        <AccountBalanceSummary batch={batch} variant="after" />
+                        {!batch.is_positions_import ? (
+                            <AccountBalanceSummary batch={batch} variant="after" />
+                        ) : null}
                         <ul className="text-muted-foreground space-y-2 text-sm">
                             <li>
-                                {t('import.summary_imported', {
-                                    count: batch.imported_count,
-                                })}
+                                {batch.is_positions_import
+                                    ? t('import.summary_positions_imported', {
+                                          count: batch.imported_count,
+                                      })
+                                    : t('import.summary_imported', {
+                                          count: batch.imported_count,
+                                      })}
                             </li>
                             <li>
                                 {t('import.summary_skipped', {
@@ -464,19 +518,165 @@ function StepIndicator({ step }: { step: Step }) {
 function PreviewTable({
     rows,
     decisions,
+    isPositionsImport,
     showBalance,
     onDecisionChange,
 }: {
     rows: ImportPreviewRow[];
     decisions: Record<number, ImportDuplicateAction>;
+    isPositionsImport: boolean;
     showBalance: boolean;
     onDecisionChange: (line: number, action: ImportDuplicateAction) => void;
 }) {
     const { t } = useTranslation();
+    const [page, setPage] = useState(1);
+
+    const totalRows = rows.length;
+    const lastPage = Math.max(1, Math.ceil(totalRows / PREVIEW_PAGE_SIZE));
+
+    useEffect(() => {
+        setPage(1);
+    }, [rows]);
+
+    useEffect(() => {
+        if (page > lastPage) {
+            setPage(lastPage);
+        }
+    }, [page, lastPage]);
+
+    const pageRows = useMemo(() => {
+        const start = (page - 1) * PREVIEW_PAGE_SIZE;
+
+        return rows.slice(start, start + PREVIEW_PAGE_SIZE);
+    }, [rows, page]);
+
+    const paginationFrom =
+        totalRows === 0 ? 0 : (page - 1) * PREVIEW_PAGE_SIZE + 1;
+    const paginationTo = Math.min(page * PREVIEW_PAGE_SIZE, totalRows);
+    const showPagination = totalRows > PREVIEW_PAGE_SIZE;
+
+    const paginationFooter = showPagination ? (
+        <PreviewPaginationFooter
+            from={paginationFrom}
+            to={paginationTo}
+            total={totalRows}
+            page={page}
+            lastPage={lastPage}
+            onPageChange={setPage}
+        />
+    ) : null;
+
+    if (isPositionsImport) {
+        const errorColSpan = 6;
+
+        return (
+            <div className="space-y-3">
+                {paginationFooter}
+                <div className="overflow-x-auto rounded-lg border border-white/10">
+                <table className="w-full min-w-[720px] text-left text-sm">
+                    <thead className="text-muted-foreground border-b border-white/10 text-xs uppercase">
+                        <tr>
+                            <th className="px-3 py-2">{t('import.line')}</th>
+                            <th className="px-3 py-2">{t('import.column_label')}</th>
+                            <th className="px-3 py-2">{t('import.column_isin')}</th>
+                            <th className="px-3 py-2 text-right">
+                                {t('import.column_quantity')}
+                            </th>
+                            <th className="px-3 py-2 text-right">
+                                {t('import.column_market_value')}
+                            </th>
+                            <th className="px-3 py-2">{t('import.duplicate')}</th>
+                            <th className="px-3 py-2">
+                                {t('import.duplicate_action')}
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {pageRows.map((row) => (
+                            <tr
+                                key={row.line}
+                                className={cn(
+                                    'border-b border-white/5',
+                                    row.status === 'error' && 'bg-destructive/10',
+                                    row.is_duplicate && 'bg-amber-500/10',
+                                )}
+                            >
+                                <td className="px-3 py-2 font-mono text-xs">
+                                    {row.line}
+                                </td>
+                                {row.status === 'error' ? (
+                                    <td
+                                        colSpan={errorColSpan}
+                                        className="text-destructive px-3 py-2 text-xs"
+                                    >
+                                        {row.error}
+                                    </td>
+                                ) : isPositionPreviewRow(row) ? (
+                                    <>
+                                        <td className="px-3 py-2">{row.label}</td>
+                                        <td className="px-3 py-2 font-mono text-xs uppercase">
+                                            {row.isin}
+                                        </td>
+                                        <td className="px-3 py-2 text-right tabular-nums">
+                                            {row.quantity}
+                                        </td>
+                                        <td className="px-3 py-2 text-right font-mono">
+                                            {formatCurrency(row.market_value ?? 0, {
+                                                precise: true,
+                                            })}
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            {row.is_duplicate ? '✓' : '—'}
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            {row.is_duplicate ? (
+                                                <Select
+                                                    value={
+                                                        decisions[row.line] ?? 'skip'
+                                                    }
+                                                    onValueChange={(value) =>
+                                                        onDecisionChange(
+                                                            row.line,
+                                                            value as ImportDuplicateAction,
+                                                        )
+                                                    }
+                                                >
+                                                    <SelectTrigger className="h-8">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="skip">
+                                                            {t('import.action_skip')}
+                                                        </SelectItem>
+                                                        <SelectItem value="import">
+                                                            {t('import.action_import')}
+                                                        </SelectItem>
+                                                        <SelectItem value="replace">
+                                                            {t('import.action_replace')}
+                                                        </SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            ) : (
+                                                '—'
+                                            )}
+                                        </td>
+                                    </>
+                                ) : null}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+                </div>
+            </div>
+        );
+    }
+
     const errorColSpan = showBalance ? 6 : 5;
 
     return (
-        <div className="overflow-x-auto rounded-lg border border-white/10">
+        <div className="space-y-3">
+            {paginationFooter}
+            <div className="overflow-x-auto rounded-lg border border-white/10">
             <table className="w-full min-w-[640px] text-left text-sm">
                 <thead className="text-muted-foreground border-b border-white/10 text-xs uppercase">
                     <tr>
@@ -498,7 +698,7 @@ function PreviewTable({
                     </tr>
                 </thead>
                 <tbody>
-                    {rows.map((row) => (
+                    {pageRows.map((row) => (
                         <tr
                             key={row.line}
                             className={cn(
@@ -517,7 +717,7 @@ function PreviewTable({
                                 >
                                     {row.error}
                                 </td>
-                            ) : (
+                            ) : isTransactionPreviewRow(row) ? (
                                 <>
                                     <td className="px-3 py-2">{row.date}</td>
                                     <td className="px-3 py-2">{row.label}</td>
@@ -542,8 +742,7 @@ function PreviewTable({
                                         {row.is_duplicate ? (
                                             <Select
                                                 value={
-                                                    decisions[row.line] ??
-                                                    'skip'
+                                                    decisions[row.line] ?? 'skip'
                                                 }
                                                 onValueChange={(value) =>
                                                     onDecisionChange(
@@ -557,19 +756,13 @@ function PreviewTable({
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="skip">
-                                                        {t(
-                                                            'import.action_skip',
-                                                        )}
+                                                        {t('import.action_skip')}
                                                     </SelectItem>
                                                     <SelectItem value="import">
-                                                        {t(
-                                                            'import.action_import',
-                                                        )}
+                                                        {t('import.action_import')}
                                                     </SelectItem>
                                                     <SelectItem value="replace">
-                                                        {t(
-                                                            'import.action_replace',
-                                                        )}
+                                                        {t('import.action_replace')}
                                                     </SelectItem>
                                                 </SelectContent>
                                             </Select>
@@ -578,11 +771,74 @@ function PreviewTable({
                                         )}
                                     </td>
                                 </>
-                            )}
+                            ) : null}
                         </tr>
                     ))}
                 </tbody>
             </table>
+            </div>
+        </div>
+    );
+}
+
+function PreviewPaginationFooter({
+    from,
+    to,
+    total,
+    page,
+    lastPage,
+    onPageChange,
+}: {
+    from: number;
+    to: number;
+    total: number;
+    page: number;
+    lastPage: number;
+    onPageChange: (page: number) => void;
+}) {
+    const { t } = useTranslation();
+
+    return (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-muted-foreground text-sm">
+                {t('accounts.transactions_list.pagination_summary', {
+                    from,
+                    to,
+                    total,
+                })}
+            </p>
+            <div className="flex items-center gap-2">
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    disabled={page <= 1}
+                    onClick={() => onPageChange(page - 1)}
+                >
+                    <ChevronLeft className="size-4" />
+                    <span className="sr-only">
+                        {t('accounts.transactions_list.previous')}
+                    </span>
+                </Button>
+                <span className="text-muted-foreground text-sm tabular-nums">
+                    {t('accounts.transactions_list.page_of', {
+                        page,
+                        last: lastPage,
+                    })}
+                </span>
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    disabled={page >= lastPage}
+                    onClick={() => onPageChange(page + 1)}
+                >
+                    <ChevronRight className="size-4" />
+                    <span className="sr-only">
+                        {t('accounts.transactions_list.next')}
+                    </span>
+                </Button>
+            </div>
         </div>
     );
 }

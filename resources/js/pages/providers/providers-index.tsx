@@ -73,6 +73,9 @@ export default function ProvidersIndex({ providers }: ProvidersIndexPageProps) {
                                             {t('providers.name')}
                                         </th>
                                         <th className="px-4 py-3 font-medium">
+                                            {t('providers.import_type_label')}
+                                        </th>
+                                        <th className="px-4 py-3 font-medium">
                                             {t('providers.default_account')}
                                         </th>
                                         <th className="px-4 py-3 font-medium">
@@ -97,6 +100,11 @@ export default function ProvidersIndex({ providers }: ProvidersIndexPageProps) {
                                                     />
                                                     <span>{provider.name}</span>
                                                 </div>
+                                            </td>
+                                            <td className="text-muted-foreground px-4 py-3">
+                                                {provider.import_type === 'positions'
+                                                    ? t('providers.import_type_positions')
+                                                    : t('providers.import_type_transactions')}
                                             </td>
                                             <td className="text-muted-foreground px-4 py-3">
                                                 {provider.default_account_name ?? '—'}

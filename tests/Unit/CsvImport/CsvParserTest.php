@@ -42,6 +42,37 @@ class CsvParserTest extends TestCase
     }
 
     #[Test]
+    public function it_repairs_invalid_utf8_bytes_when_encoding_is_utf8(): void
+    {
+        $parser = new CsvParser;
+        $content = "Label;Amount\nCaf\xE9;-3,50\n";
+
+        $table = $parser->parse($content, [
+            'delimiter' => ';',
+            'encoding' => 'UTF-8',
+            'skip_rows' => 1,
+        ]);
+
+        $this->assertSame('Café', $table->rows[0]->cells[0]);
+        $this->assertTrue(mb_check_encoding($table->rows[0]->cells[0], 'UTF-8'));
+    }
+
+    #[Test]
+    public function it_converts_windows_1252_content(): void
+    {
+        $parser = new CsvParser;
+        $raw = iconv('UTF-8', 'Windows-1252', "Société;10\n");
+        $this->assertNotFalse($raw);
+
+        $table = $parser->parse($raw, [
+            'delimiter' => ';',
+            'encoding' => 'Windows-1252',
+        ]);
+
+        $this->assertSame('Société', $table->rows[0]->cells[0]);
+    }
+
+    #[Test]
     public function it_rejects_files_that_exceed_row_limit(): void
     {
         $parser = new CsvParser;

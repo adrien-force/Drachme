@@ -8,6 +8,8 @@ use App\Http\Controllers\CategoryRuleController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\ImportProviderController;
+use App\Http\Controllers\InvestmentsController;
+use App\Http\Controllers\PositionController;
 use App\Http\Controllers\ShellPlaceholderController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\RecurringController;
@@ -32,6 +34,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('accounts/{account}/edit', [AccountController::class, 'edit'])->name('accounts.edit');
     Route::put('accounts/{account}', [AccountController::class, 'update'])->name('accounts.update');
     Route::delete('accounts/{account}', [AccountController::class, 'destroy'])->name('accounts.destroy');
+    Route::get('accounts/{account}/positions', [PositionController::class, 'index'])->name('positions.index');
+    Route::post('accounts/{account}/positions', [PositionController::class, 'store'])->name('positions.store');
+    Route::put('accounts/{account}/positions/{position}', [PositionController::class, 'update'])->name('positions.update');
+    Route::delete('accounts/{account}/positions/{position}', [PositionController::class, 'destroy'])->name('positions.destroy');
     Route::get('transactions', [TransactionController::class, 'index'])->name('transactions.index');
     Route::get('transactions/create', [TransactionController::class, 'create'])->name('transactions.create');
     Route::post('transactions', [TransactionController::class, 'store'])->name('transactions.store');
@@ -81,7 +87,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('import/{importBatch}/parse', [ImportController::class, 'parse'])->name('import.parse');
     Route::post('import/{importBatch}/commit', [ImportController::class, 'commit'])->name('import.commit');
     Route::delete('import/{importBatch}', [ImportController::class, 'destroy'])->name('import.destroy');
-    Route::get('investments', [ShellPlaceholderController::class, 'investments'])->name('investments.index');
+    Route::get('investments', [InvestmentsController::class, 'index'])->name('investments.index');
+    Route::delete('investments/snapshots/{portfolioSnapshot}', [InvestmentsController::class, 'destroySnapshot'])
+        ->name('investments.snapshots.destroy');
 });
 
 require __DIR__.'/settings.php';

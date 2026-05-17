@@ -21,6 +21,8 @@ export type AccountRecord = {
     type: AccountType;
     initial_balance: number;
     current_balance: number;
+    /** Sum of transaction amounts (current_balance − initial_balance). */
+    transactions_net?: number;
     currency: string;
     opened_at: string | null;
     is_archived: boolean;

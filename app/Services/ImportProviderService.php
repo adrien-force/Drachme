@@ -6,7 +6,10 @@ namespace App\Services;
 
 use App\Data\NormalizedRow;
 use App\Enums\ImportColumnField;
+use App\Enums\ImportPositionColumnField;
+use App\Enums\ImportProviderType;
 use App\Models\ImportProvider;
+use App\Support\Isin;
 use App\Models\User;
 use App\Support\DateFormatDetector;
 use App\Support\ImportRowError;
@@ -29,7 +32,7 @@ class ImportProviderService
             'delimiter' => ';',
             'enclosure' => '"',
             'encoding' => 'UTF-8',
-            'skip_rows' => 0,
+            'skip_rows' => 1,
             'date_format' => 'd/m/Y',
         ];
     }
@@ -38,6 +41,7 @@ class ImportProviderService
      * @param  array{
      *     name: string,
      *     default_account_id?: int|null,
+     *     import_type?: string|ImportProviderType,
      *     column_mapping: array<string, mixed>,
      *     csv_options?: array<string, mixed>|null,
      * }  $data
@@ -48,6 +52,7 @@ class ImportProviderService
             'user_id' => $user->id,
             'name' => $data['name'],
             'default_account_id' => $data['default_account_id'] ?? null,
+            'import_type' => $this->resolveImportType($data['import_type'] ?? null),
             'column_mapping' => $data['column_mapping'],
             'csv_options' => $this->mergeCsvOptions($data['csv_options'] ?? null),
         ]);
@@ -57,6 +62,7 @@ class ImportProviderService
      * @param  array{
      *     name: string,
      *     default_account_id?: int|null,
+     *     import_type?: string|ImportProviderType,
      *     column_mapping: array<string, mixed>,
      *     csv_options?: array<string, mixed>|null,
      * }  $data
@@ -66,6 +72,7 @@ class ImportProviderService
         $provider->fill([
             'name' => $data['name'],
             'default_account_id' => $data['default_account_id'] ?? null,
+            'import_type' => $this->resolveImportType($data['import_type'] ?? $provider->import_type),
             'column_mapping' => $data['column_mapping'],
             'csv_options' => $this->mergeCsvOptions($data['csv_options'] ?? $this->resolvedCsvOptions($provider)),
         ]);
@@ -118,6 +125,133 @@ class ImportProviderService
         }
 
         return $preview;
+    }
+
+    /**
+     * @param  list<list<string|null>>  $sampleRows
+     * @param  array<string, mixed>  $columnMapping
+     * @param  array<string, mixed>  $csvOptions
+     * @return list<array<string, mixed>>
+     */
+    public function previewPositionRows(array $sampleRows, array $columnMapping, array $csvOptions): array
+    {
+        $provider = new ImportProvider([
+            'import_type' => ImportProviderType::Positions,
+            'column_mapping' => $columnMapping,
+            'csv_options' => $this->mergeCsvOptions($csvOptions),
+        ]);
+
+        $preview = [];
+        $skipRows = (int) Arr::get($this->mergeCsvOptions($csvOptions), 'skip_rows', 0);
+
+        foreach (array_slice($sampleRows, 0, 10) as $index => $raw) {
+            $lineNumber = $skipRows + $index + 1;
+
+            try {
+                $normalized = $this->normalizePositionRow($raw, $provider);
+                $unitPrice = $normalized['last_price'] ?? $normalized['average_price'];
+                $quantity = (float) $normalized['quantity'];
+
+                $preview[] = [
+                    'line' => $lineNumber,
+                    'label' => $normalized['label'],
+                    'isin' => $normalized['isin'],
+                    'quantity' => $quantity,
+                    'average_price' => (float) $normalized['average_price'],
+                    'last_price' => $normalized['last_price'] !== null
+                        ? (float) $normalized['last_price']
+                        : null,
+                    'market_value' => $quantity * (float) $unitPrice,
+                ];
+            } catch (\Throwable $exception) {
+                $preview[] = [
+                    'line' => $lineNumber,
+                    'error' => ImportRowError::wrapLine($lineNumber, $exception->getMessage()),
+                ];
+            }
+        }
+
+        return $preview;
+    }
+
+    /**
+     * @param  list<string|null>  $raw
+     * @return array{
+     *     label: string,
+     *     isin: string,
+     *     quantity: string,
+     *     average_price: string,
+     *     last_price: string|null,
+     * }
+     */
+    public function normalizePositionRow(array $raw, ImportProvider $provider): array
+    {
+        $fields = $this->extractFields($raw, $provider);
+
+        if (! array_key_exists(ImportPositionColumnField::Isin->value, $fields)) {
+            throw new InvalidArgumentException(
+                ImportRowError::positionFieldNotMapped(ImportPositionColumnField::Isin),
+            );
+        }
+
+        if (! array_key_exists(ImportPositionColumnField::Quantity->value, $fields)) {
+            throw new InvalidArgumentException(
+                ImportRowError::positionFieldNotMapped(ImportPositionColumnField::Quantity),
+            );
+        }
+
+        $isinRaw = trim($fields[ImportPositionColumnField::Isin->value]);
+
+        if ($isinRaw === '') {
+            throw new InvalidArgumentException(ImportRowError::positionIsinEmpty());
+        }
+
+        if (! Isin::isValid($isinRaw)) {
+            throw new InvalidArgumentException(ImportRowError::positionIsinInvalid($isinRaw));
+        }
+
+        $quantityRaw = trim($fields[ImportPositionColumnField::Quantity->value]);
+
+        if ($quantityRaw === '' || ! $this->looksLikeAmount($quantityRaw)) {
+            throw new InvalidArgumentException(ImportRowError::positionQuantityInvalid($quantityRaw));
+        }
+
+        $quantity = $this->parseUnsignedNumber($quantityRaw);
+
+        if ($quantity <= 0) {
+            throw new InvalidArgumentException(ImportRowError::positionQuantityInvalid($quantityRaw));
+        }
+
+        $averagePrice = $this->resolvePositionPrice(
+            $fields,
+            ImportPositionColumnField::AveragePrice,
+        );
+        $lastPrice = $this->resolveOptionalPositionPrice(
+            $fields,
+            ImportPositionColumnField::LastPrice,
+        );
+
+        if ($averagePrice === null && $lastPrice === null) {
+            throw new InvalidArgumentException(ImportRowError::positionPriceMissing());
+        }
+
+        $label = array_key_exists(ImportPositionColumnField::PositionLabel->value, $fields)
+            ? trim($fields[ImportPositionColumnField::PositionLabel->value])
+            : '';
+
+        if ($label === '') {
+            $label = Isin::normalize($isinRaw);
+        }
+
+        return [
+            'label' => $label,
+            'isin' => Isin::normalize($isinRaw),
+            'quantity' => number_format($quantity, 6, '.', ''),
+            'average_price' => number_format($averagePrice ?? $lastPrice ?? 0.0, 6, '.', ''),
+            'last_price' => $lastPrice !== null
+                ? number_format($lastPrice, 6, '.', '')
+                : null,
+        ];
     }
 
     /**
@@ -307,5 +441,47 @@ class ImportProviderService
         }
 
         return $this->signedAmounts->parse($rawBalance);
+    }
+
+    /**
+     * @param  array<string, string>  $fields
+     */
+    private function resolvePositionPrice(array $fields, ImportPositionColumnField $field): ?float
+    {
+        if (! array_key_exists($field->value, $fields)) {
+            return null;
+        }
+
+        $raw = trim($fields[$field->value]);
+
+        if ($raw === '' || ! $this->looksLikeAmount($raw)) {
+            return null;
+        }
+
+        return $this->parseUnsignedNumber($raw);
+    }
+
+    /**
+     * @param  array<string, string>  $fields
+     */
+    private function resolveOptionalPositionPrice(array $fields, ImportPositionColumnField $field): ?float
+    {
+        return $this->resolvePositionPrice($fields, $field);
+    }
+
+    private function resolveImportType(mixed $importType): ImportProviderType
+    {
+        if ($importType instanceof ImportProviderType) {
+            return $importType;
+        }
+
+        if (is_string($importType)) {
+            $resolved = ImportProviderType::tryFrom($importType);
+            if ($resolved !== null) {
+                return $resolved;
+            }
+        }
+
+        return ImportProviderType::Transactions;
     }
 }

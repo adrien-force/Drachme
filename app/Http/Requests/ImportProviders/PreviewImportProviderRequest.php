@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\ImportProviders;
 
+use App\Enums\ImportProviderType;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class PreviewImportProviderRequest extends FormRequest
 {
@@ -24,6 +26,7 @@ class PreviewImportProviderRequest extends FormRequest
             'sample_rows.*' => ['array'],
             'column_mapping' => ['required', 'array'],
             'column_mapping.columns' => ['required', 'array', 'min:1'],
+            'import_type' => ['required', Rule::enum(ImportProviderType::class)],
             'csv_options' => ['nullable', 'array'],
         ];
     }

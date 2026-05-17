@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
+ * @property AccountType $type
  * @property string|null $logo_path
  * @property \Illuminate\Support\Carbon|string|null $transactions_max_date
  */
@@ -63,5 +64,13 @@ class Account extends Model
     public function transactions(): HasMany
     {
         return $this->hasMany(Transaction::class);
+    }
+
+    /**
+     * @return HasMany<Position, $this>
+     */
+    public function positions(): HasMany
+    {
+        return $this->hasMany(Position::class);
     }
 }

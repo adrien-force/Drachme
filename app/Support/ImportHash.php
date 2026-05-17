@@ -19,4 +19,10 @@ final class ImportHash
 
         return hash('sha256', "{$accountId}|{$date->format('Y-m-d')}|{$amountKey}|{$normalizedLabel}");
     }
+
+    /** Unique 64-char hash when the base hash collides (same file or import-anyway). */
+    public static function disambiguate(string $baseHash, int $batchId, int $line): string
+    {
+        return hash('sha256', "{$baseHash}|{$batchId}|{$line}");
+    }
 }

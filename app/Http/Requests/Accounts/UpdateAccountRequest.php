@@ -28,6 +28,7 @@ class UpdateAccountRequest extends FormRequest
             'institution' => ['nullable', 'string', 'max:255'],
             'type' => ['required', Rule::enum(AccountType::class)],
             'opened_at' => ['nullable', 'date'],
+            'actual_balance' => ['nullable', 'numeric'],
             ...$this->entityLogoRules(),
         ];
     }
