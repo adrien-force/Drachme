@@ -8,6 +8,9 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
+import { CategoryBadge } from '@/components/categories/category-badge';
+import { CategoryFilterSelect } from '@/components/categories/category-select';
+import { ApplyCategoryRulesButton } from '@/components/transactions/apply-category-rules-button';
 import { TransactionTypeBadge } from '@/components/transactions/transaction-type-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +25,7 @@ import {
 import { useTranslation } from '@/hooks/use-translation';
 import { buildAccountShowQuery } from '@/lib/account-show-query';
 import { formatCurrency } from '@/lib/format-currency';
+import { accountTransactionEditUrl } from '@/lib/transaction-edit-url';
 import { cn } from '@/lib/utils';
 import type {
     AccountBalanceHistory,
@@ -30,6 +34,7 @@ import type {
     SortOrder,
     TransactionSortColumn,
 } from '@/types/account.types';
+import type { CategorySelectOption } from '@/types/category.types';
 import type { TransactionTypeOption } from '@/types/transaction.types';
 
 const ALL_VALUE = '__all__';
@@ -39,8 +44,10 @@ type AccountTransactionsPanelProps = {
     transactions: PaginatedTransactions;
     transactionFilters: AccountTransactionFilters;
     transactionTypeOptions: TransactionTypeOption[];
+    categoryOptions: CategorySelectOption[];
     perPageOptions: number[];
     balanceHistory: AccountBalanceHistory;
+    uncategorizedCount: number;
 };
 
 function SortIcon({
@@ -68,8 +75,10 @@ export function AccountTransactionsPanel({
     transactions,
     transactionFilters,
     transactionTypeOptions,
+    categoryOptions,
     perPageOptions,
     balanceHistory,
+    uncategorizedCount,
 }: AccountTransactionsPanelProps) {
     const { t } = useTranslation();
     const [search, setSearch] = useState(transactionFilters.search);
@@ -123,7 +132,8 @@ export function AccountTransactionsPanel({
         transactionFilters.date_from !== null ||
         transactionFilters.date_to !== null ||
         transactionFilters.type !== null ||
-        transactionFilters.flow !== null;
+        transactionFilters.flow !== null ||
+        transactionFilters.category_id !== null;
 
     const { meta } = transactions;
 
@@ -238,6 +248,22 @@ export function AccountTransactionsPanel({
                 </div>
 
                 <div className="space-y-1.5">
+                    <Label>{t('transactions.category')}</Label>
+                    <CategoryFilterSelect
+                        value={transactionFilters.category_id}
+                        onChange={(category_id) =>
+                            navigate({
+                                category_id,
+                                page: 1,
+                            })
+                        }
+                        options={categoryOptions}
+                        allLabel={t('accounts.transactions_list.filter_all')}
+                        uncategorizedLabel={t('transactions.category_none')}
+                    />
+                </div>
+
+                <div className="space-y-1.5">
                     <Label>{t('accounts.transactions_list.flow')}</Label>
                     <Select
                         value={transactionFilters.flow ?? ALL_VALUE}
@@ -268,8 +294,12 @@ export function AccountTransactionsPanel({
                     </Select>
                 </div>
 
-                {hasActiveFilters ? (
-                    <div className="flex items-end">
+                <div className="flex flex-wrap items-end gap-2">
+                    <ApplyCategoryRulesButton
+                        uncategorizedCount={uncategorizedCount}
+                        accountId={accountId}
+                    />
+                    {hasActiveFilters ? (
                         <Button
                             type="button"
                             variant="outline"
@@ -281,14 +311,15 @@ export function AccountTransactionsPanel({
                                     date_to: null,
                                     type: null,
                                     flow: null,
+                                    category_id: null,
                                     page: 1,
                                 })
                             }
                         >
                             {t('accounts.transactions_list.reset_filters')}
                         </Button>
-                    </div>
-                ) : null}
+                    ) : null}
+                </div>
             </div>
 
             {transactions.data.length === 0 ? (
@@ -345,6 +376,20 @@ export function AccountTransactionsPanel({
                                             />
                                         </button>
                                     </th>
+                                    <th className="px-3 py-2 text-left">
+                                        <button
+                                            type="button"
+                                            className="hover:text-foreground inline-flex items-center font-medium uppercase"
+                                            onClick={() => handleSort('category')}
+                                        >
+                                            {t('transactions.category')}
+                                            <SortIcon
+                                                column="category"
+                                                sort={transactionFilters.sort}
+                                                order={transactionFilters.order}
+                                            />
+                                        </button>
+                                    </th>
                                     <th className="px-3 py-2 text-right">
                                         <button
                                             type="button"
@@ -374,7 +419,13 @@ export function AccountTransactionsPanel({
                                         </td>
                                         <td className="px-3 py-2">
                                             <Link
-                                                href={`/transactions/${transaction.id}/edit`}
+                                                href={accountTransactionEditUrl(
+                                                    accountId,
+                                                    transaction.id,
+                                                    balanceHistory,
+                                                    transactionFilters,
+                                                )}
+                                                preserveScroll
                                                 className="hover:underline"
                                             >
                                                 {transaction.label}
@@ -382,6 +433,18 @@ export function AccountTransactionsPanel({
                                         </td>
                                         <td className="px-3 py-2">
                                             <TransactionTypeBadge type={transaction.type} />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            {transaction.category_name ? (
+                                                <CategoryBadge
+                                                    name={transaction.category_name}
+                                                    color={transaction.category_color}
+                                                />
+                                            ) : (
+                                                <span className="text-muted-foreground text-xs">
+                                                    {t('transactions.category_none')}
+                                                </span>
+                                            )}
                                         </td>
                                         <td className="px-3 py-2 text-right font-mono tabular-nums">
                                             {formatCurrency(transaction.amount, {

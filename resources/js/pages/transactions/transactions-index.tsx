@@ -1,19 +1,45 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
 
+import { CategoryBadge } from '@/components/categories/category-badge';
+import { CategoryFilterSelect } from '@/components/categories/category-select';
 import { EntityLogo } from '@/components/entity-logo';
 import { FadeIn } from '@/components/motion/fade-in';
 import { GlassPanel } from '@/components/glass-panel';
+import { ApplyCategoryRulesButton } from '@/components/transactions/apply-category-rules-button';
+import { TransactionEditModal } from '@/components/transactions/transaction-edit-modal';
 import { TransactionTypeBadge } from '@/components/transactions/transaction-type-badge';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatCurrency } from '@/lib/format-currency';
+import { transactionsIndexEditUrl } from '@/lib/transaction-edit-url';
 import type { TransactionsIndexPageProps } from '@/types/transaction.types';
 
 export default function TransactionsIndex({
     transactions,
+    categoryOptions,
+    filters,
+    transactionEdit,
+    uncategorizedCount,
 }: TransactionsIndexPageProps) {
     const { t } = useTranslation();
+
+    const closeTransactionEdit = () => {
+        router.get(
+            '/transactions',
+            filters.category_id ? { category_id: filters.category_id } : {},
+            { preserveScroll: true, replace: true },
+        );
+    };
+
+    const applyCategoryFilter = (categoryId: string | null) => {
+        router.get(
+            '/transactions',
+            categoryId ? { category_id: categoryId } : {},
+            { preserveState: true, preserveScroll: true },
+        );
+    };
 
     return (
         <>
@@ -37,6 +63,24 @@ export default function TransactionsIndex({
                     </Button>
                 </div>
 
+                <FadeIn>
+                    <GlassPanel className="flex flex-col gap-3 p-4 sm:flex-row sm:flex-wrap sm:items-end">
+                        <div className="min-w-[220px] flex-1 space-y-1.5">
+                            <Label>{t('transactions.filter_category')}</Label>
+                            <CategoryFilterSelect
+                                value={filters.category_id}
+                                onChange={applyCategoryFilter}
+                                options={categoryOptions}
+                                allLabel={t('accounts.transactions_list.filter_all')}
+                                uncategorizedLabel={t('transactions.category_none')}
+                            />
+                        </div>
+                        <ApplyCategoryRulesButton
+                            uncategorizedCount={uncategorizedCount}
+                        />
+                    </GlassPanel>
+                </FadeIn>
+
                 {transactions.length === 0 ? (
                     <FadeIn>
                         <GlassPanel className="p-8 text-center">
@@ -48,7 +92,7 @@ export default function TransactionsIndex({
                 ) : (
                     <FadeIn>
                         <GlassPanel className="overflow-x-auto p-0">
-                            <table className="w-full min-w-[720px] text-sm">
+                            <table className="w-full min-w-[800px] text-sm">
                                 <thead>
                                     <tr className="text-muted-foreground border-border/60 border-b text-left text-xs uppercase tracking-wide">
                                         <th className="px-4 py-3 font-medium">
@@ -62,6 +106,9 @@ export default function TransactionsIndex({
                                         </th>
                                         <th className="px-4 py-3 font-medium">
                                             {t('transactions.type')}
+                                        </th>
+                                        <th className="px-4 py-3 font-medium">
+                                            {t('transactions.category')}
                                         </th>
                                         <th className="px-4 py-3 text-right font-medium">
                                             {t('transactions.amount')}
@@ -97,7 +144,11 @@ export default function TransactionsIndex({
                                             </td>
                                             <td className="px-4 py-3">
                                                 <Link
-                                                    href={`/transactions/${transaction.id}/edit`}
+                                                    href={transactionsIndexEditUrl(
+                                                        transaction.id,
+                                                        filters,
+                                                    )}
+                                                    preserveScroll
                                                     className="font-medium hover:underline"
                                                 >
                                                     {transaction.label}
@@ -107,6 +158,20 @@ export default function TransactionsIndex({
                                                 <TransactionTypeBadge
                                                     type={transaction.type}
                                                 />
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                {transaction.category_name ? (
+                                                    <CategoryBadge
+                                                        name={transaction.category_name}
+                                                        color={
+                                                            transaction.category_color
+                                                        }
+                                                    />
+                                                ) : (
+                                                    <span className="text-muted-foreground text-xs">
+                                                        {t('transactions.category_none')}
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="px-4 py-3 text-right font-mono tabular-nums">
                                                 {formatCurrency(transaction.amount, {
@@ -121,6 +186,13 @@ export default function TransactionsIndex({
                     </FadeIn>
                 )}
             </div>
+            {transactionEdit?.transaction ? (
+                <TransactionEditModal
+                    open
+                    onClose={closeTransactionEdit}
+                    {...transactionEdit}
+                />
+            ) : null}
         </>
     );
 }

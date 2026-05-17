@@ -6,6 +6,8 @@ declare(strict_types=1);
 namespace App\Support;
 
 use App\Models\User;
+use Illuminate\Http\Request;
+use JsonException;
 
 class ThemeColors
 {
@@ -72,7 +74,76 @@ class ThemeColors
             '--chart-secondary' => $colors['chart_secondary'],
             '--chart-1' => $colors['chart_net_worth'],
             '--chart-2' => $colors['chart_expense'],
+            '--chart-3' => $colors['chart_secondary'],
+            '--destructive' => $colors['chart_expense'],
         ];
+    }
+
+    /**
+     * Resolve theme colors for the current HTTP request (user DB + cookie fallback).
+     *
+     * @return array<string, string>
+     */
+    public static function resolveForRequest(Request $request): array
+    {
+        $user = $request->user();
+
+        if ($user !== null && is_array($user->theme_colors)) {
+            return self::resolve($user);
+        }
+
+        return self::mergeCookieColors(
+            self::resolve($user),
+            $request->cookie('drachme_theme_colors'),
+        );
+    }
+
+    /**
+     * @param  array<string, string>  $colors
+     * @return array<string, string>
+     */
+    private static function mergeCookieColors(array $colors, mixed $cookie): array
+    {
+        if (! is_string($cookie) || $cookie === '') {
+            return $colors;
+        }
+
+        try {
+            $decoded = json_decode($cookie, true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            return $colors;
+        }
+
+        if (! is_array($decoded)) {
+            return $colors;
+        }
+
+        foreach (self::KEYS as $key) {
+            if (! isset($decoded[$key]) || ! is_string($decoded[$key])) {
+                continue;
+            }
+
+            if (self::isValidHex($decoded[$key])) {
+                $colors[$key] = strtolower($decoded[$key]);
+            }
+        }
+
+        return $colors;
+    }
+
+    /**
+     * Inline CSS declarations for html.dark (SSR first paint).
+     *
+     * @param  array<string, string>  $colors
+     */
+    public static function inlineStyleDeclarations(array $colors): string
+    {
+        $declarations = [];
+        foreach (self::cssVariables($colors) as $property => $value) {
+            $declarations[] = "{$property}: {$value};";
+        }
+
+        return implode("\n                ", $declarations);
     }
 
     public static function isValidHex(string $color): bool

@@ -65,4 +65,12 @@ class Transaction extends Model
     {
         return $this->belongsTo(Transaction::class, 'transfer_pair_id');
     }
+
+    /**
+     * @return BelongsTo<Category, $this>
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
+    }
 }

@@ -1,0 +1,194 @@
+[
+  {
+    "name": "personal_and_home_essentials",
+    "color": "#CF6AFF",
+    "icon": "home",
+    "subcategories": [
+      {"name": "tobacco", "color": "#CF6AFF", "icon": "smoking"},
+      {"name": "rent", "color": "#CF6AFF", "icon": "home"},
+      {"name": "supplies", "color": "#CF6AFF", "icon": "jug-detergent"},
+      {"name": "personal_care", "color": "#CF6AFF", "icon": "hand-heart"},
+      {"name": "clothing", "color": "#CF6AFF", "icon": "clothes-hanger"},
+      {"name": "education", "color": "#CF6AFF", "icon": "user-graduate"},
+      {"name": "childcare", "color": "#CF6AFF", "icon": "baby"},
+      {"name": "student_housing", "color": "#CF6AFF", "icon": "school"},
+      {"name": "tuition", "color": "#CF6AFF", "icon": "graduation-cap"},
+      {"name": "personal_gifts", "color": "#CF6AFF", "icon": "gifts"},
+      {"name": "pets", "color": "#CF6AFF", "icon": "paw"}
+    ]
+  },
+  {"name": "unknown", "color": "#2E2F33", "icon": "circle-question", "subcategories": []},
+  {
+    "name": "auto_and_transport",
+    "color": "#DEAB5E",
+    "icon": "car",
+    "subcategories": [
+      {"name": "fuel", "color": "#DEAB5E", "icon": "gas-pump"},
+      {"name": "repairs", "color": "#DEAB5E", "icon": "car-wrench"},
+      {"name": "public_transport", "color": "#DEAB5E", "icon": "bus"},
+      {"name": "taxi", "color": "#DEAB5E", "icon": "taxi"},
+      {"name": "parking", "color": "#DEAB5E", "icon": "parking"},
+      {"name": "insurance", "color": "#DEAB5E", "icon": "file-invoice"},
+      {"name": "car_rental", "color": "#DEAB5E", "icon": "car-building"},
+      {"name": "plane_tickets", "color": "#DEAB5E", "icon": "plane"},
+      {"name": "train_tickets", "color": "#DEAB5E", "icon": "train"},
+      {"name": "tolls", "color": "#DEAB5E", "icon": "cars"},
+      {"name": "car_wash", "color": "#DEAB5E", "icon": "car-wash"}
+    ]
+  },
+  {
+    "name": "bills_and_utilities",
+    "color": "#C36B55",
+    "icon": "file-invoice",
+    "subcategories": [
+      {"name": "electricity", "color": "#C36B55", "icon": "bolt"},
+      {"name": "water", "color": "#C36B55", "icon": "droplet"},
+      {"name": "internet", "color": "#C36B55", "icon": "globe"},
+      {"name": "mobile_phone", "color": "#C36B55", "icon": "mobile"},
+      {"name": "heating", "color": "#C36B55", "icon": "heat"},
+      {"name": "trash_and_recycling", "color": "#C36B55", "icon": "phone-office"},
+      {"name": "bills_subscriptions", "color": "#C36B55", "icon": "file-contract"}
+    ]
+  },
+  {
+    "name": "business_and_work",
+    "color": "#726046",
+    "icon": "briefcase",
+    "subcategories": [
+      {"name": "office_supplies", "color": "#726046", "icon": "paperclip"},
+      {"name": "professional_services", "color": "#726046", "icon": "user-tie"},
+      {"name": "business_travel", "color": "#726046", "icon": "briefcase-arrow-right"},
+      {"name": "advertising", "color": "#726046", "icon": "megaphone"},
+      {"name": "freelancing", "color": "#726046", "icon": "business-time"},
+      {"name": "accounting", "color": "#726046", "icon": "calculator-simple"},
+      {"name": "printing", "color": "#726046", "icon": "print"},
+      {"name": "shipping", "color": "#726046", "icon": "truck"},
+      {"name": "salary", "color": "#726046", "icon": "money-bill-wave"},
+      {"name": "marketing", "color": "#726046", "icon": "bullseye-pointer"},
+      {"name": "online_services", "color": "#726046", "icon": "server"},
+      {"name": "legal_assistance", "color": "#726046", "icon": "legal"},
+      {"name": "financial_advising", "color": "#726046", "icon": "building-columns"}
+    ]
+  },
+  {
+    "name": "cash_and_checks",
+    "color": "#EDE1D4",
+    "icon": "money-check",
+    "subcategories": [
+      {"name": "withdrawal", "color": "#EDE1D4", "icon": "money-from-bracket"},
+      {"name": "check_deposit", "color": "#EDE1D4", "icon": "money-check"},
+      {"name": "cash_deposit", "color": "#EDE1D4", "icon": "sack-dollar"}
+    ]
+  },
+  {
+    "name": "food_and_beverage",
+    "color": "#EED7B4",
+    "icon": "burger-soda",
+    "subcategories": [
+      {"name": "groceries", "color": "#EED7B4", "icon": "salad"},
+      {"name": "dining_out", "color": "#EED7B4", "icon": "utensils"},
+      {"name": "fast_food", "color": "#EED7B4", "icon": "burger"},
+      {"name": "alcohol_and_bars", "color": "#EED7B4", "icon": "beer-mug"},
+      {"name": "coffee_shop", "color": "#EED7B4", "icon": "cup-togo"},
+      {"name": "snacks", "color": "#EED7B4", "icon": "cookie-bite"}
+    ]
+  },
+  {
+    "name": "income",
+    "color": "#77CFAC",
+    "icon": "arrow-down",
+    "subcategories": [
+      {"name": "salary_income", "color": "#77CFAC", "icon": "money-bill-wave"},
+      {"name": "bonuses", "color": "#77CFAC", "icon": "circle-dollar-to-slot"},
+      {"name": "investments", "color": "#77CFAC", "icon": "chart-line-up"},
+      {"name": "gift", "color": "#77CFAC", "icon": "gift"},
+      {"name": "rental_income", "color": "#77CFAC", "icon": "building-user"}
+    ]
+  },
+  {
+    "name": "leasure_and_entertainment",
+    "color": "#9E89F2",
+    "icon": "popcorn",
+    "subcategories": [
+      {"name": "movie_and_theater", "color": "#9E89F2", "icon": "masks-theater"},
+      {"name": "sports_and_recreation", "color": "#9E89F2", "icon": "sportsball"},
+      {"name": "hobbies", "color": "#9E89F2", "icon": "palette"},
+      {"name": "subscriptions", "color": "#9E89F2", "icon": "files"},
+      {"name": "vacations", "color": "#9E89F2", "icon": "umbrella-beach"},
+      {"name": "art_and_museum", "color": "#9E89F2", "icon": "building-columns"}
+    ]
+  },
+  {
+    "name": "investment",
+    "color": "#63E095",
+    "icon": "chart-line-up",
+    "subcategories": [
+      {"name": "bonds", "color": "#63E095", "icon": "landmark"},
+      {"name": "stocks", "color": "#63E095", "icon": "chart-candlestick"},
+      {"name": "real_estates", "color": "#63E095", "icon": "house-building"},
+      {"name": "retirement", "color": "#63E095", "icon": "umbrella-beach"},
+      {"name": "cryptos", "color": "#63E095", "icon": "bitcoin-sign"},
+      {"name": "safety_net", "color": "#63E095", "icon": "shield-quartered"}
+    ]
+  },
+  {
+    "name": "healthcare",
+    "color": "#E88079",
+    "icon": "medkit",
+    "subcategories": [
+      {"name": "doctor_visit", "color": "#E88079", "icon": "user-doctor"},
+      {"name": "dentist_visit", "color": "#E88079", "icon": "tooth"},
+      {"name": "medication", "color": "#E88079", "icon": "capsules"},
+      {"name": "health_insurance", "color": "#E88079", "icon": "files-medical"},
+      {"name": "medical_equipment", "color": "#E88079", "icon": "stethoscope"},
+      {"name": "optician", "color": "#E88079", "icon": "eye"}
+    ]
+  },
+  {"name": "loan_payments", "color": "#F17ED2", "icon": "money-check-dollar-pen", "subcategories": []},
+  {
+    "name": "refunds",
+    "color": "#228C83",
+    "icon": "hand-holding-dollar",
+    "subcategories": [
+      {"name": "product_returns", "color": "#228C83", "icon": "box-taped"},
+      {"name": "tax_refunds", "color": "#228C83", "icon": "hand-holding-dollar"},
+      {"name": "warranty_claims", "color": "#228C83", "icon": "wine-glass-crack"},
+      {"name": "insurance_payouts", "color": "#228C83", "icon": "house-crack"}
+    ]
+  },
+  {
+    "name": "taxes",
+    "color": "#FFC2C2",
+    "icon": "bank",
+    "subcategories": [
+      {"name": "income_taxes", "color": "#FFC2C2", "icon": "money-bill-wave"},
+      {"name": "vat", "color": "#FFC2C2", "icon": "coins"},
+      {"name": "property_taxes", "color": "#FFC2C2", "icon": "house-building"},
+      {"name": "capital_gain_taxes", "color": "#FFC2C2", "icon": "arrow-trend-up"},
+      {"name": "business_taxes", "color": "#FFC2C2", "icon": "briefcase"},
+      {"name": "social_contributions", "color": "#FFC2C2", "icon": "users"}
+    ]
+  },
+  {
+    "name": "fees",
+    "color": "#B54053",
+    "icon": "coins",
+    "subcategories": [
+      {"name": "bank_fees", "color": "#B54053", "icon": "building-columns"},
+      {"name": "late_fees", "color": "#B54053", "icon": "clock"},
+      {"name": "service_charge", "color": "#B54053", "icon": "bell-concierge"}
+    ]
+  },
+  {
+    "name": "transfer",
+    "color": "#59BDC5",
+    "icon": "money-bill-transfer",
+    "subcategories": [
+      {"name": "internal_transfer", "color": "#59BDC5", "icon": "money-bill-transfer"},
+      {"name": "external_transfer", "color": "#59BDC5", "icon": "envelope-open-dollar"},
+      {"name": "gifts_transfer", "color": "#59BDC5", "icon": "hand-holding-dollar"},
+      {"name": "bill_payment", "color": "#59BDC5", "icon": "file-invoice"},
+      {"name": "international_transfer", "color": "#59BDC5", "icon": "earth"}
+    ]
+  }
+]

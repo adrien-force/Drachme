@@ -1,3 +1,5 @@
+import type { CategorySelectOption } from '@/types/category.types';
+import type { TransactionsFormPageProps } from '@/types/transaction.types';
 import type {
     AccountTransactionItem,
     TransactionType,
@@ -54,7 +56,7 @@ export type AccountBalanceHistory = {
 
 export type TransactionFlow = 'credit' | 'debit';
 
-export type TransactionSortColumn = 'date' | 'label' | 'amount' | 'type';
+export type TransactionSortColumn = 'date' | 'label' | 'amount' | 'type' | 'category';
 
 export type SortOrder = 'asc' | 'desc';
 
@@ -64,6 +66,7 @@ export type AccountTransactionFilters = {
     date_to: string | null;
     type: TransactionType | null;
     flow: TransactionFlow | null;
+    category_id: string | null;
     sort: TransactionSortColumn;
     order: SortOrder;
     per_page: number;
@@ -89,8 +92,11 @@ export type AccountsShowPageProps = {
     transactions: PaginatedTransactions;
     transactionFilters: AccountTransactionFilters;
     transactionTypeOptions: TransactionTypeOption[];
+    categoryOptions: CategorySelectOption[];
     perPageOptions: number[];
     balanceHistory: AccountBalanceHistory;
+    transactionEdit: TransactionsFormPageProps | null;
+    uncategorizedCount: number;
 };
 
 export type AccountsFormPageProps = {

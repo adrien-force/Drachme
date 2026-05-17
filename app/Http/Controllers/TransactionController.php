@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\TransactionType;
+use App\Http\Requests\Transactions\ApplyCategoryRulesRequest;
 use App\Http\Requests\Transactions\StoreTransactionRequest;
 use App\Http\Requests\Transactions\UpdateTransactionRequest;
+use App\Services\CategoryService;
+use App\Services\TransactionCategoryRuleApplier;
 use App\Models\Account;
 use App\Models\Transaction;
-use App\Services\AccountService;
+use App\Services\TransactionFormPresenter;
 use App\Services\TransactionService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
@@ -25,24 +27,71 @@ class TransactionController extends Controller
 
     public function __construct(
         private readonly TransactionService $transactions,
-        private readonly AccountService $accounts,
+        private readonly TransactionFormPresenter $formPresenter,
+        private readonly CategoryService $categories,
+        private readonly TransactionCategoryRuleApplier $categoryRuleApplier,
     ) {}
 
     public function index(Request $request): Response
     {
         $this->authorize('viewAny', Transaction::class);
 
-        $items = Transaction::query()
-            ->with('account:id,name,logo_path')
+        $user = $request->user();
+        if ($user !== null) {
+            $this->categories->seedDefaultsForUser($user);
+        }
+
+        $query = Transaction::query()
+            ->with(['account:id,name,logo_path', 'category:id,name,color']);
+
+        $categoryFilter = $request->input('category_id');
+        if ($categoryFilter === 'uncategorized') {
+            $query->whereNull('category_id');
+        } elseif (is_string($categoryFilter) && $categoryFilter !== '') {
+            $query->where('category_id', (int) $categoryFilter);
+        }
+
+        $items = $query
             ->orderByDesc('date')
             ->orderByDesc('id')
             ->limit(100)
             ->get()
-            ->map(fn (Transaction $transaction): array => $this->serializeTransaction($transaction));
+            ->map(fn (Transaction $transaction): array => $this->formPresenter->serializeTransaction($transaction));
+
+        $transactionEdit = $this->resolveTransactionEditPayload($request);
 
         return Inertia::render('transactions/transactions-index', [
             'transactions' => $items,
+            'categoryOptions' => $user !== null ? $this->categories->flatSelectOptions($user) : [],
+            'filters' => [
+                'category_id' => is_string($categoryFilter) ? $categoryFilter : null,
+            ],
+            'transactionEdit' => $transactionEdit ?? null,
+            'uncategorizedCount' => $user !== null
+                ? $this->categoryRuleApplier->countUncategorized($user)
+                : 0,
         ]);
+    }
+
+    public function applyCategoryRules(ApplyCategoryRulesRequest $request): RedirectResponse
+    {
+        $user = $request->user();
+        if ($user === null) {
+            abort(403);
+        }
+
+        $accountId = $request->accountId();
+        $result = $this->categoryRuleApplier->applyToUncategorized($user, $accountId);
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('ui.transactions.rules_bulk_applied', [
+                'matched' => $result['matched'],
+                'scanned' => $result['scanned'],
+            ]),
+        ]);
+
+        return back();
     }
 
     public function create(Request $request): Response
@@ -58,7 +107,7 @@ class TransactionController extends Controller
             $this->authorize('view', $presetAccount);
         }
 
-        return Inertia::render('transactions/transactions-form', $this->formPayload(null, $presetAccount));
+        return Inertia::render('transactions/transactions-form', $this->formPresenter->payload(null, $presetAccount));
     }
 
     public function store(StoreTransactionRequest $request): RedirectResponse
@@ -75,6 +124,8 @@ class TransactionController extends Controller
          *     amount: float|string,
          *     type?: string|null,
          *     notes?: string|null,
+         *     category_id?: int|null,
+         *     apply_category_rules?: bool,
          * } $data */
         $data = $request->validated();
 
@@ -94,12 +145,14 @@ class TransactionController extends Controller
         return to_route('accounts.show', $transaction->account_id);
     }
 
-    public function edit(Transaction $transaction): Response
+    public function edit(Transaction $transaction): RedirectResponse
     {
         $this->authorize('update', $transaction);
-        $transaction->load('account:id,name,logo_path');
 
-        return Inertia::render('transactions/transactions-form', $this->formPayload($transaction, null));
+        return to_route('accounts.show', [
+            'account' => $transaction->account_id,
+            'edit_transaction' => $transaction->id,
+        ]);
     }
 
     public function update(UpdateTransactionRequest $request, Transaction $transaction): RedirectResponse
@@ -111,6 +164,8 @@ class TransactionController extends Controller
          *     amount: float|string,
          *     type?: string|null,
          *     notes?: string|null,
+         *     category_id?: int|null,
+         *     apply_category_rules?: bool,
          * } $data */
         $data = $request->validated();
 
@@ -131,68 +186,24 @@ class TransactionController extends Controller
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array<string, mixed>|null
      */
-    private function formPayload(?Transaction $transaction, ?Account $presetAccount): array
+    private function resolveTransactionEditPayload(Request $request): ?array
     {
-        $accountOptions = Account::query()
-            ->active()
-            ->orderBy('name')
-            ->get(['id', 'name', 'logo_path'])
-            ->map(fn (Account $account): array => [
-                'id' => $account->id,
-                'name' => $account->name,
-                'logo_url' => $this->accounts->logoUrl($account),
-            ])
-            ->values()
-            ->all();
+        $editId = $request->integer('edit_transaction');
+        if ($editId <= 0) {
+            return null;
+        }
 
-        return [
-            'transaction' => $transaction !== null ? $this->serializeTransaction($transaction) : null,
-            'accounts' => $accountOptions,
-            'presetAccountId' => $presetAccount?->id,
-            'typeOptions' => $this->typeOptions(),
-        ];
-    }
+        $transaction = Transaction::query()->whereKey($editId)->first();
+        if ($transaction === null) {
+            return null;
+        }
 
-    /**
-     * @return array<string, mixed>
-     */
-    private function serializeTransaction(Transaction $transaction): array
-    {
-        $account = $transaction->account;
-        $type = $transaction->type;
-        $date = $transaction->date;
+        $this->authorize('update', $transaction);
+        $transaction->load(['account:id,name,logo_path', 'category:id,name,color']);
 
-        return [
-            'id' => $transaction->id,
-            'account_id' => $transaction->account_id,
-            'account_name' => $account?->name,
-            'account_logo_url' => $account !== null ? $this->accounts->logoUrl($account) : null,
-            'date' => $date instanceof \DateTimeInterface
-                ? $date->format('Y-m-d')
-                : (string) $date,
-            'label' => $transaction->label,
-            'amount' => (float) $transaction->amount,
-            'type' => $type instanceof TransactionType ? $type->value : (string) $type,
-            'notes' => $transaction->notes,
-            'is_transfer_linked' => $transaction->transfer_pair_id !== null,
-            'import_batch_id' => $transaction->import_batch_id,
-        ];
-    }
-
-    /**
-     * @return list<array{value: string, label: string}>
-     */
-    private function typeOptions(): array
-    {
-        return array_values(array_map(
-            static fn (TransactionType $type): array => [
-                'value' => $type->value,
-                'label' => (string) __("ui.transactions.types.{$type->value}"),
-            ],
-            TransactionType::cases(),
-        ));
+        return $this->formPresenter->payload($transaction, null);
     }
 
     /**
@@ -206,6 +217,7 @@ class TransactionController extends Controller
             'transaction_amount_zero' => ['amount' => __('ui.transactions.errors.amount_zero')],
             'transaction_transfer_linked' => ['transaction' => __('ui.transactions.errors.transfer_linked')],
             'transaction_account_forbidden' => ['account_id' => __('ui.transactions.errors.account_forbidden')],
+            'transaction_category_forbidden' => ['category_id' => __('ui.transactions.errors.category_forbidden')],
             default => ['transaction' => __('ui.transactions.errors.generic')],
         };
     }

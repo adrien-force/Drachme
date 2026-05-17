@@ -14,6 +14,9 @@ use App\Models\Transaction;
 use App\Services\AccountBalanceHistoryService;
 use App\Services\AccountService;
 use App\Services\AccountTransactionListService;
+use App\Services\CategoryService;
+use App\Services\TransactionCategoryRuleApplier;
+use App\Services\TransactionFormPresenter;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -28,6 +31,9 @@ class AccountController extends Controller
         private readonly AccountService $accounts,
         private readonly AccountBalanceHistoryService $balanceHistory,
         private readonly AccountTransactionListService $transactionList,
+        private readonly CategoryService $categories,
+        private readonly TransactionFormPresenter $transactionForm,
+        private readonly TransactionCategoryRuleApplier $categoryRuleApplier,
     ) {}
 
     public function index(Request $request): Response
@@ -66,6 +72,11 @@ class AccountController extends Controller
         $transactionFilters = $request->transactionFilters();
         $paginator = $this->transactionList->paginate($account, $transactionFilters);
 
+        $user = $request->user();
+        if ($user !== null) {
+            $this->categories->seedDefaultsForUser($user);
+        }
+
         return Inertia::render('accounts/accounts-show', [
             'account' => $this->serializeAccount($account),
             'transactions' => [
@@ -84,6 +95,7 @@ class AccountController extends Controller
             ],
             'transactionFilters' => $request->transactionFiltersForFrontend(),
             'transactionTypeOptions' => $this->transactionTypeOptions(),
+            'categoryOptions' => $user !== null ? $this->categories->flatSelectOptions($user) : [],
             'perPageOptions' => ShowAccountRequest::perPageOptions(),
             'balanceHistory' => $this->balanceHistory->build(
                 $account,
@@ -91,7 +103,36 @@ class AccountController extends Controller
                 $request->chartTo(),
                 $request->chartAllTime(),
             ),
+            'transactionEdit' => $this->resolveTransactionEditForAccount($request, $account),
+            'uncategorizedCount' => $user !== null
+                ? $this->categoryRuleApplier->countUncategorized($user, $account->id)
+                : 0,
         ]);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function resolveTransactionEditForAccount(ShowAccountRequest $request, Account $account): ?array
+    {
+        $editId = $request->editTransactionId();
+        if ($editId === null) {
+            return null;
+        }
+
+        $transaction = Transaction::query()
+            ->where('account_id', $account->id)
+            ->whereKey($editId)
+            ->first();
+
+        if ($transaction === null) {
+            return null;
+        }
+
+        $this->authorize('update', $transaction);
+        $transaction->load(['account:id,name,logo_path', 'category:id,name,color']);
+
+        return $this->transactionForm->payload($transaction, null);
     }
 
     public function create(): Response
@@ -224,6 +265,7 @@ class AccountController extends Controller
     {
         $type = $transaction->type;
         $date = $transaction->date;
+        $category = $transaction->category;
 
         return [
             'id' => $transaction->id,
@@ -234,6 +276,9 @@ class AccountController extends Controller
             'amount' => (float) $transaction->amount,
             'type' => $type instanceof TransactionType ? $type->value : (string) $type,
             'is_transfer_linked' => $transaction->transfer_pair_id !== null,
+            'category_id' => $transaction->category_id,
+            'category_name' => $category?->name,
+            'category_color' => $category?->color,
         ];
     }
 

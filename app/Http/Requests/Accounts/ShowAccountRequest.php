@@ -33,11 +33,20 @@ class ShowAccountRequest extends FormRequest
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
             'type' => ['nullable', Rule::enum(TransactionType::class)],
             'flow' => ['nullable', Rule::in(['credit', 'debit'])],
-            'sort' => ['nullable', Rule::in(['date', 'label', 'amount', 'type'])],
+            'category_id' => ['nullable', 'string', 'max:64'],
+            'sort' => ['nullable', Rule::in(['date', 'label', 'amount', 'type', 'category'])],
             'order' => ['nullable', Rule::in(['asc', 'desc'])],
             'per_page' => ['nullable', 'integer', Rule::in(self::PER_PAGE_OPTIONS)],
             'page' => ['nullable', 'integer', 'min:1'],
+            'edit_transaction' => ['nullable', 'integer', 'min:1'],
         ];
+    }
+
+    public function editTransactionId(): ?int
+    {
+        $id = $this->integer('edit_transaction');
+
+        return $id > 0 ? $id : null;
     }
 
     public function chartAllTime(): bool
@@ -74,6 +83,7 @@ class ShowAccountRequest extends FormRequest
      *     date_to: string|null,
      *     type: string|null,
      *     flow: string|null,
+     *     category_id: string|null,
      *     sort: string,
      *     order: string,
      *     per_page: int,
@@ -89,6 +99,7 @@ class ShowAccountRequest extends FormRequest
         $dateTo = $this->input('date_to');
         $type = $this->input('type');
         $flow = $this->input('flow');
+        $categoryId = $this->input('category_id');
 
         return [
             'search' => is_string($search) && $search !== '' ? $search : null,
@@ -96,6 +107,7 @@ class ShowAccountRequest extends FormRequest
             'date_to' => is_string($dateTo) && $dateTo !== '' ? $dateTo : null,
             'type' => is_string($type) && $type !== '' ? $type : null,
             'flow' => is_string($flow) && $flow !== '' ? $flow : null,
+            'category_id' => is_string($categoryId) && $categoryId !== '' ? $categoryId : null,
             'sort' => is_string($sort) && $sort !== '' ? $sort : 'date',
             'order' => is_string($order) && $order === 'asc' ? 'asc' : 'desc',
             'per_page' => $this->resolvedPerPage(),
@@ -110,6 +122,7 @@ class ShowAccountRequest extends FormRequest
      *     date_to: string|null,
      *     type: string|null,
      *     flow: string|null,
+     *     category_id: string|null,
      *     sort: string,
      *     order: string,
      *     per_page: int,
@@ -126,6 +139,7 @@ class ShowAccountRequest extends FormRequest
             'date_to' => $filters['date_to'],
             'type' => $filters['type'],
             'flow' => $filters['flow'],
+            'category_id' => $filters['category_id'],
             'sort' => $filters['sort'],
             'order' => $filters['order'],
             'per_page' => $filters['per_page'],

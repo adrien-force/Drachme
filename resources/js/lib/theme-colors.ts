@@ -14,7 +14,7 @@ const COOKIE_KEY = 'drachme_theme_colors';
 export const THEME_COLOR_CSS_MAP: Record<keyof ThemeColorMap, string[]> = {
     primary: ['--primary', '--ring'],
     chart_income: ['--chart-income'],
-    chart_expense: ['--chart-expense', '--chart-2'],
+    chart_expense: ['--chart-expense', '--chart-2', '--destructive'],
     chart_net_worth: ['--chart-net-worth', '--chart-1'],
     chart_secondary: ['--chart-secondary', '--chart-3'],
 };

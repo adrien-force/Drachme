@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CategoryRuleController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\ImportProviderController;
@@ -31,8 +33,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('transactions', [TransactionController::class, 'index'])->name('transactions.index');
     Route::get('transactions/create', [TransactionController::class, 'create'])->name('transactions.create');
     Route::post('transactions', [TransactionController::class, 'store'])->name('transactions.store');
+    Route::post('transactions/apply-category-rules', [TransactionController::class, 'applyCategoryRules'])
+        ->name('transactions.apply-category-rules');
     Route::get('transactions/{transaction}/edit', [TransactionController::class, 'edit'])->name('transactions.edit');
     Route::put('transactions/{transaction}', [TransactionController::class, 'update'])->name('transactions.update');
+    Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
+    Route::post('categories', [CategoryController::class, 'store'])->name('categories.store');
+    Route::put('categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
+    Route::delete('categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+    Route::get('category-rules', [CategoryRuleController::class, 'index'])->name('category-rules.index');
+    Route::post('category-rules', [CategoryRuleController::class, 'store'])->name('category-rules.store');
+    Route::post('category-rules/from-label', [CategoryRuleController::class, 'storeFromLabel'])
+        ->name('category-rules.store-from-label');
+    Route::post('category-rules/test-match', [CategoryRuleController::class, 'testMatch'])
+        ->name('category-rules.test-match');
+    Route::put('category-rules/{categoryRule}', [CategoryRuleController::class, 'update'])->name('category-rules.update');
+    Route::delete('category-rules/{categoryRule}', [CategoryRuleController::class, 'destroy'])->name('category-rules.destroy');
     Route::get('providers', [ImportProviderController::class, 'index'])->name('providers.index');
     Route::get('providers/create', [ImportProviderController::class, 'create'])->name('providers.create');
     Route::post('providers/detect-date-format', [ImportProviderController::class, 'detectDateFormat'])

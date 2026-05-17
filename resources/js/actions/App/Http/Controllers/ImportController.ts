@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\ImportController::create
-* @see app/Http/Controllers/ImportController.php:32
+* @see app/Http/Controllers/ImportController.php:34
 * @route '/import'
 */
 export const create = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ create.definition = {
 
 /**
 * @see \App\Http\Controllers\ImportController::create
-* @see app/Http/Controllers/ImportController.php:32
+* @see app/Http/Controllers/ImportController.php:34
 * @route '/import'
 */
 create.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ create.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ImportController::create
-* @see app/Http/Controllers/ImportController.php:32
+* @see app/Http/Controllers/ImportController.php:34
 * @route '/import'
 */
 create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -35,7 +35,7 @@ create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\ImportController::create
-* @see app/Http/Controllers/ImportController.php:32
+* @see app/Http/Controllers/ImportController.php:34
 * @route '/import'
 */
 create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -45,7 +45,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
 /**
 * @see \App\Http\Controllers\ImportController::create
-* @see app/Http/Controllers/ImportController.php:32
+* @see app/Http/Controllers/ImportController.php:34
 * @route '/import'
 */
 const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -55,7 +55,7 @@ const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => 
 
 /**
 * @see \App\Http\Controllers\ImportController::create
-* @see app/Http/Controllers/ImportController.php:32
+* @see app/Http/Controllers/ImportController.php:34
 * @route '/import'
 */
 createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -65,7 +65,7 @@ createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\ImportController::create
-* @see app/Http/Controllers/ImportController.php:32
+* @see app/Http/Controllers/ImportController.php:34
 * @route '/import'
 */
 createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -82,7 +82,7 @@ create.form = createForm
 
 /**
 * @see \App\Http\Controllers\ImportController::store
-* @see app/Http/Controllers/ImportController.php:50
+* @see app/Http/Controllers/ImportController.php:52
 * @route '/import'
 */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -97,7 +97,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\ImportController::store
-* @see app/Http/Controllers/ImportController.php:50
+* @see app/Http/Controllers/ImportController.php:52
 * @route '/import'
 */
 store.url = (options?: RouteQueryOptions) => {
@@ -106,7 +106,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ImportController::store
-* @see app/Http/Controllers/ImportController.php:50
+* @see app/Http/Controllers/ImportController.php:52
 * @route '/import'
 */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -116,7 +116,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
 /**
 * @see \App\Http\Controllers\ImportController::store
-* @see app/Http/Controllers/ImportController.php:50
+* @see app/Http/Controllers/ImportController.php:52
 * @route '/import'
 */
 const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -126,7 +126,7 @@ const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => 
 
 /**
 * @see \App\Http\Controllers\ImportController::store
-* @see app/Http/Controllers/ImportController.php:50
+* @see app/Http/Controllers/ImportController.php:52
 * @route '/import'
 */
 storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -138,7 +138,7 @@ store.form = storeForm
 
 /**
 * @see \App\Http\Controllers\ImportController::show
-* @see app/Http/Controllers/ImportController.php:67
+* @see app/Http/Controllers/ImportController.php:69
 * @route '/import/{importBatch}'
 */
 export const show = (args: { importBatch: number | { id: number } } | [importBatch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -153,7 +153,7 @@ show.definition = {
 
 /**
 * @see \App\Http\Controllers\ImportController::show
-* @see app/Http/Controllers/ImportController.php:67
+* @see app/Http/Controllers/ImportController.php:69
 * @route '/import/{importBatch}'
 */
 show.url = (args: { importBatch: number | { id: number } } | [importBatch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -186,7 +186,7 @@ show.url = (args: { importBatch: number | { id: number } } | [importBatch: numbe
 
 /**
 * @see \App\Http\Controllers\ImportController::show
-* @see app/Http/Controllers/ImportController.php:67
+* @see app/Http/Controllers/ImportController.php:69
 * @route '/import/{importBatch}'
 */
 show.get = (args: { importBatch: number | { id: number } } | [importBatch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -196,7 +196,7 @@ show.get = (args: { importBatch: number | { id: number } } | [importBatch: numbe
 
 /**
 * @see \App\Http\Controllers\ImportController::show
-* @see app/Http/Controllers/ImportController.php:67
+* @see app/Http/Controllers/ImportController.php:69
 * @route '/import/{importBatch}'
 */
 show.head = (args: { importBatch: number | { id: number } } | [importBatch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -206,7 +206,7 @@ show.head = (args: { importBatch: number | { id: number } } | [importBatch: numb
 
 /**
 * @see \App\Http\Controllers\ImportController::show
-* @see app/Http/Controllers/ImportController.php:67
+* @see app/Http/Controllers/ImportController.php:69
 * @route '/import/{importBatch}'
 */
 const showForm = (args: { importBatch: number | { id: number } } | [importBatch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -216,7 +216,7 @@ const showForm = (args: { importBatch: number | { id: number } } | [importBatch:
 
 /**
 * @see \App\Http\Controllers\ImportController::show
-* @see app/Http/Controllers/ImportController.php:67
+* @see app/Http/Controllers/ImportController.php:69
 * @route '/import/{importBatch}'
 */
 showForm.get = (args: { importBatch: number | { id: number } } | [importBatch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -226,7 +226,7 @@ showForm.get = (args: { importBatch: number | { id: number } } | [importBatch: n
 
 /**
 * @see \App\Http\Controllers\ImportController::show
-* @see app/Http/Controllers/ImportController.php:67
+* @see app/Http/Controllers/ImportController.php:69
 * @route '/import/{importBatch}'
 */
 showForm.head = (args: { importBatch: number | { id: number } } | [importBatch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -243,7 +243,7 @@ show.form = showForm
 
 /**
 * @see \App\Http\Controllers\ImportController::parse
-* @see app/Http/Controllers/ImportController.php:75
+* @see app/Http/Controllers/ImportController.php:78
 * @route '/import/{importBatch}/parse'
 */
 export const parse = (args: { importBatch: number | { id: number } } | [importBatch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -258,7 +258,7 @@ parse.definition = {
 
 /**
 * @see \App\Http\Controllers\ImportController::parse
-* @see app/Http/Controllers/ImportController.php:75
+* @see app/Http/Controllers/ImportController.php:78
 * @route '/import/{importBatch}/parse'
 */
 parse.url = (args: { importBatch: number | { id: number } } | [importBatch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -291,7 +291,7 @@ parse.url = (args: { importBatch: number | { id: number } } | [importBatch: numb
 
 /**
 * @see \App\Http\Controllers\ImportController::parse
-* @see app/Http/Controllers/ImportController.php:75
+* @see app/Http/Controllers/ImportController.php:78
 * @route '/import/{importBatch}/parse'
 */
 parse.post = (args: { importBatch: number | { id: number } } | [importBatch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -301,7 +301,7 @@ parse.post = (args: { importBatch: number | { id: number } } | [importBatch: num
 
 /**
 * @see \App\Http\Controllers\ImportController::parse
-* @see app/Http/Controllers/ImportController.php:75
+* @see app/Http/Controllers/ImportController.php:78
 * @route '/import/{importBatch}/parse'
 */
 const parseForm = (args: { importBatch: number | { id: number } } | [importBatch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -311,7 +311,7 @@ const parseForm = (args: { importBatch: number | { id: number } } | [importBatch
 
 /**
 * @see \App\Http\Controllers\ImportController::parse
-* @see app/Http/Controllers/ImportController.php:75
+* @see app/Http/Controllers/ImportController.php:78
 * @route '/import/{importBatch}/parse'
 */
 parseForm.post = (args: { importBatch: number | { id: number } } | [importBatch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -323,7 +323,7 @@ parse.form = parseForm
 
 /**
 * @see \App\Http\Controllers\ImportController::commit
-* @see app/Http/Controllers/ImportController.php:90
+* @see app/Http/Controllers/ImportController.php:93
 * @route '/import/{importBatch}/commit'
 */
 export const commit = (args: { importBatch: number | { id: number } } | [importBatch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -338,7 +338,7 @@ commit.definition = {
 
 /**
 * @see \App\Http\Controllers\ImportController::commit
-* @see app/Http/Controllers/ImportController.php:90
+* @see app/Http/Controllers/ImportController.php:93
 * @route '/import/{importBatch}/commit'
 */
 commit.url = (args: { importBatch: number | { id: number } } | [importBatch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -371,7 +371,7 @@ commit.url = (args: { importBatch: number | { id: number } } | [importBatch: num
 
 /**
 * @see \App\Http\Controllers\ImportController::commit
-* @see app/Http/Controllers/ImportController.php:90
+* @see app/Http/Controllers/ImportController.php:93
 * @route '/import/{importBatch}/commit'
 */
 commit.post = (args: { importBatch: number | { id: number } } | [importBatch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -381,7 +381,7 @@ commit.post = (args: { importBatch: number | { id: number } } | [importBatch: nu
 
 /**
 * @see \App\Http\Controllers\ImportController::commit
-* @see app/Http/Controllers/ImportController.php:90
+* @see app/Http/Controllers/ImportController.php:93
 * @route '/import/{importBatch}/commit'
 */
 const commitForm = (args: { importBatch: number | { id: number } } | [importBatch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -391,7 +391,7 @@ const commitForm = (args: { importBatch: number | { id: number } } | [importBatc
 
 /**
 * @see \App\Http\Controllers\ImportController::commit
-* @see app/Http/Controllers/ImportController.php:90
+* @see app/Http/Controllers/ImportController.php:93
 * @route '/import/{importBatch}/commit'
 */
 commitForm.post = (args: { importBatch: number | { id: number } } | [importBatch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -403,7 +403,7 @@ commit.form = commitForm
 
 /**
 * @see \App\Http\Controllers\ImportController::destroy
-* @see app/Http/Controllers/ImportController.php:108
+* @see app/Http/Controllers/ImportController.php:111
 * @route '/import/{importBatch}'
 */
 export const destroy = (args: { importBatch: number | { id: number } } | [importBatch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -418,7 +418,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\ImportController::destroy
-* @see app/Http/Controllers/ImportController.php:108
+* @see app/Http/Controllers/ImportController.php:111
 * @route '/import/{importBatch}'
 */
 destroy.url = (args: { importBatch: number | { id: number } } | [importBatch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -451,7 +451,7 @@ destroy.url = (args: { importBatch: number | { id: number } } | [importBatch: nu
 
 /**
 * @see \App\Http\Controllers\ImportController::destroy
-* @see app/Http/Controllers/ImportController.php:108
+* @see app/Http/Controllers/ImportController.php:111
 * @route '/import/{importBatch}'
 */
 destroy.delete = (args: { importBatch: number | { id: number } } | [importBatch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -461,7 +461,7 @@ destroy.delete = (args: { importBatch: number | { id: number } } | [importBatch:
 
 /**
 * @see \App\Http\Controllers\ImportController::destroy
-* @see app/Http/Controllers/ImportController.php:108
+* @see app/Http/Controllers/ImportController.php:111
 * @route '/import/{importBatch}'
 */
 const destroyForm = (args: { importBatch: number | { id: number } } | [importBatch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -476,7 +476,7 @@ const destroyForm = (args: { importBatch: number | { id: number } } | [importBat
 
 /**
 * @see \App\Http\Controllers\ImportController::destroy
-* @see app/Http/Controllers/ImportController.php:108
+* @see app/Http/Controllers/ImportController.php:111
 * @route '/import/{importBatch}'
 */
 destroyForm.delete = (args: { importBatch: number | { id: number } } | [importBatch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

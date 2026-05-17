@@ -1,3 +1,5 @@
+import type { CategorySelectOption } from '@/types/category.types';
+
 export type TransactionType = 'expense' | 'income' | 'transfer';
 
 export type TransactionAccountOption = {
@@ -9,6 +11,12 @@ export type TransactionAccountOption = {
 export type TransactionTypeOption = {
     value: TransactionType;
     label: string;
+};
+
+export type TransactionCategorySummary = {
+    id: number;
+    name: string;
+    color: string | null;
 };
 
 export type TransactionListItem = {
@@ -23,6 +31,9 @@ export type TransactionListItem = {
     notes?: string | null;
     is_transfer_linked: boolean;
     import_batch_id?: number | null;
+    category_id: number | null;
+    category_name?: string | null;
+    category_color?: string | null;
 };
 
 export type AccountTransactionItem = {
@@ -32,10 +43,19 @@ export type AccountTransactionItem = {
     amount: number;
     type: TransactionType;
     is_transfer_linked: boolean;
+    category_id: number | null;
+    category_name?: string | null;
+    category_color?: string | null;
 };
 
 export type TransactionsIndexPageProps = {
     transactions: TransactionListItem[];
+    categoryOptions: CategorySelectOption[];
+    filters: {
+        category_id: string | null;
+    };
+    transactionEdit: TransactionsFormPageProps | null;
+    uncategorizedCount: number;
 };
 
 export type TransactionsFormPageProps = {
@@ -43,4 +63,6 @@ export type TransactionsFormPageProps = {
     accounts: TransactionAccountOption[];
     presetAccountId: number | null;
     typeOptions: TransactionTypeOption[];
+    categoryOptions: CategorySelectOption[];
+    suggestedCategory: TransactionCategorySummary | null;
 };

@@ -34,6 +34,12 @@ class StoreTransactionRequest extends FormRequest
             'amount' => ['required', 'numeric', 'not_in:0'],
             'type' => ['nullable', Rule::enum(TransactionType::class)],
             'notes' => ['nullable', 'string', 'max:5000'],
+            'category_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('categories', 'id')->where(fn ($query) => $query->where('user_id', $userId)),
+            ],
+            'apply_category_rules' => ['nullable', 'boolean'],
         ];
     }
 }

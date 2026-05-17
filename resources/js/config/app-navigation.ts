@@ -3,14 +3,15 @@ import {
     FileUp,
     Landmark,
     LayoutGrid,
+    ListFilter,
     Plug,
-    Settings,
+    SlidersHorizontal,
+    Tags,
     TrendingUp,
     type LucideIcon,
 } from 'lucide-react';
 
 import { dashboard } from '@/routes';
-import { edit as editProfile } from '@/routes/profile';
 
 export type AppNavItem = {
     titleKey: string;
@@ -53,14 +54,29 @@ export const appNavSections: AppNavSection[] = [
         labelKey: 'nav.data',
         items: [
             {
-                titleKey: 'nav.providers',
-                href: '/providers',
-                icon: Plug,
-            },
-            {
                 titleKey: 'nav.import',
                 href: '/import',
                 icon: FileUp,
+            },
+        ],
+    },
+    {
+        labelKey: 'nav.configuration',
+        items: [
+            {
+                titleKey: 'nav.categories',
+                href: '/categories',
+                icon: Tags,
+            },
+            {
+                titleKey: 'nav.category_rules',
+                href: '/category-rules',
+                icon: ListFilter,
+            },
+            {
+                titleKey: 'nav.providers',
+                href: '/providers',
+                icon: Plug,
             },
         ],
     },
@@ -71,16 +87,6 @@ export const appNavSections: AppNavSection[] = [
                 titleKey: 'nav.investments',
                 href: '/investments',
                 icon: TrendingUp,
-            },
-        ],
-    },
-    {
-        labelKey: 'nav.account',
-        items: [
-            {
-                titleKey: 'nav.settings',
-                href: editProfile.url(),
-                icon: Settings,
             },
         ],
     },

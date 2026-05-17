@@ -18,6 +18,7 @@ class AccountTransactionListService
      *     date_to?: string|null,
      *     type?: string|null,
      *     flow?: string|null,
+     *     category_id?: int|string|null,
      *     sort?: string,
      *     order?: string,
      *     per_page?: int,
@@ -28,7 +29,9 @@ class AccountTransactionListService
      */
     public function paginate(Account $account, array $filters): LengthAwarePaginator
     {
-        $query = Transaction::query()->where('account_id', $account->id);
+        $query = Transaction::query()
+            ->with('category:id,name,color')
+            ->where('account_id', $account->id);
 
         $this->applyFilters($query, $filters);
         $this->applySorting($query, $filters);
@@ -77,6 +80,13 @@ class AccountTransactionListService
         if (($filters['flow'] ?? null) === 'debit') {
             $query->where('amount', '<', 0);
         }
+
+        $categoryFilter = $filters['category_id'] ?? null;
+        if ($categoryFilter === 'uncategorized') {
+            $query->whereNull('category_id');
+        } elseif (is_numeric($categoryFilter)) {
+            $query->where('category_id', (int) $categoryFilter);
+        }
     }
 
     /**
@@ -92,6 +102,11 @@ class AccountTransactionListService
             'label' => $query->orderBy('label', $order)->orderBy('id', $order),
             'amount' => $query->orderBy('amount', $order)->orderBy('id', $order),
             'type' => $query->orderBy('type', $order)->orderBy('id', $order),
+            'category' => $query
+                ->leftJoin('categories', 'transactions.category_id', '=', 'categories.id')
+                ->orderBy('categories.name', $order)
+                ->select('transactions.*')
+                ->orderBy('transactions.id', $order),
             default => $query->orderBy('date', $order)->orderBy('id', $order),
         };
     }

@@ -3,8 +3,8 @@ import { cn } from '@/lib/utils';
 import type { TransactionType } from '@/types/transaction.types';
 
 const styles: Record<TransactionType, string> = {
-    expense: 'bg-destructive/15 text-destructive',
-    income: 'bg-emerald-500/15 text-emerald-400',
+    expense: 'bg-chart-expense/15 text-chart-expense',
+    income: 'bg-chart-income/15 text-chart-income',
     transfer: 'bg-primary/15 text-primary',
 };
 

@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeft, Pencil, Plus, Upload } from 'lucide-react';
 
 import { AccountBalanceChart } from '@/components/accounts/account-balance-chart';
@@ -8,8 +8,10 @@ import { AccountTypeBadge } from '@/components/accounts/account-type-badge';
 import { EntityLogo } from '@/components/entity-logo';
 import { FadeIn } from '@/components/motion/fade-in';
 import { GlassPanel } from '@/components/glass-panel';
+import { TransactionEditModal } from '@/components/transactions/transaction-edit-modal';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
+import { buildAccountShowQuery } from '@/lib/account-show-query';
 import { formatCurrency } from '@/lib/format-currency';
 import type { AccountsShowPageProps } from '@/types/account.types';
 
@@ -18,10 +20,21 @@ export default function AccountsShow({
     transactions,
     transactionFilters,
     transactionTypeOptions,
+    categoryOptions,
     perPageOptions,
     balanceHistory,
+    transactionEdit,
+    uncategorizedCount,
 }: AccountsShowPageProps) {
     const { t } = useTranslation();
+
+    const closeTransactionEdit = () => {
+        router.get(
+            `/accounts/${account.id}`,
+            buildAccountShowQuery(balanceHistory, transactionFilters),
+            { preserveScroll: true, replace: true },
+        );
+    };
 
     return (
         <>
@@ -124,12 +137,22 @@ export default function AccountsShow({
                             transactions={transactions}
                             transactionFilters={transactionFilters}
                             transactionTypeOptions={transactionTypeOptions}
+                            categoryOptions={categoryOptions}
                             perPageOptions={perPageOptions}
                             balanceHistory={balanceHistory}
+                            uncategorizedCount={uncategorizedCount}
                         />
                     </GlassPanel>
                 </FadeIn>
             </div>
+
+            {transactionEdit?.transaction ? (
+                <TransactionEditModal
+                    open
+                    onClose={closeTransactionEdit}
+                    {...transactionEdit}
+                />
+            ) : null}
         </>
     );
 }

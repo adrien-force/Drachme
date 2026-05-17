@@ -45,6 +45,8 @@
     --color-input: var(--input);
     --color-ring: var(--ring);
 
+    --color-chart-income: var(--chart-income);
+    --color-chart-expense: var(--chart-expense);
     --color-chart-1: var(--chart-1);
     --color-chart-2: var(--chart-2);
     --color-chart-3: var(--chart-3);
@@ -153,12 +155,12 @@
         background-image:
             radial-gradient(
                 ellipse 80% 50% at 20% -10%,
-                oklch(0.72 0.17 155 / 0.12),
+                color-mix(in oklab, var(--primary) 12%, transparent),
                 transparent
             ),
             radial-gradient(
                 ellipse 60% 40% at 90% 100%,
-                oklch(0.35 0.08 260 / 0.35),
+                color-mix(in oklab, var(--primary) 8%, transparent),
                 transparent
             );
     }
@@ -232,4 +234,14 @@
     [data-slot='calendar'] .rdp-range_end {
         background: transparent !important;
     }
+}
+
+.color-picker-surface {
+    width: 12.5rem;
+    height: 12.5rem;
+}
+
+.color-picker-surface .react-colorful__pointer {
+    width: 1rem;
+    height: 1rem;
 }

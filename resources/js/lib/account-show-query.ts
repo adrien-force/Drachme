@@ -8,6 +8,7 @@ type ChartQuery = Pick<AccountBalanceHistory, 'from' | 'to' | 'is_all_time'>;
 export function buildAccountShowQuery(
     chart: ChartQuery,
     filters: AccountTransactionFilters,
+    editTransactionId?: number,
 ): Record<string, string | number> {
     const query: Record<string, string | number> = {
         sort: filters.sort,
@@ -41,6 +42,14 @@ export function buildAccountShowQuery(
 
     if (filters.flow) {
         query.flow = filters.flow;
+    }
+
+    if (filters.category_id) {
+        query.category_id = filters.category_id;
+    }
+
+    if (editTransactionId !== undefined && editTransactionId > 0) {
+        query.edit_transaction = editTransactionId;
     }
 
     return query;

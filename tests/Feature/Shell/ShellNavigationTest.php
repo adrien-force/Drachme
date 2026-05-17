@@ -21,6 +21,8 @@ class ShellNavigationTest extends TestCase
         return [
             'accounts' => ['accounts.index'],
             'transactions' => ['transactions.index'],
+            'categories' => ['categories.index'],
+            'category-rules' => ['category-rules.index'],
             'providers' => ['providers.index'],
             'import' => ['import.index'],
             'investments' => ['investments.index'],

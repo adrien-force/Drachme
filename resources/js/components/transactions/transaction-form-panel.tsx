@@ -1,0 +1,319 @@
+import { Tags } from 'lucide-react';
+import { useMemo, useState } from 'react';
+
+import { CreateRuleFromLabelDialog } from '@/components/category-rules/create-rule-from-label-dialog';
+import { CategoryBadge } from '@/components/categories/category-badge';
+import { CategorySelect } from '@/components/categories/category-select';
+import { EntityLogo } from '@/components/entity-logo';
+import { TransactionTypeBadge } from '@/components/transactions/transaction-type-badge';
+import InputError from '@/components/input-error';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { useTranslation } from '@/hooks/use-translation';
+import { cn } from '@/lib/utils';
+import type { InertiaForm } from '@inertiajs/react';
+import type { CategorySelectOption } from '@/types/category.types';
+import type {
+    TransactionAccountOption,
+    TransactionCategorySummary,
+    TransactionListItem,
+    TransactionType,
+    TransactionTypeOption,
+} from '@/types/transaction.types';
+
+const TYPE_AUTO = 'auto';
+
+export type TransactionFormData = {
+    account_id: string;
+    date: string;
+    label: string;
+    amount: string;
+    type: string;
+    notes: string;
+    category_id: number | null;
+    apply_category_rules: boolean;
+};
+
+type TransactionFormPanelProps = {
+    form: InertiaForm<TransactionFormData>;
+    accounts: TransactionAccountOption[];
+    typeOptions: TransactionTypeOption[];
+    categoryOptions: CategorySelectOption[];
+    suggestedCategory: TransactionCategorySummary | null;
+    transaction: TransactionListItem | null;
+    isEditing: boolean;
+    onCancel: () => void;
+    onSubmit: () => void;
+    compact?: boolean;
+};
+
+function inferType(amount: number): TransactionType {
+    if (amount < 0) {
+        return 'expense';
+    }
+
+    if (amount > 0) {
+        return 'income';
+    }
+
+    return 'transfer';
+}
+
+export function TransactionFormPanel({
+    form,
+    accounts,
+    typeOptions,
+    categoryOptions,
+    suggestedCategory,
+    transaction,
+    isEditing,
+    onCancel,
+    onSubmit,
+    compact = false,
+}: TransactionFormPanelProps) {
+    const { t } = useTranslation();
+    const [ruleDialogOpen, setRuleDialogOpen] = useState(false);
+
+    const previewType = useMemo(() => {
+        if (form.data.type !== TYPE_AUTO) {
+            return form.data.type as TransactionType;
+        }
+
+        const amount = Number.parseFloat(form.data.amount);
+        if (Number.isNaN(amount)) {
+            return null;
+        }
+
+        return inferType(amount);
+    }, [form.data.amount, form.data.type]);
+
+    return (
+        <>
+            <div className={cn('space-y-6', compact && 'space-y-5')}>
+                <div className="space-y-2">
+                    <Label>{t('transactions.account')}</Label>
+                    <Select
+                        value={form.data.account_id}
+                        onValueChange={(value) => form.setData('account_id', value)}
+                    >
+                        <SelectTrigger>
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {accounts.map((account) => (
+                                <SelectItem key={account.id} value={String(account.id)}>
+                                    <span className="flex items-center gap-2">
+                                        <EntityLogo
+                                            name={account.name}
+                                            logoUrl={account.logo_url}
+                                            className="size-5"
+                                        />
+                                        {account.name}
+                                    </span>
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <InputError message={form.errors.account_id} />
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                        <Label htmlFor="transaction-date">{t('transactions.date')}</Label>
+                        <Input
+                            id="transaction-date"
+                            type="date"
+                            value={form.data.date}
+                            onChange={(event) => form.setData('date', event.target.value)}
+                        />
+                        <InputError message={form.errors.date} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="transaction-amount">{t('transactions.amount')}</Label>
+                        <Input
+                            id="transaction-amount"
+                            type="number"
+                            step="0.01"
+                            value={form.data.amount}
+                            onChange={(event) => form.setData('amount', event.target.value)}
+                        />
+                        <p className="text-muted-foreground text-xs">
+                            {t('transactions.amount_hint')}
+                        </p>
+                        <InputError message={form.errors.amount} />
+                    </div>
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="transaction-label">{t('transactions.label')}</Label>
+                    <Input
+                        id="transaction-label"
+                        value={form.data.label}
+                        onChange={(event) => form.setData('label', event.target.value)}
+                    />
+                    <InputError message={form.errors.label} />
+                </div>
+
+                <div className="space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                        <Label>{t('transactions.category')}</Label>
+                        {form.data.label.trim() !== '' ? (
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 gap-1.5 px-2"
+                                onClick={() => setRuleDialogOpen(true)}
+                            >
+                                <Tags className="size-3.5" />
+                                {t('category_rules.create_from_label')}
+                            </Button>
+                        ) : null}
+                    </div>
+                    <CategorySelect
+                        value={form.data.category_id}
+                        onChange={(categoryId) => form.setData('category_id', categoryId)}
+                        options={categoryOptions}
+                        noneLabel={t('transactions.category_none')}
+                    />
+                    {suggestedCategory && form.data.category_id === null ? (
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                            <span className="text-muted-foreground text-xs">
+                                {t('transactions.suggested_category')}
+                            </span>
+                            <CategoryBadge
+                                name={suggestedCategory.name}
+                                color={suggestedCategory.color}
+                            />
+                            <Button
+                                type="button"
+                                variant="link"
+                                size="sm"
+                                className="h-auto px-0 text-xs"
+                                onClick={() =>
+                                    form.setData('category_id', suggestedCategory.id)
+                                }
+                            >
+                                {t('transactions.apply_suggestion')}
+                            </Button>
+                        </div>
+                    ) : null}
+                    <InputError message={form.errors.category_id} />
+                </div>
+
+                {!isEditing ? (
+                    <p className="text-muted-foreground text-xs">
+                        {t('transactions.auto_rules_hint')}
+                    </p>
+                ) : form.data.category_id === null ? (
+                    <div className="border-border/60 bg-muted/20 space-y-2 rounded-md border px-3 py-2.5">
+                        <div className="flex items-start gap-3">
+                            <Checkbox
+                                id="apply-category-rules"
+                                checked={form.data.apply_category_rules}
+                                onCheckedChange={(checked) =>
+                                    form.setData(
+                                        'apply_category_rules',
+                                        checked === true,
+                                    )
+                                }
+                                className="mt-0.5"
+                            />
+                            <div className="space-y-1">
+                                <Label
+                                    htmlFor="apply-category-rules"
+                                    className="cursor-pointer font-normal"
+                                >
+                                    {t('transactions.apply_rules_on_save')}
+                                </Label>
+                                <p className="text-muted-foreground text-xs leading-relaxed">
+                                    {t('transactions.apply_rules_on_save_hint')}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    <p className="text-muted-foreground text-xs">
+                        {t('transactions.manual_category_hint')}
+                    </p>
+                )}
+
+                <div className="space-y-2">
+                    <Label>{t('transactions.type')}</Label>
+                    <Select
+                        value={form.data.type}
+                        onValueChange={(value) => form.setData('type', value)}
+                    >
+                        <SelectTrigger>
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value={TYPE_AUTO}>
+                                {t('transactions.type_auto')}
+                            </SelectItem>
+                            {typeOptions.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                    {option.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    {previewType ? (
+                        <div className="flex items-center gap-2 pt-1">
+                            <TransactionTypeBadge type={previewType} />
+                        </div>
+                    ) : null}
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="transaction-notes">{t('transactions.notes')}</Label>
+                    <textarea
+                        id="transaction-notes"
+                        rows={3}
+                        value={form.data.notes}
+                        onChange={(event) => form.setData('notes', event.target.value)}
+                        className={cn(
+                            'border-input placeholder:text-muted-foreground w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none',
+                            'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
+                        )}
+                    />
+                    <InputError message={form.errors.notes} />
+                </div>
+
+                {'transaction' in form.errors ? (
+                    <InputError
+                        message={
+                            (form.errors as Record<string, string>).transaction
+                        }
+                    />
+                ) : null}
+
+                <div className="flex flex-wrap gap-3">
+                    <Button type="button" disabled={form.processing} onClick={onSubmit}>
+                        {t('transactions.save')}
+                    </Button>
+                    <Button type="button" variant="outline" onClick={onCancel}>
+                        {t('transactions.cancel')}
+                    </Button>
+                </div>
+            </div>
+
+            <CreateRuleFromLabelDialog
+                open={ruleDialogOpen}
+                onOpenChange={setRuleDialogOpen}
+                label={form.data.label}
+                categoryOptions={categoryOptions}
+                applyToTransactionId={transaction?.id ?? null}
+            />
+        </>
+    );
+}

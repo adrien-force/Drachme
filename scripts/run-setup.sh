@@ -53,6 +53,8 @@ echo "=== Wayfinder + frontend build ==="
 drachme_compose exec -T app php artisan wayfinder:generate --with-form
 drachme_compose exec -T app npm install
 drachme_compose exec -T app npm run build
+# Drop Vite HMR marker so the app serves built assets until `make dev` is started.
+rm -f public/hot
 
 echo "=== Database ==="
 drachme_compose exec -T app php artisan migrate --force

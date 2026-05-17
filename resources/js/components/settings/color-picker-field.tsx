@@ -1,4 +1,4 @@
-import { Input } from '@/components/ui/input';
+import { ColorPicker } from '@/components/ui/color-picker';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 
@@ -25,25 +25,8 @@ export function ColorPickerField({
                     <p className="text-muted-foreground text-sm">{description}</p>
                 )}
             </div>
-            <div className="flex shrink-0 items-center gap-3">
-                <span
-                    className={cn(
-                        'size-10 shrink-0 rounded-lg border shadow-sm',
-                        'ring-1 ring-white/10',
-                    )}
-                    style={{ backgroundColor: value }}
-                    aria-hidden
-                />
-                <Input
-                    id={id}
-                    type="color"
-                    value={value}
-                    onChange={(event) => onChange(event.target.value)}
-                    className="h-10 w-14 cursor-pointer border-0 p-1"
-                />
-                <span className="text-muted-foreground w-[4.5rem] font-mono text-xs uppercase">
-                    {value}
-                </span>
+            <div className={cn('w-full shrink-0 sm:w-48')}>
+                <ColorPicker id={id} value={value} onChange={onChange} />
             </div>
         </div>
     );

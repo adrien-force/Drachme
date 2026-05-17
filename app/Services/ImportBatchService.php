@@ -27,6 +27,7 @@ class ImportBatchService
         private readonly CsvParser $csvParser,
         private readonly ImportProviderService $providers,
         private readonly AccountBalanceService $balances,
+        private readonly CategoryMatcher $categoryMatcher,
     ) {}
 
     public function createDraft(
@@ -244,14 +245,17 @@ class ImportBatchService
     private function insertTransaction(ImportBatch $batch, Account $account, array $row): void
     {
         $amount = (float) ($row['amount'] ?? 0);
+        $label = (string) ($row['label'] ?? '');
+        $user = User::query()->findOrFail($batch->user_id);
 
         Transaction::query()->create([
             'user_id' => $batch->user_id,
             'account_id' => $account->id,
             'date' => (string) ($row['date'] ?? now()->format('Y-m-d')),
-            'label' => (string) ($row['label'] ?? ''),
+            'label' => $label,
             'amount' => $amount,
             'type' => $this->transactionType($amount),
+            'category_id' => $this->categoryMatcher->match($user, $label)?->id,
             'import_batch_id' => $batch->id,
             'import_hash' => (string) ($row['import_hash'] ?? ''),
         ]);

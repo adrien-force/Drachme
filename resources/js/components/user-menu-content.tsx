@@ -43,7 +43,7 @@ export function UserMenuContent({ user }: Props) {
                         onClick={cleanup}
                     >
                         <Settings className="mr-2" />
-                        {t('nav.settings')}
+                        {t('nav.account_settings')}
                     </Link>
                 </DropdownMenuItem>
             </DropdownMenuGroup>

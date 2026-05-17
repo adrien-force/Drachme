@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Enums\TransactionType;
 use App\Models\Account;
+use App\Models\Category;
 use App\Models\Transaction;
 use App\Models\User;
 use InvalidArgumentException;
@@ -14,6 +15,7 @@ class TransactionService
 {
     public function __construct(
         private readonly AccountBalanceService $balances,
+        private readonly CategoryMatcher $categoryMatcher,
     ) {}
 
     /**
@@ -24,6 +26,8 @@ class TransactionService
      *     amount: float|string,
      *     type?: string|null,
      *     notes?: string|null,
+     *     category_id?: int|null,
+     *     apply_category_rules?: bool,
      * }  $data
      */
     public function create(User $user, array $data): Transaction
@@ -31,6 +35,12 @@ class TransactionService
         $account = $this->resolveAccount($user, (int) $data['account_id']);
         $amount = $this->parseAmount($data['amount']);
         $type = $this->resolveType($amount, isset($data['type']) ? (string) $data['type'] : null);
+        $categoryId = $this->resolveCategoryId(
+            $user,
+            $data['label'],
+            $data['category_id'] ?? null,
+            ($data['apply_category_rules'] ?? true) === true,
+        );
 
         $transaction = Transaction::query()->create([
             'user_id' => $user->id,
@@ -39,6 +49,7 @@ class TransactionService
             'label' => $data['label'],
             'amount' => $amount,
             'type' => $type,
+            'category_id' => $categoryId,
             'notes' => $data['notes'] ?? null,
         ]);
 
@@ -55,6 +66,8 @@ class TransactionService
      *     amount: float|string,
      *     type?: string|null,
      *     notes?: string|null,
+     *     category_id?: int|null,
+     *     apply_category_rules?: bool,
      * }  $data
      */
     public function update(Transaction $transaction, array $data): Transaction
@@ -68,6 +81,12 @@ class TransactionService
         $account = $this->resolveAccount($user, (int) $data['account_id']);
         $amount = $this->parseAmount($data['amount']);
         $type = $this->resolveType($amount, isset($data['type']) ? (string) $data['type'] : null);
+        $categoryId = $this->resolveCategoryId(
+            $user,
+            $data['label'],
+            $data['category_id'] ?? null,
+            ($data['apply_category_rules'] ?? false) === true,
+        );
 
         $transaction->update([
             'account_id' => $account->id,
@@ -75,6 +94,7 @@ class TransactionService
             'label' => $data['label'],
             'amount' => $amount,
             'type' => $type,
+            'category_id' => $categoryId,
             'notes' => $data['notes'] ?? null,
         ]);
 
@@ -150,5 +170,31 @@ class TransactionService
         }
 
         return TransactionType::Transfer;
+    }
+
+    private function resolveCategoryId(
+        User $user,
+        string $label,
+        ?int $explicitCategoryId,
+        bool $applyRules,
+    ): ?int {
+        if ($explicitCategoryId !== null) {
+            $category = Category::query()
+                ->where('user_id', $user->id)
+                ->whereKey($explicitCategoryId)
+                ->first();
+
+            if ($category === null) {
+                throw new InvalidArgumentException('transaction_category_forbidden');
+            }
+
+            return $category->id;
+        }
+
+        if (! $applyRules) {
+            return null;
+        }
+
+        return $this->categoryMatcher->match($user, $label)?->id;
     }
 }

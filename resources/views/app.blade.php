@@ -28,6 +28,7 @@
 
             html.dark {
                 background-color: oklch(0.145 0 0);
+                {!! $themeInlineCss ?? '' !!}
             }
         </style>
 
