@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Concerns\ResolvesAuthenticatedUser;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileDeleteRequest;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
+use App\Services\UserProfileService;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,14 +20,25 @@ class ProfileController extends Controller
 {
     use ResolvesAuthenticatedUser;
 
+    public function __construct(
+        private readonly UserProfileService $profiles,
+    ) {}
+
     /**
      * Show the user's profile settings page.
      */
     public function edit(Request $request): Response
     {
+        $user = $request->user();
+        abort_if($user === null, 403);
+
         return Inertia::render('settings/profile', [
-            'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
+            'mustVerifyEmail' => $user instanceof MustVerifyEmail,
             'status' => $request->session()->get('status'),
+            'profile' => [
+                'avatar_url' => $this->profiles->avatarUrl($user),
+                'month_start_day' => (int) ($user->month_start_day ?? 1),
+            ],
         ]);
     }
 
@@ -38,13 +49,26 @@ class ProfileController extends Controller
     {
         $user = $this->authenticatedUser($request);
 
-        $user->fill($request->validated());
+        /** @var array{
+         *     name: string,
+         *     email: string,
+         *     locale: string,
+         *     month_start_day: int,
+         * } $data */
+        $data = $request->validated();
+        $emailChanged = $user->email !== $data['email'];
 
-        if ($user->isDirty('email')) {
+        $this->profiles->update(
+            $user,
+            $data,
+            $request->file('avatar'),
+            $request->boolean('remove_avatar'),
+        );
+
+        if ($emailChanged) {
             $user->email_verified_at = null;
+            $user->save();
         }
-
-        $user->save();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('ui.settings.saved')]);
 

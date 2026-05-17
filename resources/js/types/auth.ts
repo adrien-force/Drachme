@@ -3,7 +3,8 @@ export type User = {
     name: string;
     email: string;
     locale: string;
-    avatar?: string;
+    month_start_day: number;
+    avatar?: string | null;
     email_verified_at: string | null;
     two_factor_enabled?: boolean;
     created_at: string;

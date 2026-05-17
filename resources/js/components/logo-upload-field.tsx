@@ -11,6 +11,12 @@ type LogoUploadFieldProps = {
     disabled?: boolean;
     /** When true, adds name="logo" for Inertia/HTML forms with multipart. */
     useNativeFormFields?: boolean;
+    /** Native file input name (default: logo). */
+    fieldName?: string;
+    /** Hidden input name when removing (default: remove_logo). */
+    removeFieldName?: string;
+    label?: string;
+    hint?: string;
     onFileChange?: (file: File | null) => void;
     onRemoveChange?: (remove: boolean) => void;
 };
@@ -20,6 +26,10 @@ export function LogoUploadField({
     currentLogoUrl,
     disabled = false,
     useNativeFormFields = true,
+    fieldName = 'logo',
+    removeFieldName = 'remove_logo',
+    label,
+    hint,
     onFileChange,
     onRemoveChange,
 }: LogoUploadFieldProps) {
@@ -73,7 +83,7 @@ export function LogoUploadField({
 
     return (
         <div className="flex flex-col gap-3">
-            <Label>{t('common.logo')}</Label>
+            <Label>{label ?? t('common.logo')}</Label>
             <div className="flex flex-wrap items-center gap-4">
                 <EntityLogo name={name || '?'} logoUrl={displayUrl} className="size-14" />
                 <div className="flex flex-wrap gap-2">
@@ -99,18 +109,18 @@ export function LogoUploadField({
                     )}
                 </div>
             </div>
-            <p className="text-muted-foreground text-xs">{t('common.logo_hint')}</p>
+            <p className="text-muted-foreground text-xs">{hint ?? t('common.logo_hint')}</p>
             <input
                 ref={inputRef}
                 type="file"
-                {...(useNativeFormFields ? { name: 'logo' } : {})}
+                {...(useNativeFormFields ? { name: fieldName } : {})}
                 accept="image/jpeg,image/png,image/webp"
                 className="sr-only"
                 disabled={disabled}
                 onChange={handleFileChange}
             />
             {useNativeFormFields && removeLogo && (
-                <input type="hidden" name="remove_logo" value="1" />
+                <input type="hidden" name={removeFieldName} value="1" />
             )}
         </div>
     );

@@ -1,13 +1,4 @@
-import {
-    Bar,
-    BarChart,
-    CartesianGrid,
-    Legend,
-    ResponsiveContainer,
-    Tooltip,
-    XAxis,
-    YAxis,
-} from 'recharts';
+import { Bar, BarChart, CartesianGrid, Legend, XAxis, YAxis } from 'recharts';
 
 import {
     Card,
@@ -16,40 +7,39 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import {
+    ChartContainer,
+    ChartTooltip,
+    ChartTooltipContent,
+    type ChartConfig,
+} from '@/components/ui/chart';
+import { useTranslation } from '@/hooks/use-translation';
 import { formatCurrency } from '@/lib/format-currency';
 import type { CashflowPoint } from '@/types/dashboard.types';
+
+const chartConfig = {
+    income: {
+        label: 'Revenus',
+        color: 'var(--chart-income)',
+    },
+    expense: {
+        label: 'Dépenses',
+        color: 'var(--chart-expense)',
+    },
+} satisfies ChartConfig;
+
+const tooltipCursor = {
+    fill: 'var(--muted)',
+    fillOpacity: 0.18,
+} as const;
 
 type CashflowChartProps = {
     data: CashflowPoint[];
 };
 
-function ChartTooltip({
-    active,
-    payload,
-    label,
-}: {
-    active?: boolean;
-    label?: string;
-    payload?: Array<{ dataKey: string; value: number; color: string }>;
-}) {
-    if (!active || !payload?.length) {
-        return null;
-    }
-
-    return (
-        <div className="bg-popover text-popover-foreground rounded-lg border px-3 py-2 text-sm shadow-md">
-            <p className="text-muted-foreground mb-1">{label}</p>
-            {payload.map((entry) => (
-                <p key={entry.dataKey} className="font-medium" style={{ color: entry.color }}>
-                    {entry.dataKey === 'income' ? 'Revenus' : 'Dépenses'} :{' '}
-                    {formatCurrency(entry.value)}
-                </p>
-            ))}
-        </div>
-    );
-}
-
 export function CashflowChart({ data }: CashflowChartProps) {
+    const { t } = useTranslation();
+
     return (
         <Card className="animate-in fade-in duration-500 fill-mode-both delay-150">
             <CardHeader>
@@ -57,52 +47,66 @@ export function CashflowChart({ data }: CashflowChartProps) {
                 <CardDescription>Cashflow mensuel</CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="h-72 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                            data={data}
-                            margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
-                        >
-                            <CartesianGrid
-                                stroke="var(--border)"
-                                strokeDasharray="4 4"
-                                vertical={false}
-                            />
-                            <XAxis
-                                dataKey="label"
-                                tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
-                                tickLine={false}
-                                axisLine={false}
-                                interval="preserveStartEnd"
-                            />
-                            <YAxis
-                                tickFormatter={(v) => formatCurrency(Number(v))}
-                                tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
-                                tickLine={false}
-                                axisLine={false}
-                                width={72}
-                            />
-                            <Tooltip content={<ChartTooltip />} />
-                            <Legend
-                                formatter={(value) =>
-                                    value === 'income' ? 'Revenus' : 'Dépenses'
-                                }
-                            />
-                            <Bar
-                                dataKey="income"
-                                name="income"
-                                fill="var(--chart-income)"
-                                radius={[4, 4, 0, 0]}
-                            />
-                            <Bar
-                                dataKey="expense"
-                                name="expense"
-                                fill="var(--chart-expense)"
-                                radius={[4, 4, 0, 0]}
-                            />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
+                <ChartContainer
+                    config={chartConfig}
+                    className="aspect-auto h-72 w-full [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted/15"
+                >
+                    <BarChart
+                        data={data}
+                        margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
+                    >
+                        <CartesianGrid
+                            stroke="var(--border)"
+                            strokeDasharray="4 4"
+                            vertical={false}
+                        />
+                        <XAxis
+                            dataKey="label"
+                            tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
+                            tickLine={false}
+                            axisLine={false}
+                            interval="preserveStartEnd"
+                        />
+                        <YAxis
+                            tickFormatter={(v) => formatCurrency(Number(v))}
+                            tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
+                            tickLine={false}
+                            axisLine={false}
+                            width={72}
+                        />
+                        <ChartTooltip
+                            cursor={tooltipCursor}
+                            content={
+                                <ChartTooltipContent
+                                    formatter={(value) =>
+                                        formatCurrency(Number(value), { precise: true })
+                                    }
+                                />
+                            }
+                        />
+                        <Legend
+                            formatter={(value) =>
+                                value === 'income'
+                                    ? t('dashboard.cashflow_income')
+                                    : t('dashboard.cashflow_expense')
+                            }
+                        />
+                        <Bar
+                            dataKey="income"
+                            name="income"
+                            fill="var(--color-income)"
+                            radius={[4, 4, 0, 0]}
+                            activeBar={false}
+                        />
+                        <Bar
+                            dataKey="expense"
+                            name="expense"
+                            fill="var(--color-expense)"
+                            radius={[4, 4, 0, 0]}
+                            activeBar={false}
+                        />
+                    </BarChart>
+                </ChartContainer>
             </CardContent>
         </Card>
     );

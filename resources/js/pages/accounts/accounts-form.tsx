@@ -180,6 +180,7 @@ export default function AccountsForm({
                                 <InputError message={errors.type} />
                             </div>
 
+
                             {!isEditing && (
                                 <div className="grid gap-2">
                                     <Label htmlFor="initial_balance">

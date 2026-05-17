@@ -31,6 +31,7 @@ class DashboardTest extends TestCase
             ->where('isDemoData', true)
             ->has('kpis')
             ->has('netWorthHistory', 12)
-            ->has('cashflow', 12));
+            ->has('cashflow', 12)
+            ->where('kpis.monthly_cashflow', 0));
     }
 }

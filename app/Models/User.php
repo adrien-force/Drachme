@@ -14,9 +14,11 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 
 /**
+ * @property string|null $avatar_path
+ * @property int $month_start_day
  * @property array<string, string>|null $theme_colors
  */
-#[Fillable(['name', 'email', 'password', 'locale', 'theme_colors'])]
+#[Fillable(['name', 'email', 'password', 'locale', 'avatar_path', 'month_start_day', 'theme_colors'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -35,6 +37,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
             'theme_colors' => 'array',
+            'month_start_day' => 'integer',
         ];
     }
 }

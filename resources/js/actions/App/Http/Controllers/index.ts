@@ -1,6 +1,8 @@
 import DashboardController from './DashboardController'
 import AccountController from './AccountController'
 import TransactionController from './TransactionController'
+import TransferController from './TransferController'
+import RecurringController from './RecurringController'
 import CategoryController from './CategoryController'
 import CategoryRuleController from './CategoryRuleController'
 import ImportProviderController from './ImportProviderController'
@@ -12,6 +14,8 @@ const Controllers = {
     DashboardController: Object.assign(DashboardController, DashboardController),
     AccountController: Object.assign(AccountController, AccountController),
     TransactionController: Object.assign(TransactionController, TransactionController),
+    TransferController: Object.assign(TransferController, TransferController),
+    RecurringController: Object.assign(RecurringController, RecurringController),
     CategoryController: Object.assign(CategoryController, CategoryController),
     CategoryRuleController: Object.assign(CategoryRuleController, CategoryRuleController),
     ImportProviderController: Object.assign(ImportProviderController, ImportProviderController),

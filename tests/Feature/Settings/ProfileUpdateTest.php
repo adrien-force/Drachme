@@ -34,6 +34,7 @@ class ProfileUpdateTest extends TestCase
                 'name' => 'Test User',
                 'email' => 'test@example.com',
                 'locale' => 'fr',
+                'month_start_day' => 27,
             ]);
 
         $response
@@ -44,6 +45,7 @@ class ProfileUpdateTest extends TestCase
 
         $this->assertSame('Test User', $user->name);
         $this->assertSame('test@example.com', $user->email);
+        $this->assertSame(27, $user->month_start_day);
         $this->assertNull($user->email_verified_at);
     }
 
@@ -57,6 +59,7 @@ class ProfileUpdateTest extends TestCase
                 'name' => 'Test User',
                 'email' => $user->email,
                 'locale' => 'fr',
+                'month_start_day' => 1,
             ]);
 
         $response
@@ -112,6 +115,7 @@ class ProfileUpdateTest extends TestCase
                 'name' => $user->name,
                 'email' => $user->email,
                 'locale' => 'en',
+                'month_start_day' => 15,
             ])
             ->assertSessionHasNoErrors()
             ->assertRedirect(route('profile.edit'));
