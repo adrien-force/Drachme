@@ -5,18 +5,18 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Account;
-use App\Models\Transaction;
 
+/**
+ * @deprecated Prefer BalanceEngine::recalculateAccount — kept for existing injections.
+ */
 class AccountBalanceService
 {
+    public function __construct(
+        private readonly BalanceEngine $balanceEngine,
+    ) {}
+
     public function recalculate(Account $account): void
     {
-        $sum = Transaction::query()
-            ->where('account_id', $account->id)
-            ->sum('amount');
-
-        $account->update([
-            'current_balance' => (string) ((float) $account->initial_balance + (float) $sum),
-        ]);
+        $this->balanceEngine->recalculateAccount($account);
     }
 }

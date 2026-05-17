@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\TransactionType;
+use App\Events\TransactionChanged;
 use App\Models\Account;
 use App\Models\DismissedTransferSuggestion;
 use App\Models\Transaction;
@@ -14,10 +15,6 @@ use InvalidArgumentException;
 
 class TransferService
 {
-    public function __construct(
-        private readonly AccountBalanceService $balances,
-    ) {}
-
     public function linkPair(User $user, Transaction $first, Transaction $second): void
     {
         $this->assertLinkablePair($user, $first, $second);
@@ -33,7 +30,7 @@ class TransferService
             ]);
         });
 
-        $this->recalculateAccounts($first, $second);
+        $this->dispatchBalanceRefresh($first, $second);
     }
 
     public function dismissPair(User $user, Transaction $first, Transaction $second): void
@@ -99,8 +96,8 @@ class TransferService
             $outgoing->update(['transfer_pair_id' => $incoming->id]);
             $incoming->update(['transfer_pair_id' => $outgoing->id]);
 
-            $this->balances->recalculate($fromAccount);
-            $this->balances->recalculate($toAccount);
+            TransactionChanged::dispatch($fromAccount);
+            TransactionChanged::dispatch($toAccount);
 
             return [$outgoing->fresh() ?? $outgoing, $incoming->fresh() ?? $incoming];
         });
@@ -166,17 +163,17 @@ class TransferService
         return $value;
     }
 
-    private function recalculateAccounts(Transaction $first, Transaction $second): void
+    private function dispatchBalanceRefresh(Transaction $first, Transaction $second): void
     {
         $first->loadMissing('account');
         $second->loadMissing('account');
 
         if ($first->account !== null) {
-            $this->balances->recalculate($first->account);
+            TransactionChanged::dispatch($first->account);
         }
 
         if ($second->account !== null && $second->account_id !== $first->account_id) {
-            $this->balances->recalculate($second->account);
+            TransactionChanged::dispatch($second->account);
         }
     }
 }

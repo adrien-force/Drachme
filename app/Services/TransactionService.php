@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\TransactionType;
+use App\Events\TransactionChanged;
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\Transaction;
@@ -14,7 +15,6 @@ use InvalidArgumentException;
 class TransactionService
 {
     public function __construct(
-        private readonly AccountBalanceService $balances,
         private readonly CategoryMatcher $categoryMatcher,
     ) {}
 
@@ -53,7 +53,7 @@ class TransactionService
             'notes' => $data['notes'] ?? null,
         ]);
 
-        $this->balances->recalculate($account);
+        TransactionChanged::dispatch($account);
 
         return $transaction;
     }
@@ -98,12 +98,12 @@ class TransactionService
             'notes' => $data['notes'] ?? null,
         ]);
 
-        $this->balances->recalculate($account);
+        TransactionChanged::dispatch($account);
 
         if ($previousAccountId !== $account->id) {
             $previousAccount = Account::query()->find($previousAccountId);
             if ($previousAccount !== null) {
-                $this->balances->recalculate($previousAccount);
+                TransactionChanged::dispatch($previousAccount);
             }
         }
 
@@ -144,7 +144,7 @@ class TransactionService
 
         $account = Account::query()->find($accountId);
         if ($account !== null) {
-            $this->balances->recalculate($account);
+            TransactionChanged::dispatch($account);
         }
     }
 

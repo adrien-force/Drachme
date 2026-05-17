@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Events\TransactionChanged;
+use App\Listeners\RecalculateAccountBalance;
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\CategoryRule;
@@ -18,6 +20,7 @@ use App\Policies\ImportProviderPolicy;
 use App\Policies\TransactionPolicy;
 use Carbon\CarbonImmutable;
 use App\Support\ThemeColors;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -47,6 +50,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Transaction::class, TransactionPolicy::class);
         Gate::policy(Category::class, CategoryPolicy::class);
         Gate::policy(CategoryRule::class, CategoryRulePolicy::class);
+
+        Event::listen(TransactionChanged::class, RecalculateAccountBalance::class);
 
         View::composer('app', function ($view): void {
             $colors = ThemeColors::resolveForRequest(request());

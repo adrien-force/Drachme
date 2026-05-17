@@ -8,6 +8,7 @@ use App\Enums\ImportBatchStatus;
 use App\Enums\ImportDuplicateAction;
 use App\Enums\TransactionType;
 use App\Models\Account;
+use App\Events\TransactionChanged;
 use App\Models\ImportBatch;
 use App\Models\ImportProvider;
 use App\Models\Transaction;
@@ -26,7 +27,6 @@ class ImportBatchService
     public function __construct(
         private readonly CsvParser $csvParser,
         private readonly ImportProviderService $providers,
-        private readonly AccountBalanceService $balances,
         private readonly CategoryMatcher $categoryMatcher,
     ) {}
 
@@ -160,7 +160,7 @@ class ImportBatchService
                 $imported++;
             }
 
-            $this->balances->recalculate($account);
+            TransactionChanged::dispatch($account);
 
             $storedDecisions = [];
             foreach ($decisionMap as $line => $action) {
