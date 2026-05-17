@@ -23,6 +23,9 @@ yarn-error.log
 !/.vscode/settings.json
 /.zed
 
+# Cursor IDE (local rules/skills)
+/.cursor
+
 # Drachme
 .DS_Store
 Thumbs.db

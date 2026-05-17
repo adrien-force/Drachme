@@ -16,8 +16,6 @@ use Illuminate\Database\Eloquent\Builder;
 
 class CashflowSummaryService
 {
-    private const int DEFAULT_MONTHS = 12;
-
     /**
      * Income and expense totals for a period, excluding internal transfers.
      *
@@ -56,28 +54,47 @@ class CashflowSummaryService
     /**
      * Monthly income vs expenses for the dashboard (user billing period).
      *
-     * @return list<array{month: string, label: string, income: float, expense: float}>
+     * @return list<array{
+     *     month: string,
+     *     label: string,
+     *     income: float,
+     *     expense: float,
+     *     period_start: string,
+     *     period_end: string,
+     * }>
      */
     public function monthlySeriesForUser(
         User $user,
-        int $months = self::DEFAULT_MONTHS,
+        CarbonImmutable $from,
+        CarbonImmutable $to,
         bool $includeInvestAccounts = false,
     ): array {
-        $months = max(1, $months);
+        $from = $from->startOfDay();
+        $to = $to->startOfDay();
+
+        if ($from->greaterThan($to)) {
+            $from = $to;
+        }
+
         $locale = $user->locale ?? config('app.locale', 'fr');
         $monthStartDay = $this->userMonthStartDay($user);
+        $monthsSpan = max(1, (int) $from->diffInMonths($to) + 2);
 
-        $chartPeriods = BillingPeriod::recentPeriodsChronological(
-            $monthStartDay,
-            $months,
-            CarbonImmutable::today(),
-        );
+        $chartPeriods = array_values(array_filter(
+            BillingPeriod::recentPeriodsChronological($monthStartDay, $monthsSpan, $to),
+            static fn (array $period): bool => $period['end']->greaterThanOrEqualTo($from)
+                && $period['start']->lessThanOrEqualTo($to),
+        ));
+
+        if ($chartPeriods === []) {
+            return [];
+        }
 
         $lookbackStart = $chartPeriods[0]['start'];
         $transactions = $this->scopedTransactionQuery(
             $user,
             $lookbackStart,
-            CarbonImmutable::today(),
+            $to,
             $includeInvestAccounts,
         )->get(['date', 'amount']);
 
@@ -107,6 +124,8 @@ class CashflowSummaryService
                 'label' => BillingPeriod::formatLabel($period['start'], $period['end'], $locale),
                 'income' => $income,
                 'expense' => $expense,
+                'period_start' => $period['start']->toDateString(),
+                'period_end' => $period['end']->toDateString(),
             ];
         }
 
@@ -115,10 +134,12 @@ class CashflowSummaryService
 
     public function currentPeriodNetForUser(
         User $user,
+        ?CarbonImmutable $referenceDate = null,
         bool $includeInvestAccounts = false,
     ): float {
+        $reference = ($referenceDate ?? CarbonImmutable::today())->startOfDay();
         $bounds = BillingPeriod::boundsContaining(
-            CarbonImmutable::today(),
+            $reference,
             $this->userMonthStartDay($user),
         );
 

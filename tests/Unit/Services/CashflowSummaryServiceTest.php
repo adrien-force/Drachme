@@ -10,6 +10,7 @@ use App\Models\Account;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\CashflowSummaryService;
+use App\Support\BillingPeriod;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -22,9 +23,12 @@ class CashflowSummaryServiceTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $series = app(CashflowSummaryService::class)->monthlySeriesForUser($user);
+        $to = CarbonImmutable::today();
+        $from = BillingPeriod::recentPeriodsChronological(1, 12, $to)[0]['start'];
+        $series = app(CashflowSummaryService::class)->monthlySeriesForUser($user, $from, $to);
 
         $this->assertCount(12, $series);
+        $this->assertArrayHasKey('period_start', $series[0]);
         $this->assertSame(0.0, $series[0]['income']);
         $this->assertSame(0.0, $series[0]['expense']);
         $this->assertNotSame('', $series[0]['label']);
@@ -112,7 +116,9 @@ class CashflowSummaryServiceTest extends TestCase
             'type' => TransactionType::Income,
         ]);
 
-        $series = app(CashflowSummaryService::class)->monthlySeriesForUser($user);
+        $to = CarbonImmutable::today();
+        $from = BillingPeriod::recentPeriodsChronological(27, 12, $to)[0]['start'];
+        $series = app(CashflowSummaryService::class)->monthlySeriesForUser($user, $from, $to);
         $current = $series[array_key_last($series)];
 
         $this->assertSame(700.0, $current['income']);

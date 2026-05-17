@@ -34,9 +34,18 @@ export type CashflowPoint = {
     label: string;
     income: number;
     expense: number;
+    period_start: string;
+    period_end: string;
+};
+
+export type DashboardDateRange = {
+    preset: '3m' | '6m' | '12m' | 'ytd' | 'custom';
+    from: string;
+    to: string;
 };
 
 export type DashboardPageProps = {
+    dateRange: DashboardDateRange;
     kpis: DashboardKpis;
     netWorthHistory: NetWorthPoint[];
     portfolioHistory: PortfolioEvolutionPoint[];

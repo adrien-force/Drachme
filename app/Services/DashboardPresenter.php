@@ -10,6 +10,8 @@ use App\Models\PortfolioSnapshot;
 use App\Models\Position;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Support\BillingPeriod;
+use App\Support\DashboardDateRange;
 use Carbon\CarbonImmutable;
 
 class DashboardPresenter
@@ -17,6 +19,7 @@ class DashboardPresenter
     public function __construct(
         private readonly CashflowSummaryService $cashflow,
         private readonly NetWorthSnapshotService $netWorth,
+        private readonly NetWorthHistoryService $netWorthHistory,
         private readonly PortfolioValuationService $portfolioValuation,
         private readonly PortfolioSnapshotService $portfolioSnapshots,
     ) {}
@@ -24,19 +27,26 @@ class DashboardPresenter
     /**
      * @return array<string, mixed>
      */
-    public function payload(User $user): array
+    public function payload(User $user, DashboardDateRange $range): array
     {
-        $cashflowSeries = $this->cashflow->monthlySeriesForUser($user);
-        $monthlyCashflow = $this->cashflow->currentPeriodNetForUser($user);
+        $monthStartDay = BillingPeriod::normalizeStartDay((int) ($user->month_start_day ?? 1));
+
+        $cashflowSeries = $this->cashflow->monthlySeriesForUser(
+            $user,
+            $range->from,
+            $range->to,
+        );
+        $monthlyCashflow = $this->cashflow->currentPeriodNetForUser($user, $range->to);
         $totals = $this->netWorth->totalsForUser($user);
         $netWorthValue = (float) $totals['net_worth'];
         $portfolioHistory = $this->portfolioSnapshots->evolutionSeriesForUser($user);
         $portfolioValue = $this->resolvePortfolioValue($user, $portfolioHistory);
         $accountAllocation = $this->accountAllocationByType($totals['breakdown']['accounts']);
 
-        $netWorthHistory = $this->netWorthHistory($user, $netWorthValue);
+        $netWorthHistory = $this->buildNetWorthHistory($user, $range, $monthStartDay, $netWorthValue);
 
         return [
+            'dateRange' => $range->toArray(),
             'kpis' => [
                 'net_worth' => $netWorthValue,
                 'net_worth_change_pct' => $this->netWorthChangePct($netWorthHistory, $netWorthValue),
@@ -163,18 +173,26 @@ class DashboardPresenter
     /**
      * @return list<array{month: string, label: string, value: float}>
      */
-    private function netWorthHistory(User $user, float $currentNetWorth): array
-    {
-        $points = $this->netWorth->historyPointsForUser($user);
+    private function buildNetWorthHistory(
+        User $user,
+        DashboardDateRange $range,
+        int $monthStartDay,
+        float $currentNetWorth,
+    ): array {
+        if (! $this->userHasFinancialActivity($user)) {
+            /** @var list<array{month: string, label: string, value: float}> */
+            return config('dummy-dashboard.net_worth_history');
+        }
+
+        $points = $this->netWorthHistory->pointsForUser(
+            $user,
+            $range->from,
+            $range->to,
+            $monthStartDay,
+        );
 
         if ($points === []) {
-            if (! $this->userHasFinancialActivity($user)) {
-                /** @var list<array{month: string, label: string, value: float}> */
-                return config('dummy-dashboard.net_worth_history');
-            }
-
             $today = CarbonImmutable::today();
-            $locale = app()->getLocale();
 
             return [[
                 'month' => $today->format('Y-m'),
@@ -186,7 +204,6 @@ class DashboardPresenter
         $lastIndex = count($points) - 1;
         $points[$lastIndex]['value'] = $currentNetWorth;
 
-        /** @var list<array{month: string, label: string, value: float}> */
         return $points;
     }
 

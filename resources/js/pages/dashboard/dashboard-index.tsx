@@ -1,11 +1,14 @@
 import { Head } from '@inertiajs/react';
 import { Info } from 'lucide-react';
+import { isValidElement, type ReactNode } from 'react';
 
 import { AccountAllocationChart } from '@/components/dashboard/account-allocation-chart';
 import { CashflowChart } from '@/components/dashboard/cashflow-chart';
+import { DashboardDateRangePicker } from '@/components/dashboard/dashboard-date-range-picker';
 import { NetWorthChart } from '@/components/dashboard/net-worth-chart';
 import { PortfolioEvolutionChart } from '@/components/dashboard/portfolio-evolution-chart';
 import { GlassPanel } from '@/components/glass-panel';
+import AppLayout from '@/layouts/app-layout';
 import { FadeIn } from '@/components/motion/fade-in';
 import {
     Card,
@@ -19,7 +22,8 @@ import { formatCurrency, formatPercent } from '@/lib/format-currency';
 import { dashboard } from '@/routes';
 import type { DashboardPageProps } from '@/types/dashboard.types';
 
-export default function DashboardIndex({
+function DashboardPage({
+    dateRange,
     kpis,
     netWorthHistory,
     portfolioHistory,
@@ -193,11 +197,32 @@ export default function DashboardIndex({
     );
 }
 
-DashboardIndex.layout = {
-    breadcrumbs: [
-        {
-            title: 'Tableau de bord',
-            href: dashboard(),
-        },
-    ],
-};
+export default function DashboardIndex(props: DashboardPageProps) {
+    return <DashboardPage {...props} />;
+}
+
+const dashboardBreadcrumbs = [
+    {
+        title: 'Tableau de bord',
+        href: dashboard(),
+    },
+];
+
+function dateRangeFromLayoutArg(page: ReactNode): DashboardPageProps['dateRange'] {
+    if (isValidElement(page)) {
+        return (page.props as DashboardPageProps).dateRange;
+    }
+
+    return (page as unknown as DashboardPageProps).dateRange;
+}
+
+DashboardIndex.layout = (page: ReactNode) => (
+    <AppLayout
+        breadcrumbs={dashboardBreadcrumbs}
+        headerEnd={
+            <DashboardDateRangePicker dateRange={dateRangeFromLayoutArg(page)} />
+        }
+    >
+        {page}
+    </AppLayout>
+);

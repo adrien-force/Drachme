@@ -101,12 +101,14 @@ class CashflowTransactionListConsistencyTest extends TestCase
             'type' => TransactionType::Income,
         ]);
 
-        $series = app(CashflowSummaryService::class)->monthlySeriesForUser($user);
+        $to = CarbonImmutable::parse('2026-05-15');
+        $from = \App\Support\BillingPeriod::recentPeriodsChronological(27, 12, $to)[0]['start'];
+        $series = app(CashflowSummaryService::class)->monthlySeriesForUser($user, $from, $to);
         $current = $series[array_key_last($series)];
 
         $listIncome = $this->sumWithListFilters($user, [
-            'date_from' => '2026-04-27',
-            'date_to' => '2026-05-26',
+            'date_from' => $current['period_start'],
+            'date_to' => $current['period_end'],
             'flow' => 'credit',
         ]);
 
