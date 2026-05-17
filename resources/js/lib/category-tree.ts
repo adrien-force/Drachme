@@ -136,3 +136,52 @@ export function selectOptionAncestorRootIds(
 ): number[] {
     return selectOptionAncestorIds(tree, categoryId);
 }
+
+function normalizeCategorySearchQuery(query: string): string {
+    return query.trim().toLocaleLowerCase();
+}
+
+/** Keeps nodes whose name matches or that have a matching descendant. */
+export function filterSelectOptionTree(
+    tree: CategorySelectTreeNode[],
+    query: string,
+): CategorySelectTreeNode[] {
+    const normalized = normalizeCategorySearchQuery(query);
+    if (normalized === '') {
+        return tree;
+    }
+
+    const visit = (nodes: CategorySelectTreeNode[]): CategorySelectTreeNode[] =>
+        nodes.flatMap((node) => {
+            const filteredChildren = visit(node.children);
+            const selfMatches = node.name.toLocaleLowerCase().includes(normalized);
+
+            if (!selfMatches && filteredChildren.length === 0) {
+                return [];
+            }
+
+            return [
+                {
+                    ...node,
+                    children: selfMatches ? node.children : filteredChildren,
+                },
+            ];
+        });
+
+    return visit(tree);
+}
+
+export function collectSelectOptionTreeIds(tree: CategorySelectTreeNode[]): number[] {
+    const ids: number[] = [];
+
+    const walk = (nodes: CategorySelectTreeNode[]) => {
+        for (const node of nodes) {
+            ids.push(node.id);
+            walk(node.children);
+        }
+    };
+
+    walk(tree);
+
+    return ids;
+}

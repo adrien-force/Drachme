@@ -33,6 +33,21 @@ type FormMode =
     | { type: 'create'; parentId: number | null }
     | { type: 'edit'; category: CategoryRecord };
 
+const DEFAULT_CATEGORY_COLOR = '#94a3b8';
+
+function defaultColorForParent(
+    categories: CategoryRecord[],
+    parentId: number | null,
+): string {
+    if (parentId === null) {
+        return DEFAULT_CATEGORY_COLOR;
+    }
+
+    const parent = categories.find((category) => category.id === parentId);
+
+    return parent?.color ?? DEFAULT_CATEGORY_COLOR;
+}
+
 export default function CategoriesIndex({ categories }: CategoriesIndexPageProps) {
     const { t } = useTranslation();
     const [formMode, setFormMode] = useState<FormMode | null>(null);
@@ -44,7 +59,7 @@ export default function CategoriesIndex({ categories }: CategoriesIndexPageProps
     const form = useForm({
         name: '',
         parent_id: '' as string,
-        color: '#94a3b8',
+        color: DEFAULT_CATEGORY_COLOR,
     });
 
     const deleteForm = useForm({
@@ -56,7 +71,7 @@ export default function CategoriesIndex({ categories }: CategoriesIndexPageProps
         form.setData({
             name: '',
             parent_id: parentId !== null ? String(parentId) : '',
-            color: '#94a3b8',
+            color: defaultColorForParent(categories, parentId),
         });
         setFormMode({ type: 'create', parentId });
     };
@@ -66,7 +81,7 @@ export default function CategoriesIndex({ categories }: CategoriesIndexPageProps
         form.setData({
             name: category.name,
             parent_id: category.parent_id !== null ? String(category.parent_id) : '',
-            color: category.color ?? '#94a3b8',
+            color: category.color ?? DEFAULT_CATEGORY_COLOR,
         });
         setFormMode({ type: 'edit', category });
     };

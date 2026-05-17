@@ -29,8 +29,10 @@ class RecurringPatternTest extends TestCase
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->component('recurring/recurring-index')
-                ->has('suggestions', 1)
-                ->has('confirmed', 0)
+                ->has('suggestions.data', 1)
+                ->has('confirmed.data', 0)
+                ->has('summary')
+                ->has('filters')
                 ->has('categoryOptions'));
     }
 
@@ -42,11 +44,13 @@ class RecurringPatternTest extends TestCase
 
         $this
             ->actingAs($user)
+            ->from(route('recurring.index'))
             ->post(route('recurring.confirm'), [
                 'label_pattern' => $labelPattern,
                 'display_label' => 'NETFLIX ABONNEMENT',
                 'expected_amount' => '15.99',
                 'frequency' => 'monthly',
+                'transaction_type' => 'expense',
                 'occurrence_count' => 3,
                 'account_id' => $account->id,
                 'category_id' => null,
@@ -69,8 +73,10 @@ class RecurringPatternTest extends TestCase
 
         $this
             ->actingAs($user)
+            ->from(route('recurring.index'))
             ->post(route('recurring.dismiss'), [
                 'label_pattern' => $labelPattern,
+                'transaction_type' => 'expense',
             ])
             ->assertRedirect(route('recurring.index'));
 
@@ -92,6 +98,7 @@ class RecurringPatternTest extends TestCase
             'display_label' => 'NETFLIX ABONNEMENT',
             'expected_amount' => '15.99',
             'frequency' => 'monthly',
+            'transaction_type' => TransactionType::Expense,
             'account_id' => $account->id,
             'occurrence_count' => 3,
             'is_confirmed' => true,
@@ -99,6 +106,7 @@ class RecurringPatternTest extends TestCase
 
         $this
             ->actingAs($user)
+            ->from(route('recurring.index'))
             ->delete(route('recurring.destroy', $pattern))
             ->assertRedirect(route('recurring.index'));
 
@@ -119,6 +127,7 @@ class RecurringPatternTest extends TestCase
             'display_label' => 'NETFLIX ABONNEMENT',
             'expected_amount' => '15.99',
             'frequency' => 'monthly',
+            'transaction_type' => TransactionType::Expense,
             'account_id' => $account->id,
             'occurrence_count' => 3,
             'is_confirmed' => true,

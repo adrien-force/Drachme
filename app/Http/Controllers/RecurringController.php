@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\DataTransferObjects\RecurringSuggestion;
+use App\Enums\RecurringFrequency;
 use App\Http\Requests\Recurring\ConfirmRecurringRequest;
 use App\Http\Requests\Recurring\DismissRecurringRequest;
+use App\Http\Requests\Recurring\IndexRecurringRequest;
 use App\Models\RecurringPattern;
 use App\Services\RecurringDetector;
+use App\Services\RecurringListService;
 use App\Services\RecurringPatternService;
 use App\Services\RecurringPresenter;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -26,19 +29,30 @@ class RecurringController extends Controller
         private readonly RecurringDetector $detector,
         private readonly RecurringPatternService $patterns,
         private readonly RecurringPresenter $presenter,
+        private readonly RecurringListService $list,
     ) {}
 
-    public function index(): Response
+    public function index(IndexRecurringRequest $request): Response
     {
         $user = Auth::user();
         abort_if($user === null, 403);
 
+        $filters = $request->listFilters();
         $suggestions = $this->detector->findSuggestions($user);
-        $confirmed = $this->patterns->confirmedForUser($user);
+
+        $confirmedPaginator = $this->list->paginateConfirmed($user, $filters);
+        $suggestionsPaginator = $this->list->paginateSuggestions($user, $suggestions, $filters);
 
         return Inertia::render('recurring/recurring-index', [
-            'suggestions' => $this->presenter->serializeSuggestions($suggestions),
-            'confirmed' => $this->presenter->serializeConfirmed($confirmed),
+            'confirmed' => $this->presenter->serializeConfirmedPaginator($confirmedPaginator),
+            'suggestions' => $this->presenter->serializeSuggestionsPaginator($suggestionsPaginator),
+            'summary' => $this->list->buildSummary($user, $filters),
+            'filters' => $request->listFiltersForFrontend(),
+            'perPageOptions' => IndexRecurringRequest::perPageOptions(),
+            'frequencyOptions' => array_map(
+                static fn (RecurringFrequency $frequency): string => $frequency->value,
+                RecurringFrequency::cases(),
+            ),
             'categoryOptions' => $this->presenter->categoryOptions($user),
         ]);
     }
@@ -56,6 +70,7 @@ class RecurringController extends Controller
                 displayLabel: $payload['display_label'],
                 expectedAmount: $payload['expected_amount'],
                 frequency: $payload['frequency'],
+                transactionType: $payload['transaction_type'],
                 occurrenceCount: $payload['occurrence_count'],
                 score: 100,
                 suggestedCategoryId: $payload['suggested_category_id'],
@@ -74,9 +89,7 @@ class RecurringController extends Controller
             ]);
         }
 
-        return redirect()
-            ->route('recurring.index')
-            ->with('success', __('ui.recurring.confirmed'));
+        return back()->with('success', __('ui.recurring.confirmed'));
     }
 
     public function dismiss(DismissRecurringRequest $request): RedirectResponse
@@ -84,11 +97,13 @@ class RecurringController extends Controller
         $user = $request->user();
         abort_if($user === null, 403);
 
-        $this->patterns->dismiss($user, (string) $request->input('label_pattern'));
+        $this->patterns->dismiss(
+            $user,
+            (string) $request->input('label_pattern'),
+            $request->transactionType(),
+        );
 
-        return redirect()
-            ->route('recurring.index')
-            ->with('success', __('ui.recurring.dismissed'));
+        return back()->with('success', __('ui.recurring.dismissed'));
     }
 
     public function destroy(RecurringPattern $recurringPattern): RedirectResponse
@@ -97,9 +112,7 @@ class RecurringController extends Controller
 
         $recurringPattern->delete();
 
-        return redirect()
-            ->route('recurring.index')
-            ->with('success', __('ui.recurring.removed'));
+        return back()->with('success', __('ui.recurring.removed'));
     }
 
     private function errorMessage(string $key): string

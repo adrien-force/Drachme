@@ -1,5 +1,6 @@
-import { Head, Link } from '@inertiajs/react';
-import { Plus, TrendingUp } from 'lucide-react';
+import { Head, Link, router } from '@inertiajs/react';
+import { Plus, RefreshCw, TrendingUp } from 'lucide-react';
+import { useState } from 'react';
 
 import { EntityLogo } from '@/components/entity-logo';
 import { FadeIn } from '@/components/motion/fade-in';
@@ -8,10 +9,15 @@ import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
 import { PortfolioImportHistory } from '@/components/investments/portfolio-import-history';
 import { formatCurrency } from '@/lib/format-currency';
+import { refreshPrices as refreshPricesRoute } from '@/routes/investments';
 import type { InvestmentsIndexPageProps } from '@/types/position.types';
 
-export default function InvestmentsIndex({ accounts }: InvestmentsIndexPageProps) {
+export default function InvestmentsIndex({
+    accounts,
+    marketDataConfigured,
+}: InvestmentsIndexPageProps) {
     const { t } = useTranslation();
+    const [refreshingPrices, setRefreshingPrices] = useState(false);
 
     return (
         <>
@@ -33,12 +39,42 @@ export default function InvestmentsIndex({ accounts }: InvestmentsIndexPageProps
                                 </p>
                             </div>
                         </div>
-                        <Button asChild>
-                            <Link href="/accounts/create">
-                                <Plus className="mr-2 size-4" />
-                                {t('investments.create_invest_account')}
-                            </Link>
-                        </Button>
+                        <div className="flex flex-wrap gap-2">
+                            {accounts.length > 0 ? (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    disabled={!marketDataConfigured || refreshingPrices}
+                                    title={
+                                        marketDataConfigured
+                                            ? undefined
+                                            : t('investments.market_data_not_configured')
+                                    }
+                                    onClick={() => {
+                                        setRefreshingPrices(true);
+                                        router.post(
+                                            refreshPricesRoute.url(),
+                                            {},
+                                            {
+                                                preserveScroll: true,
+                                                onFinish: () => setRefreshingPrices(false),
+                                            },
+                                        );
+                                    }}
+                                >
+                                    <RefreshCw
+                                        className={`mr-2 size-4 ${refreshingPrices ? 'animate-spin' : ''}`}
+                                    />
+                                    {t('investments.refresh_prices')}
+                                </Button>
+                            ) : null}
+                            <Button asChild>
+                                <Link href="/accounts/create">
+                                    <Plus className="mr-2 size-4" />
+                                    {t('investments.create_invest_account')}
+                                </Link>
+                            </Button>
+                        </div>
                     </div>
                 </FadeIn>
 

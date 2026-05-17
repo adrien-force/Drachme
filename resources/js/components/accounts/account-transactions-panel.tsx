@@ -420,7 +420,7 @@ export function AccountTransactionsPanel({
                                             />
                                         </button>
                                     </th>
-                                    <th className="px-3 py-2 text-left">
+                                    <th className="w-[15rem] min-w-[15rem] px-3 py-2 text-left">
                                         <button
                                             type="button"
                                             className="hover:text-foreground inline-flex items-center font-medium uppercase"
@@ -478,11 +478,12 @@ export function AccountTransactionsPanel({
                                         <td className="px-3 py-2">
                                             <TransactionTypeBadge type={transaction.type} />
                                         </td>
-                                        <td className="px-3 py-2">
+                                        <td className="w-[15rem] min-w-[15rem] max-w-[15rem] px-3 py-2">
                                             {transaction.category_name ? (
                                                 <CategoryBadge
                                                     name={transaction.category_name}
                                                     color={transaction.category_color}
+                                                    className="max-w-full"
                                                 />
                                             ) : (
                                                 <span className="text-muted-foreground text-xs">

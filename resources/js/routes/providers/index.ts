@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../wayfinder'
 /**
 * @see \App\Http\Controllers\ImportProviderController::index
-* @see app/Http/Controllers/ImportProviderController.php:33
+* @see app/Http/Controllers/ImportProviderController.php:35
 * @route '/providers'
 */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::index
-* @see app/Http/Controllers/ImportProviderController.php:33
+* @see app/Http/Controllers/ImportProviderController.php:35
 * @route '/providers'
 */
 index.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::index
-* @see app/Http/Controllers/ImportProviderController.php:33
+* @see app/Http/Controllers/ImportProviderController.php:35
 * @route '/providers'
 */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -35,7 +35,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::index
-* @see app/Http/Controllers/ImportProviderController.php:33
+* @see app/Http/Controllers/ImportProviderController.php:35
 * @route '/providers'
 */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -45,7 +45,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::index
-* @see app/Http/Controllers/ImportProviderController.php:33
+* @see app/Http/Controllers/ImportProviderController.php:35
 * @route '/providers'
 */
 const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -55,7 +55,7 @@ const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => (
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::index
-* @see app/Http/Controllers/ImportProviderController.php:33
+* @see app/Http/Controllers/ImportProviderController.php:35
 * @route '/providers'
 */
 indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -65,7 +65,7 @@ indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::index
-* @see app/Http/Controllers/ImportProviderController.php:33
+* @see app/Http/Controllers/ImportProviderController.php:35
 * @route '/providers'
 */
 indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -82,7 +82,7 @@ index.form = indexForm
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::create
-* @see app/Http/Controllers/ImportProviderController.php:48
+* @see app/Http/Controllers/ImportProviderController.php:50
 * @route '/providers/create'
 */
 export const create = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -97,7 +97,7 @@ create.definition = {
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::create
-* @see app/Http/Controllers/ImportProviderController.php:48
+* @see app/Http/Controllers/ImportProviderController.php:50
 * @route '/providers/create'
 */
 create.url = (options?: RouteQueryOptions) => {
@@ -106,7 +106,7 @@ create.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::create
-* @see app/Http/Controllers/ImportProviderController.php:48
+* @see app/Http/Controllers/ImportProviderController.php:50
 * @route '/providers/create'
 */
 create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -116,7 +116,7 @@ create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::create
-* @see app/Http/Controllers/ImportProviderController.php:48
+* @see app/Http/Controllers/ImportProviderController.php:50
 * @route '/providers/create'
 */
 create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -126,7 +126,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::create
-* @see app/Http/Controllers/ImportProviderController.php:48
+* @see app/Http/Controllers/ImportProviderController.php:50
 * @route '/providers/create'
 */
 const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -136,7 +136,7 @@ const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => 
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::create
-* @see app/Http/Controllers/ImportProviderController.php:48
+* @see app/Http/Controllers/ImportProviderController.php:50
 * @route '/providers/create'
 */
 createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -146,7 +146,7 @@ createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::create
-* @see app/Http/Controllers/ImportProviderController.php:48
+* @see app/Http/Controllers/ImportProviderController.php:50
 * @route '/providers/create'
 */
 createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -163,7 +163,7 @@ create.form = createForm
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::detectDateFormat
-* @see app/Http/Controllers/ImportProviderController.php:73
+* @see app/Http/Controllers/ImportProviderController.php:75
 * @route '/providers/detect-date-format'
 */
 export const detectDateFormat = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -178,7 +178,7 @@ detectDateFormat.definition = {
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::detectDateFormat
-* @see app/Http/Controllers/ImportProviderController.php:73
+* @see app/Http/Controllers/ImportProviderController.php:75
 * @route '/providers/detect-date-format'
 */
 detectDateFormat.url = (options?: RouteQueryOptions) => {
@@ -187,7 +187,7 @@ detectDateFormat.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::detectDateFormat
-* @see app/Http/Controllers/ImportProviderController.php:73
+* @see app/Http/Controllers/ImportProviderController.php:75
 * @route '/providers/detect-date-format'
 */
 detectDateFormat.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -197,7 +197,7 @@ detectDateFormat.post = (options?: RouteQueryOptions): RouteDefinition<'post'> =
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::detectDateFormat
-* @see app/Http/Controllers/ImportProviderController.php:73
+* @see app/Http/Controllers/ImportProviderController.php:75
 * @route '/providers/detect-date-format'
 */
 const detectDateFormatForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -207,7 +207,7 @@ const detectDateFormatForm = (options?: RouteQueryOptions): RouteFormDefinition<
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::detectDateFormat
-* @see app/Http/Controllers/ImportProviderController.php:73
+* @see app/Http/Controllers/ImportProviderController.php:75
 * @route '/providers/detect-date-format'
 */
 detectDateFormatForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -219,7 +219,7 @@ detectDateFormat.form = detectDateFormatForm
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::preview
-* @see app/Http/Controllers/ImportProviderController.php:88
+* @see app/Http/Controllers/ImportProviderController.php:90
 * @route '/providers/preview'
 */
 export const preview = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -234,7 +234,7 @@ preview.definition = {
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::preview
-* @see app/Http/Controllers/ImportProviderController.php:88
+* @see app/Http/Controllers/ImportProviderController.php:90
 * @route '/providers/preview'
 */
 preview.url = (options?: RouteQueryOptions) => {
@@ -243,7 +243,7 @@ preview.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::preview
-* @see app/Http/Controllers/ImportProviderController.php:88
+* @see app/Http/Controllers/ImportProviderController.php:90
 * @route '/providers/preview'
 */
 preview.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -253,7 +253,7 @@ preview.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::preview
-* @see app/Http/Controllers/ImportProviderController.php:88
+* @see app/Http/Controllers/ImportProviderController.php:90
 * @route '/providers/preview'
 */
 const previewForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -263,7 +263,7 @@ const previewForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> =
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::preview
-* @see app/Http/Controllers/ImportProviderController.php:88
+* @see app/Http/Controllers/ImportProviderController.php:90
 * @route '/providers/preview'
 */
 previewForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -275,7 +275,7 @@ preview.form = previewForm
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::store
-* @see app/Http/Controllers/ImportProviderController.php:108
+* @see app/Http/Controllers/ImportProviderController.php:110
 * @route '/providers'
 */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -290,7 +290,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::store
-* @see app/Http/Controllers/ImportProviderController.php:108
+* @see app/Http/Controllers/ImportProviderController.php:110
 * @route '/providers'
 */
 store.url = (options?: RouteQueryOptions) => {
@@ -299,7 +299,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::store
-* @see app/Http/Controllers/ImportProviderController.php:108
+* @see app/Http/Controllers/ImportProviderController.php:110
 * @route '/providers'
 */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -309,7 +309,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::store
-* @see app/Http/Controllers/ImportProviderController.php:108
+* @see app/Http/Controllers/ImportProviderController.php:110
 * @route '/providers'
 */
 const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -319,7 +319,7 @@ const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => 
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::store
-* @see app/Http/Controllers/ImportProviderController.php:108
+* @see app/Http/Controllers/ImportProviderController.php:110
 * @route '/providers'
 */
 storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -331,7 +331,7 @@ store.form = storeForm
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::show
-* @see app/Http/Controllers/ImportProviderController.php:55
+* @see app/Http/Controllers/ImportProviderController.php:57
 * @route '/providers/{importProvider}'
 */
 export const show = (args: { importProvider: number | { id: number } } | [importProvider: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -346,7 +346,7 @@ show.definition = {
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::show
-* @see app/Http/Controllers/ImportProviderController.php:55
+* @see app/Http/Controllers/ImportProviderController.php:57
 * @route '/providers/{importProvider}'
 */
 show.url = (args: { importProvider: number | { id: number } } | [importProvider: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -379,7 +379,7 @@ show.url = (args: { importProvider: number | { id: number } } | [importProvider:
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::show
-* @see app/Http/Controllers/ImportProviderController.php:55
+* @see app/Http/Controllers/ImportProviderController.php:57
 * @route '/providers/{importProvider}'
 */
 show.get = (args: { importProvider: number | { id: number } } | [importProvider: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -389,7 +389,7 @@ show.get = (args: { importProvider: number | { id: number } } | [importProvider:
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::show
-* @see app/Http/Controllers/ImportProviderController.php:55
+* @see app/Http/Controllers/ImportProviderController.php:57
 * @route '/providers/{importProvider}'
 */
 show.head = (args: { importProvider: number | { id: number } } | [importProvider: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -399,7 +399,7 @@ show.head = (args: { importProvider: number | { id: number } } | [importProvider
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::show
-* @see app/Http/Controllers/ImportProviderController.php:55
+* @see app/Http/Controllers/ImportProviderController.php:57
 * @route '/providers/{importProvider}'
 */
 const showForm = (args: { importProvider: number | { id: number } } | [importProvider: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -409,7 +409,7 @@ const showForm = (args: { importProvider: number | { id: number } } | [importPro
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::show
-* @see app/Http/Controllers/ImportProviderController.php:55
+* @see app/Http/Controllers/ImportProviderController.php:57
 * @route '/providers/{importProvider}'
 */
 showForm.get = (args: { importProvider: number | { id: number } } | [importProvider: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -419,7 +419,7 @@ showForm.get = (args: { importProvider: number | { id: number } } | [importProvi
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::show
-* @see app/Http/Controllers/ImportProviderController.php:55
+* @see app/Http/Controllers/ImportProviderController.php:57
 * @route '/providers/{importProvider}'
 */
 showForm.head = (args: { importProvider: number | { id: number } } | [importProvider: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -436,7 +436,7 @@ show.form = showForm
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::edit
-* @see app/Http/Controllers/ImportProviderController.php:64
+* @see app/Http/Controllers/ImportProviderController.php:66
 * @route '/providers/{importProvider}/edit'
 */
 export const edit = (args: { importProvider: number | { id: number } } | [importProvider: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -451,7 +451,7 @@ edit.definition = {
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::edit
-* @see app/Http/Controllers/ImportProviderController.php:64
+* @see app/Http/Controllers/ImportProviderController.php:66
 * @route '/providers/{importProvider}/edit'
 */
 edit.url = (args: { importProvider: number | { id: number } } | [importProvider: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -484,7 +484,7 @@ edit.url = (args: { importProvider: number | { id: number } } | [importProvider:
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::edit
-* @see app/Http/Controllers/ImportProviderController.php:64
+* @see app/Http/Controllers/ImportProviderController.php:66
 * @route '/providers/{importProvider}/edit'
 */
 edit.get = (args: { importProvider: number | { id: number } } | [importProvider: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -494,7 +494,7 @@ edit.get = (args: { importProvider: number | { id: number } } | [importProvider:
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::edit
-* @see app/Http/Controllers/ImportProviderController.php:64
+* @see app/Http/Controllers/ImportProviderController.php:66
 * @route '/providers/{importProvider}/edit'
 */
 edit.head = (args: { importProvider: number | { id: number } } | [importProvider: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -504,7 +504,7 @@ edit.head = (args: { importProvider: number | { id: number } } | [importProvider
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::edit
-* @see app/Http/Controllers/ImportProviderController.php:64
+* @see app/Http/Controllers/ImportProviderController.php:66
 * @route '/providers/{importProvider}/edit'
 */
 const editForm = (args: { importProvider: number | { id: number } } | [importProvider: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -514,7 +514,7 @@ const editForm = (args: { importProvider: number | { id: number } } | [importPro
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::edit
-* @see app/Http/Controllers/ImportProviderController.php:64
+* @see app/Http/Controllers/ImportProviderController.php:66
 * @route '/providers/{importProvider}/edit'
 */
 editForm.get = (args: { importProvider: number | { id: number } } | [importProvider: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -524,7 +524,7 @@ editForm.get = (args: { importProvider: number | { id: number } } | [importProvi
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::edit
-* @see app/Http/Controllers/ImportProviderController.php:64
+* @see app/Http/Controllers/ImportProviderController.php:66
 * @route '/providers/{importProvider}/edit'
 */
 editForm.head = (args: { importProvider: number | { id: number } } | [importProvider: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -541,7 +541,7 @@ edit.form = editForm
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::update
-* @see app/Http/Controllers/ImportProviderController.php:133
+* @see app/Http/Controllers/ImportProviderController.php:136
 * @route '/providers/{importProvider}'
 */
 export const update = (args: { importProvider: number | { id: number } } | [importProvider: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -556,7 +556,7 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::update
-* @see app/Http/Controllers/ImportProviderController.php:133
+* @see app/Http/Controllers/ImportProviderController.php:136
 * @route '/providers/{importProvider}'
 */
 update.url = (args: { importProvider: number | { id: number } } | [importProvider: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -589,7 +589,7 @@ update.url = (args: { importProvider: number | { id: number } } | [importProvide
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::update
-* @see app/Http/Controllers/ImportProviderController.php:133
+* @see app/Http/Controllers/ImportProviderController.php:136
 * @route '/providers/{importProvider}'
 */
 update.put = (args: { importProvider: number | { id: number } } | [importProvider: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -599,7 +599,7 @@ update.put = (args: { importProvider: number | { id: number } } | [importProvide
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::update
-* @see app/Http/Controllers/ImportProviderController.php:133
+* @see app/Http/Controllers/ImportProviderController.php:136
 * @route '/providers/{importProvider}'
 */
 const updateForm = (args: { importProvider: number | { id: number } } | [importProvider: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -614,7 +614,7 @@ const updateForm = (args: { importProvider: number | { id: number } } | [importP
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::update
-* @see app/Http/Controllers/ImportProviderController.php:133
+* @see app/Http/Controllers/ImportProviderController.php:136
 * @route '/providers/{importProvider}'
 */
 updateForm.put = (args: { importProvider: number | { id: number } } | [importProvider: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -631,7 +631,7 @@ update.form = updateForm
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::destroy
-* @see app/Http/Controllers/ImportProviderController.php:155
+* @see app/Http/Controllers/ImportProviderController.php:159
 * @route '/providers/{importProvider}'
 */
 export const destroy = (args: { importProvider: number | { id: number } } | [importProvider: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -646,7 +646,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::destroy
-* @see app/Http/Controllers/ImportProviderController.php:155
+* @see app/Http/Controllers/ImportProviderController.php:159
 * @route '/providers/{importProvider}'
 */
 destroy.url = (args: { importProvider: number | { id: number } } | [importProvider: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -679,7 +679,7 @@ destroy.url = (args: { importProvider: number | { id: number } } | [importProvid
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::destroy
-* @see app/Http/Controllers/ImportProviderController.php:155
+* @see app/Http/Controllers/ImportProviderController.php:159
 * @route '/providers/{importProvider}'
 */
 destroy.delete = (args: { importProvider: number | { id: number } } | [importProvider: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -689,7 +689,7 @@ destroy.delete = (args: { importProvider: number | { id: number } } | [importPro
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::destroy
-* @see app/Http/Controllers/ImportProviderController.php:155
+* @see app/Http/Controllers/ImportProviderController.php:159
 * @route '/providers/{importProvider}'
 */
 const destroyForm = (args: { importProvider: number | { id: number } } | [importProvider: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -704,7 +704,7 @@ const destroyForm = (args: { importProvider: number | { id: number } } | [import
 
 /**
 * @see \App\Http\Controllers\ImportProviderController::destroy
-* @see app/Http/Controllers/ImportProviderController.php:155
+* @see app/Http/Controllers/ImportProviderController.php:159
 * @route '/providers/{importProvider}'
 */
 destroyForm.delete = (args: { importProvider: number | { id: number } } | [importProvider: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

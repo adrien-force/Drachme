@@ -65,4 +65,5 @@ export type InvestmentAccountRow = {
 
 export type InvestmentsIndexPageProps = {
     accounts: InvestmentAccountRow[];
+    marketDataConfigured: boolean;
 };

@@ -89,6 +89,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('import/{importBatch}/commit', [ImportController::class, 'commit'])->name('import.commit');
     Route::delete('import/{importBatch}', [ImportController::class, 'destroy'])->name('import.destroy');
     Route::get('investments', [InvestmentsController::class, 'index'])->name('investments.index');
+    Route::post('investments/refresh-prices', [InvestmentsController::class, 'refreshPrices'])
+        ->name('investments.refresh-prices');
     Route::delete('investments/snapshots/{portfolioSnapshot}', [InvestmentsController::class, 'destroySnapshot'])
         ->name('investments.snapshots.destroy');
 });

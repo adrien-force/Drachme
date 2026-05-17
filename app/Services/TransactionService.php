@@ -16,6 +16,7 @@ class TransactionService
 {
     public function __construct(
         private readonly CategoryMatcher $categoryMatcher,
+        private readonly RecurringPatternService $recurringPatterns,
     ) {}
 
     /**
@@ -107,7 +108,10 @@ class TransactionService
             }
         }
 
-        return $transaction->fresh() ?? $transaction;
+        $transaction = $transaction->fresh() ?? $transaction;
+        $this->recurringPatterns->syncCategoryFromTransaction($user, $transaction);
+
+        return $transaction;
     }
 
     public function updateCategory(Transaction $transaction, ?int $categoryId): Transaction
@@ -130,7 +134,10 @@ class TransactionService
 
         $transaction->update(['category_id' => $categoryId]);
 
-        return $transaction->fresh(['category:id,name,color']) ?? $transaction;
+        $transaction = $transaction->fresh(['category:id,name,color']) ?? $transaction;
+        $this->recurringPatterns->syncCategoryFromTransaction($user, $transaction);
+
+        return $transaction;
     }
 
     public function delete(Transaction $transaction): void

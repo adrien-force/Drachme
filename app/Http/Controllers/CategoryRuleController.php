@@ -8,7 +8,6 @@ use App\Http\Requests\CategoryRules\StoreCategoryRuleFromLabelRequest;
 use App\Http\Requests\CategoryRules\StoreCategoryRuleRequest;
 use App\Http\Requests\CategoryRules\UpdateCategoryRuleRequest;
 use App\Models\CategoryRule;
-use App\Models\Transaction;
 use App\Services\CategoryMatcher;
 use App\Services\CategoryRuleService;
 use App\Services\CategoryService;
@@ -103,15 +102,8 @@ class CategoryRuleController extends Controller
             'message' => __('ui.category_rules.created_from_label'),
         ]);
 
-        $transactionId = $request->integer('apply_to_transaction_id');
-        if ($transactionId > 0) {
-            $transaction = Transaction::query()->whereKey($transactionId)->first();
-            if ($transaction !== null) {
-                return to_route('accounts.show', [
-                    'account' => $transaction->account_id,
-                    'edit_transaction' => $transaction->id,
-                ]);
-            }
+        if ($request->integer('apply_to_transaction_id') > 0) {
+            return back();
         }
 
         return to_route('category-rules.index');

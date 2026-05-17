@@ -49,16 +49,24 @@ class RecurringDetector
             return [];
         }
 
-        $dismissed = DismissedRecurringPattern::query()
+        $dismissedKeys = DismissedRecurringPattern::query()
             ->where('user_id', $user->id)
-            ->pluck('label_pattern')
-            ->flip();
+            ->get()
+            ->mapWithKeys(
+                fn (DismissedRecurringPattern $row): array => [
+                    $this->patternGroupKey($row->label_pattern, $row->transaction_type) => true,
+                ],
+            );
 
-        $confirmed = RecurringPattern::query()
+        $confirmedKeys = RecurringPattern::query()
             ->where('user_id', $user->id)
             ->where('is_confirmed', true)
-            ->pluck('label_pattern')
-            ->flip();
+            ->get()
+            ->mapWithKeys(
+                fn (RecurringPattern $row): array => [
+                    $this->patternGroupKey($row->label_pattern, $row->transaction_type) => true,
+                ],
+            );
 
         /** @var array<string, list<Transaction>> $groups */
         $groups = [];
@@ -70,13 +78,16 @@ class RecurringDetector
                 continue;
             }
 
-            $groups[$pattern][] = $transaction;
+            $type = $transaction->type instanceof TransactionType
+                ? $transaction->type->value
+                : (string) $transaction->type;
+            $groups[$pattern.'|'.$type][] = $transaction;
         }
 
         $suggestions = [];
 
-        foreach ($groups as $labelPattern => $group) {
-            if ($dismissed->has($labelPattern) || $confirmed->has($labelPattern)) {
+        foreach ($groups as $groupKey => $group) {
+            if ($dismissedKeys->has($groupKey) || $confirmedKeys->has($groupKey)) {
                 continue;
             }
 
@@ -84,6 +95,7 @@ class RecurringDetector
                 continue;
             }
 
+            [$labelPattern] = explode('|', $groupKey, 2);
             $suggestion = $this->buildSuggestion($user, $labelPattern, $group);
 
             if ($suggestion !== null && $suggestion->score >= 60) {
@@ -137,12 +149,16 @@ class RecurringDetector
         $displayLabel = $this->resolveDisplayLabel($group);
         $lastTransaction = $group[count($group) - 1];
         $suggestedCategoryId = $this->resolveSuggestedCategoryId($user, $group);
+        $transactionType = $lastTransaction->type instanceof TransactionType
+            ? $lastTransaction->type
+            : TransactionType::from((string) $lastTransaction->type);
 
         return new RecurringSuggestion(
             labelPattern: $labelPattern,
             displayLabel: $displayLabel,
             expectedAmount: $expectedAmount,
             frequency: $frequency,
+            transactionType: $transactionType,
             occurrenceCount: count($group),
             score: $this->scoreSuggestion($labelPattern, $dates, $frequency),
             suggestedCategoryId: $suggestedCategoryId,
@@ -271,6 +287,13 @@ class RecurringDetector
         $score += (int) max(0, 20 - $averageDeviation);
 
         return min(100, $score);
+    }
+
+    private function patternGroupKey(string $labelPattern, TransactionType|string $type): string
+    {
+        $typeValue = $type instanceof TransactionType ? $type->value : $type;
+
+        return $labelPattern.'|'.$typeValue;
     }
 
     /**

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Recurring;
 
+use App\Enums\TransactionType;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class DismissRecurringRequest extends FormRequest
 {
@@ -20,6 +22,12 @@ class DismissRecurringRequest extends FormRequest
     {
         return [
             'label_pattern' => ['required', 'string', 'max:500'],
+            'transaction_type' => ['required', Rule::enum(TransactionType::class)],
         ];
+    }
+
+    public function transactionType(): TransactionType
+    {
+        return TransactionType::from((string) $this->input('transaction_type'));
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\RecurringFrequency;
+use App\Enums\TransactionType;
 use App\Models\Concerns\BelongsToUser;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -22,6 +23,7 @@ class RecurringPattern extends Model
         'display_label',
         'expected_amount',
         'frequency',
+        'transaction_type',
         'category_id',
         'account_id',
         'occurrence_count',
@@ -37,6 +39,7 @@ class RecurringPattern extends Model
         return [
             'expected_amount' => 'decimal:2',
             'frequency' => RecurringFrequency::class,
+            'transaction_type' => TransactionType::class,
             'last_seen_at' => 'date',
             'is_confirmed' => 'boolean',
         ];

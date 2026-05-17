@@ -6,6 +6,8 @@ namespace Tests\Feature\Transactions;
 
 use App\Enums\TransactionType;
 use App\Models\Account;
+use App\Models\Category;
+use App\Models\RecurringPattern;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Support\RecurringLabelNormalizer;
@@ -74,6 +76,39 @@ class TransactionRecurringTest extends TestCase
             'user_id' => $user->id,
             'label_pattern' => $labelPattern,
         ]);
+    }
+
+    public function test_recurring_pattern_category_syncs_when_transaction_is_categorized(): void
+    {
+        $user = User::factory()->create();
+        $category = Category::factory()->for($user)->create(['name' => 'Abonnements']);
+        $account = Account::factory()->for($user)->create();
+
+        $transaction = Transaction::factory()->for($user)->for($account)->create([
+            'label' => 'Spotify Premium',
+            'amount' => '-9.99',
+            'type' => TransactionType::Expense,
+            'category_id' => null,
+        ]);
+
+        $this
+            ->actingAs($user)
+            ->post(route('transactions.mark-recurring', $transaction), [
+                'frequency' => 'monthly',
+            ]);
+
+        $pattern = RecurringPattern::query()->where('user_id', $user->id)->firstOrFail();
+        $this->assertNull($pattern->category_id);
+
+        $this
+            ->actingAs($user)
+            ->patch(route('transactions.update-category', $transaction), [
+                'category_id' => $category->id,
+            ])
+            ->assertRedirect();
+
+        $pattern->refresh();
+        $this->assertSame($category->id, $pattern->category_id);
     }
 
     public function test_transfer_transaction_cannot_be_marked_recurring(): void

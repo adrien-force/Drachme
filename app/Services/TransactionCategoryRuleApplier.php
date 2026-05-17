@@ -11,6 +11,7 @@ class TransactionCategoryRuleApplier
 {
     public function __construct(
         private readonly CategoryMatcher $matcher,
+        private readonly RecurringPatternService $recurringPatterns,
     ) {}
 
     /**
@@ -39,6 +40,8 @@ class TransactionCategoryRuleApplier
                 }
 
                 $transaction->update(['category_id' => $category->id]);
+                $transaction->refresh();
+                $this->recurringPatterns->syncCategoryFromTransaction($user, $transaction);
                 $matched++;
             }
         });

@@ -84,12 +84,13 @@ export function TransactionEditModal({
             <DialogContent
                 aria-describedby={undefined}
                 overlayClassName="bg-black/60 backdrop-blur-sm"
-                className="bg-card border-border max-h-[min(90vh,820px)] overflow-y-auto shadow-xl sm:max-w-xl"
+                className="bg-card border-border flex max-h-[min(90vh,820px)] flex-col overflow-hidden shadow-xl sm:max-w-xl"
             >
                 <DialogHeader>
                     <DialogTitle>{t('transactions.edit_title')}</DialogTitle>
                 </DialogHeader>
 
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
                 <TransactionFormPanel
                     form={form}
                     accounts={accounts}
@@ -102,6 +103,7 @@ export function TransactionEditModal({
                     onCancel={onClose}
                     onSubmit={submit}
                 />
+                </div>
             </DialogContent>
         </Dialog>
     );

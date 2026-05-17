@@ -1,5 +1,5 @@
-import { Check, ChevronDown, ChevronRight } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { Check, ChevronDown, ChevronRight, Search } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -7,6 +7,7 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import { Input } from '@/components/ui/input';
 import {
     Popover,
     PopoverContent,
@@ -14,6 +15,8 @@ import {
 } from '@/components/ui/popover';
 import {
     buildSelectOptionTree,
+    collectSelectOptionTreeIds,
+    filterSelectOptionTree,
     selectOptionAncestorIds,
 } from '@/lib/category-tree';
 import { useTranslation } from '@/hooks/use-translation';
@@ -23,16 +26,68 @@ import type { CategorySelectOption, CategorySelectTreeNode } from '@/types/categ
 const NONE_VALUE = '__none__';
 const UNCATEGORIZED_VALUE = 'uncategorized';
 
-type CategorySelectProps = {
-    value: number | null;
-    onChange: (value: number | null) => void;
-    options: CategorySelectOption[];
-    placeholder?: string;
-    noneLabel?: string;
-    uncategorizedLabel?: string;
-    showUncategorizedOption?: boolean;
-    id?: string;
+type CategorySelectPopoverShellProps = {
+    open: boolean;
+    searchQuery: string;
+    onSearchQueryChange: (query: string) => void;
+    children: ReactNode;
 };
+
+function CategorySelectPopoverShell({
+    open,
+    searchQuery,
+    onSearchQueryChange,
+    children,
+}: CategorySelectPopoverShellProps) {
+    const { t } = useTranslation();
+    const searchInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (!open) {
+            onSearchQueryChange('');
+            return;
+        }
+
+        const frame = requestAnimationFrame(() => {
+            searchInputRef.current?.focus();
+        });
+
+        return () => cancelAnimationFrame(frame);
+    }, [open, onSearchQueryChange]);
+
+    return (
+        <PopoverContent
+            className="w-[var(--radix-popover-trigger-width)] p-0"
+            align="start"
+            collisionPadding={16}
+            onOpenAutoFocus={(event) => event.preventDefault()}
+            onWheel={(event) => event.stopPropagation()}
+        >
+            <div className="flex max-h-80 flex-col">
+                <div className="border-border/60 shrink-0 border-b p-1">
+                    <div className="relative">
+                        <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2" />
+                        <Input
+                            ref={searchInputRef}
+                            value={searchQuery}
+                            onChange={(event) => onSearchQueryChange(event.target.value)}
+                            placeholder={t('categories.search_placeholder')}
+                            className="h-8 pl-8"
+                            onKeyDown={(event) => {
+                                if (event.key === 'Escape') {
+                                    event.stopPropagation();
+                                }
+                            }}
+                        />
+                    </div>
+                </div>
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-1">
+                    {children}
+                </div>
+            </div>
+        </PopoverContent>
+    );
+}
 
 function CategoryColorDot({ color }: { color: string | null }) {
     return (
@@ -148,34 +203,29 @@ function CategoryTreeRow({
     );
 }
 
-export function CategorySelect({
-    value,
-    onChange,
-    options,
-    placeholder,
-    noneLabel = '—',
-    uncategorizedLabel,
-    showUncategorizedOption = false,
-    id,
-}: CategorySelectProps) {
-    const [open, setOpen] = useState(false);
-    const tree = useMemo(() => buildSelectOptionTree(options), [options]);
-
-    const selectedOption = useMemo(
-        () => options.find((option) => option.id === value) ?? null,
-        [options, value],
-    );
-
+function useCategoryTreeExpansion(
+    open: boolean,
+    tree: CategorySelectTreeNode[],
+    filteredTree: CategorySelectTreeNode[],
+    searchQuery: string,
+    selectedCategoryId: number | null,
+) {
     const [expandedIds, setExpandedIds] = useState<Set<number>>(() => new Set());
+    const isSearching = searchQuery.trim() !== '';
 
     useEffect(() => {
         if (!open) {
             return;
         }
 
-        const ancestors = selectOptionAncestorIds(tree, value);
+        if (isSearching) {
+            setExpandedIds(new Set(collectSelectOptionTreeIds(filteredTree)));
+            return;
+        }
+
+        const ancestors = selectOptionAncestorIds(tree, selectedCategoryId);
         setExpandedIds(new Set(ancestors));
-    }, [open, tree, value]);
+    }, [open, tree, filteredTree, isSearching, selectedCategoryId]);
 
     const toggleExpanded = (categoryId: number, isOpen: boolean) => {
         setExpandedIds((current) => {
@@ -189,6 +239,52 @@ export function CategorySelect({
             return next;
         });
     };
+
+    return { expandedIds, toggleExpanded };
+}
+
+type CategorySelectProps = {
+    value: number | null;
+    onChange: (value: number | null) => void;
+    options: CategorySelectOption[];
+    placeholder?: string;
+    noneLabel?: string;
+    uncategorizedLabel?: string;
+    showUncategorizedOption?: boolean;
+    id?: string;
+};
+
+export function CategorySelect({
+    value,
+    onChange,
+    options,
+    placeholder,
+    noneLabel = '—',
+    uncategorizedLabel,
+    showUncategorizedOption = false,
+    id,
+}: CategorySelectProps) {
+    const { t } = useTranslation();
+    const [open, setOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const tree = useMemo(() => buildSelectOptionTree(options), [options]);
+    const filteredTree = useMemo(
+        () => filterSelectOptionTree(tree, searchQuery),
+        [tree, searchQuery],
+    );
+
+    const selectedOption = useMemo(
+        () => options.find((option) => option.id === value) ?? null,
+        [options, value],
+    );
+
+    const { expandedIds, toggleExpanded } = useCategoryTreeExpansion(
+        open,
+        tree,
+        filteredTree,
+        searchQuery,
+        value,
+    );
 
     const pick = (next: number | null) => {
         onChange(next);
@@ -222,11 +318,11 @@ export function CategorySelect({
                     <ChevronDown className="text-muted-foreground size-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent
-                className="w-[var(--radix-popover-trigger-width)] p-0"
-                align="start"
+            <CategorySelectPopoverShell
+                open={open}
+                searchQuery={searchQuery}
+                onSearchQueryChange={setSearchQuery}
             >
-                <div className="max-h-80 overflow-x-hidden overflow-y-auto overscroll-contain p-1">
                 <button
                     type="button"
                     onClick={() => pick(null)}
@@ -258,19 +354,24 @@ export function CategorySelect({
                     </button>
                 ) : null}
                 <div className="border-border/60 my-1 border-t" />
-                {tree.map((node) => (
-                    <CategoryTreeRow
-                        key={node.id}
-                        node={node}
-                        depth={0}
-                        value={value}
-                        expandedIds={expandedIds}
-                        onToggleExpanded={toggleExpanded}
-                        onSelect={pick}
-                    />
-                ))}
-                </div>
-            </PopoverContent>
+                {filteredTree.length === 0 ? (
+                    <p className="text-muted-foreground px-2 py-3 text-center text-sm">
+                        {t('categories.search_no_results')}
+                    </p>
+                ) : (
+                    filteredTree.map((node) => (
+                        <CategoryTreeRow
+                            key={node.id}
+                            node={node}
+                            depth={0}
+                            value={value}
+                            expandedIds={expandedIds}
+                            onToggleExpanded={toggleExpanded}
+                            onSelect={pick}
+                        />
+                    ))
+                )}
+            </CategorySelectPopoverShell>
         </Popover>
     );
 }
@@ -294,8 +395,14 @@ export function CategoryFilterSelect({
     uncategorizedLabel,
     id,
 }: CategoryFilterSelectProps) {
+    const { t } = useTranslation();
     const [open, setOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
     const tree = useMemo(() => buildSelectOptionTree(options), [options]);
+    const filteredTree = useMemo(
+        () => filterSelectOptionTree(tree, searchQuery),
+        [tree, searchQuery],
+    );
 
     const isAll = value === null;
     const isUncategorized = value === UNCATEGORIZED_VALUE;
@@ -311,29 +418,13 @@ export function CategoryFilterSelect({
         [options, selectedCategoryId],
     );
 
-    const [expandedIds, setExpandedIds] = useState<Set<number>>(() => new Set());
-
-    useEffect(() => {
-        if (!open) {
-            return;
-        }
-
-        const ancestors = selectOptionAncestorIds(tree, selectedCategoryId);
-        setExpandedIds(new Set(ancestors));
-    }, [open, tree, selectedCategoryId]);
-
-    const toggleExpanded = (categoryId: number, isOpen: boolean) => {
-        setExpandedIds((current) => {
-            const next = new Set(current);
-            if (isOpen) {
-                next.add(categoryId);
-            } else {
-                next.delete(categoryId);
-            }
-
-            return next;
-        });
-    };
+    const { expandedIds, toggleExpanded } = useCategoryTreeExpansion(
+        open,
+        tree,
+        filteredTree,
+        searchQuery,
+        selectedCategoryId,
+    );
 
     const pickCategory = (categoryId: number) => {
         onChange(String(categoryId));
@@ -366,11 +457,11 @@ export function CategoryFilterSelect({
                     <ChevronDown className="text-muted-foreground size-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent
-                className="w-[var(--radix-popover-trigger-width)] p-0"
-                align="start"
+            <CategorySelectPopoverShell
+                open={open}
+                searchQuery={searchQuery}
+                onSearchQueryChange={setSearchQuery}
             >
-                <div className="max-h-80 overflow-x-hidden overflow-y-auto overscroll-contain p-1">
                 <button
                     type="button"
                     onClick={() => {
@@ -402,19 +493,24 @@ export function CategoryFilterSelect({
                     ) : null}
                 </button>
                 <div className="border-border/60 my-1 border-t" />
-                {tree.map((node) => (
-                    <CategoryTreeRow
-                        key={node.id}
-                        node={node}
-                        depth={0}
-                        value={selectedCategoryId}
-                        expandedIds={expandedIds}
-                        onToggleExpanded={toggleExpanded}
-                        onSelect={pickCategory}
-                    />
-                ))}
-                </div>
-            </PopoverContent>
+                {filteredTree.length === 0 ? (
+                    <p className="text-muted-foreground px-2 py-3 text-center text-sm">
+                        {t('categories.search_no_results')}
+                    </p>
+                ) : (
+                    filteredTree.map((node) => (
+                        <CategoryTreeRow
+                            key={node.id}
+                            node={node}
+                            depth={0}
+                            value={selectedCategoryId}
+                            expandedIds={expandedIds}
+                            onToggleExpanded={toggleExpanded}
+                            onSelect={pickCategory}
+                        />
+                    ))
+                )}
+            </CategorySelectPopoverShell>
         </Popover>
     );
 }

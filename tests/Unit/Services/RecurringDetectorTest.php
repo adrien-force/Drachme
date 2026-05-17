@@ -60,6 +60,7 @@ class RecurringDetectorTest extends TestCase
         DismissedRecurringPattern::query()->create([
             'user_id' => $user->id,
             'label_pattern' => $labelPattern,
+            'transaction_type' => TransactionType::Expense,
         ]);
 
         $suggestions = app(RecurringDetector::class)->findSuggestions($user);

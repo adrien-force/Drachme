@@ -45,6 +45,7 @@ class RecurringPatternService
             [
                 'user_id' => $user->id,
                 'label_pattern' => $suggestion->labelPattern,
+                'transaction_type' => $suggestion->transactionType,
             ],
             [
                 'display_label' => $suggestion->displayLabel,
@@ -91,11 +92,16 @@ class RecurringPatternService
             throw new InvalidArgumentException('recurring_amount_zero');
         }
 
+        $transactionType = $transaction->type instanceof TransactionType
+            ? $transaction->type
+            : TransactionType::from($typeValue);
+
         $suggestion = new RecurringSuggestion(
             labelPattern: $labelPattern,
             displayLabel: $transaction->label,
             expectedAmount: number_format($amount, 2, '.', ''),
             frequency: $frequency,
+            transactionType: $transactionType,
             occurrenceCount: 1,
             score: 100,
             suggestedCategoryId: $transaction->category_id,
@@ -121,11 +127,12 @@ class RecurringPatternService
         $pattern->delete();
     }
 
-    public function dismiss(User $user, string $labelPattern): void
+    public function dismiss(User $user, string $labelPattern, TransactionType $transactionType): void
     {
         DismissedRecurringPattern::query()->firstOrCreate([
             'user_id' => $user->id,
             'label_pattern' => $labelPattern,
+            'transaction_type' => $transactionType,
         ]);
     }
 
@@ -156,6 +163,35 @@ class RecurringPatternService
         );
     }
 
+    /** Keeps confirmed pattern category aligned with a matching transaction. */
+    public function syncCategoryFromTransaction(User $user, Transaction $transaction): void
+    {
+        $pattern = $this->matchesConfirmedPattern($user, $transaction);
+
+        if ($pattern === null) {
+            return;
+        }
+
+        $categoryId = $transaction->category_id;
+
+        if ($categoryId !== null) {
+            $exists = Category::query()
+                ->where('user_id', $user->id)
+                ->whereKey($categoryId)
+                ->exists();
+
+            if (! $exists) {
+                return;
+            }
+        }
+
+        if ($pattern->category_id === $categoryId) {
+            return;
+        }
+
+        $pattern->update(['category_id' => $categoryId]);
+    }
+
     /**
      * @return array<string, RecurringPattern>
      */
@@ -169,7 +205,10 @@ class RecurringPatternService
         $indexed = [];
 
         foreach ($patterns as $pattern) {
-            $indexed[$pattern->label_pattern] = $pattern;
+            $type = $pattern->transaction_type instanceof TransactionType
+                ? $pattern->transaction_type->value
+                : (string) $pattern->transaction_type;
+            $indexed[$pattern->label_pattern.'|'.$type] = $pattern;
         }
 
         return $indexed;
@@ -186,7 +225,10 @@ class RecurringPatternService
             return null;
         }
 
-        $recurring = $indexed[$patternKey] ?? null;
+        $transactionType = $transaction->type instanceof TransactionType
+            ? $transaction->type
+            : TransactionType::from((string) $transaction->type);
+        $recurring = $indexed[$patternKey.'|'.$transactionType->value] ?? null;
 
         if ($recurring === null) {
             return null;

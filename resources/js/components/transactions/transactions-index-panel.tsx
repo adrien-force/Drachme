@@ -493,7 +493,7 @@ export function TransactionsIndexPanel({
                                             />
                                         </button>
                                     </th>
-                                    <th className="px-4 py-3">
+                                    <th className="w-[15rem] min-w-[15rem] px-4 py-3">
                                         <button
                                             type="button"
                                             className="hover:text-foreground inline-flex items-center font-medium"
@@ -569,7 +569,7 @@ export function TransactionsIndexPanel({
                                         <td className="px-4 py-3">
                                             <TransactionTypeBadge type={transaction.type} />
                                         </td>
-                                        <td className="max-w-[12rem] px-4 py-3">
+                                        <td className="w-[15rem] min-w-[15rem] max-w-[15rem] px-4 py-3">
                                             <TransactionInlineCategorySelect
                                                 transactionId={transaction.id}
                                                 value={transaction.category_id}

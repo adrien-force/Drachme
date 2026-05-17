@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../wayfinder'
 /**
 * @see \App\Http\Controllers\RecurringController::index
-* @see app/Http/Controllers/RecurringController.php:31
+* @see app/Http/Controllers/RecurringController.php:35
 * @route '/recurring'
 */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\RecurringController::index
-* @see app/Http/Controllers/RecurringController.php:31
+* @see app/Http/Controllers/RecurringController.php:35
 * @route '/recurring'
 */
 index.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\RecurringController::index
-* @see app/Http/Controllers/RecurringController.php:31
+* @see app/Http/Controllers/RecurringController.php:35
 * @route '/recurring'
 */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -35,7 +35,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\RecurringController::index
-* @see app/Http/Controllers/RecurringController.php:31
+* @see app/Http/Controllers/RecurringController.php:35
 * @route '/recurring'
 */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -45,7 +45,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
 /**
 * @see \App\Http\Controllers\RecurringController::index
-* @see app/Http/Controllers/RecurringController.php:31
+* @see app/Http/Controllers/RecurringController.php:35
 * @route '/recurring'
 */
 const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -55,7 +55,7 @@ const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => (
 
 /**
 * @see \App\Http\Controllers\RecurringController::index
-* @see app/Http/Controllers/RecurringController.php:31
+* @see app/Http/Controllers/RecurringController.php:35
 * @route '/recurring'
 */
 indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -65,7 +65,7 @@ indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\RecurringController::index
-* @see app/Http/Controllers/RecurringController.php:31
+* @see app/Http/Controllers/RecurringController.php:35
 * @route '/recurring'
 */
 indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -82,7 +82,7 @@ index.form = indexForm
 
 /**
 * @see \App\Http\Controllers\RecurringController::confirm
-* @see app/Http/Controllers/RecurringController.php:46
+* @see app/Http/Controllers/RecurringController.php:60
 * @route '/recurring/confirm'
 */
 export const confirm = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -97,7 +97,7 @@ confirm.definition = {
 
 /**
 * @see \App\Http\Controllers\RecurringController::confirm
-* @see app/Http/Controllers/RecurringController.php:46
+* @see app/Http/Controllers/RecurringController.php:60
 * @route '/recurring/confirm'
 */
 confirm.url = (options?: RouteQueryOptions) => {
@@ -106,7 +106,7 @@ confirm.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\RecurringController::confirm
-* @see app/Http/Controllers/RecurringController.php:46
+* @see app/Http/Controllers/RecurringController.php:60
 * @route '/recurring/confirm'
 */
 confirm.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -116,7 +116,7 @@ confirm.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
 /**
 * @see \App\Http\Controllers\RecurringController::confirm
-* @see app/Http/Controllers/RecurringController.php:46
+* @see app/Http/Controllers/RecurringController.php:60
 * @route '/recurring/confirm'
 */
 const confirmForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -126,7 +126,7 @@ const confirmForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> =
 
 /**
 * @see \App\Http\Controllers\RecurringController::confirm
-* @see app/Http/Controllers/RecurringController.php:46
+* @see app/Http/Controllers/RecurringController.php:60
 * @route '/recurring/confirm'
 */
 confirmForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -138,7 +138,7 @@ confirm.form = confirmForm
 
 /**
 * @see \App\Http\Controllers\RecurringController::dismiss
-* @see app/Http/Controllers/RecurringController.php:82
+* @see app/Http/Controllers/RecurringController.php:95
 * @route '/recurring/dismiss'
 */
 export const dismiss = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -153,7 +153,7 @@ dismiss.definition = {
 
 /**
 * @see \App\Http\Controllers\RecurringController::dismiss
-* @see app/Http/Controllers/RecurringController.php:82
+* @see app/Http/Controllers/RecurringController.php:95
 * @route '/recurring/dismiss'
 */
 dismiss.url = (options?: RouteQueryOptions) => {
@@ -162,7 +162,7 @@ dismiss.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\RecurringController::dismiss
-* @see app/Http/Controllers/RecurringController.php:82
+* @see app/Http/Controllers/RecurringController.php:95
 * @route '/recurring/dismiss'
 */
 dismiss.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -172,7 +172,7 @@ dismiss.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
 /**
 * @see \App\Http\Controllers\RecurringController::dismiss
-* @see app/Http/Controllers/RecurringController.php:82
+* @see app/Http/Controllers/RecurringController.php:95
 * @route '/recurring/dismiss'
 */
 const dismissForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -182,7 +182,7 @@ const dismissForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> =
 
 /**
 * @see \App\Http\Controllers\RecurringController::dismiss
-* @see app/Http/Controllers/RecurringController.php:82
+* @see app/Http/Controllers/RecurringController.php:95
 * @route '/recurring/dismiss'
 */
 dismissForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -194,7 +194,7 @@ dismiss.form = dismissForm
 
 /**
 * @see \App\Http\Controllers\RecurringController::destroy
-* @see app/Http/Controllers/RecurringController.php:94
+* @see app/Http/Controllers/RecurringController.php:109
 * @route '/recurring/{recurringPattern}'
 */
 export const destroy = (args: { recurringPattern: number | { id: number } } | [recurringPattern: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -209,7 +209,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\RecurringController::destroy
-* @see app/Http/Controllers/RecurringController.php:94
+* @see app/Http/Controllers/RecurringController.php:109
 * @route '/recurring/{recurringPattern}'
 */
 destroy.url = (args: { recurringPattern: number | { id: number } } | [recurringPattern: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -242,7 +242,7 @@ destroy.url = (args: { recurringPattern: number | { id: number } } | [recurringP
 
 /**
 * @see \App\Http\Controllers\RecurringController::destroy
-* @see app/Http/Controllers/RecurringController.php:94
+* @see app/Http/Controllers/RecurringController.php:109
 * @route '/recurring/{recurringPattern}'
 */
 destroy.delete = (args: { recurringPattern: number | { id: number } } | [recurringPattern: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -252,7 +252,7 @@ destroy.delete = (args: { recurringPattern: number | { id: number } } | [recurri
 
 /**
 * @see \App\Http\Controllers\RecurringController::destroy
-* @see app/Http/Controllers/RecurringController.php:94
+* @see app/Http/Controllers/RecurringController.php:109
 * @route '/recurring/{recurringPattern}'
 */
 const destroyForm = (args: { recurringPattern: number | { id: number } } | [recurringPattern: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -267,7 +267,7 @@ const destroyForm = (args: { recurringPattern: number | { id: number } } | [recu
 
 /**
 * @see \App\Http\Controllers\RecurringController::destroy
-* @see app/Http/Controllers/RecurringController.php:94
+* @see app/Http/Controllers/RecurringController.php:109
 * @route '/recurring/{recurringPattern}'
 */
 destroyForm.delete = (args: { recurringPattern: number | { id: number } } | [recurringPattern: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

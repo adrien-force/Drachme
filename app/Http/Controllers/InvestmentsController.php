@@ -8,9 +8,12 @@ use App\Enums\AccountType;
 use App\Models\Account;
 use App\Models\PortfolioSnapshot;
 use App\Models\Position;
+use App\Exceptions\MarketDataQuotaExceededException;
 use App\Services\AccountService;
+use App\Services\MarketDataService;
 use App\Services\PortfolioSnapshotService;
 use App\Services\PositionService;
+use InvalidArgumentException;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,6 +28,7 @@ class InvestmentsController extends Controller
         private readonly AccountService $accounts,
         private readonly PositionService $positions,
         private readonly PortfolioSnapshotService $portfolioSnapshots,
+        private readonly MarketDataService $marketData,
     ) {}
 
     public function index(Request $request): Response
@@ -71,7 +75,52 @@ class InvestmentsController extends Controller
 
         return Inertia::render('investments/investments-index', [
             'accounts' => $portfolioRows->values()->all(),
+            'marketDataConfigured' => is_string(config('alpha_vantage.api_key'))
+                && config('alpha_vantage.api_key') !== '',
         ]);
+    }
+
+    public function refreshPrices(Request $request): RedirectResponse
+    {
+        $this->authorize('viewAny', Account::class);
+
+        $user = $request->user();
+        if ($user === null) {
+            abort(401);
+        }
+
+        try {
+            $result = $this->marketData->refreshForUser($user);
+
+            if ($result->quotaMessage !== null) {
+                Inertia::flash('toast', [
+                    'type' => 'warning',
+                    'message' => __('ui.investments.market_data_quota'),
+                ]);
+
+                return to_route('investments.index');
+            }
+
+            Inertia::flash('toast', [
+                'type' => 'success',
+                'message' => __('ui.investments.market_data_refreshed', [
+                    'updated' => $result->updated,
+                    'skipped' => $result->skipped,
+                ]),
+            ]);
+        } catch (MarketDataQuotaExceededException) {
+            Inertia::flash('toast', [
+                'type' => 'warning',
+                'message' => __('ui.investments.market_data_quota'),
+            ]);
+        } catch (InvalidArgumentException) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => __('ui.investments.market_data_not_configured'),
+            ]);
+        }
+
+        return to_route('investments.index');
     }
 
     public function destroySnapshot(PortfolioSnapshot $portfolioSnapshot): RedirectResponse

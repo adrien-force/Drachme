@@ -81,9 +81,24 @@ class CategoryRuleCrudTest extends TestCase
 
         $this
             ->actingAs($user)
+            ->from(route('transactions.index', ['edit_transaction' => $transaction->id]))
             ->post(route('category-rules.store-from-label'), [
                 'label' => $transaction->label,
                 'selected_tokens' => ['NETFLIX'],
+                'category_id' => $category->id,
+                'apply_to_transaction_id' => $transaction->id,
+            ])
+            ->assertRedirect(route('transactions.index', ['edit_transaction' => $transaction->id]));
+
+        $this
+            ->actingAs($user)
+            ->from(route('accounts.show', [
+                'account' => $transaction->account_id,
+                'edit_transaction' => $transaction->id,
+            ]))
+            ->post(route('category-rules.store-from-label'), [
+                'label' => $transaction->label,
+                'selected_tokens' => ['SPOTIFY'],
                 'category_id' => $category->id,
                 'apply_to_transaction_id' => $transaction->id,
             ])
