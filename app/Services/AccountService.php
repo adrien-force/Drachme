@@ -9,6 +9,7 @@ use App\Models\Account;
 use App\Models\User;
 use App\Support\LogoUploadService;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 
 class AccountService
 {
@@ -102,6 +103,24 @@ class AccountService
     public function archive(Account $account): void
     {
         $account->update(['is_archived' => true]);
+    }
+
+    public function delete(Account $account): void
+    {
+        $account->loadMissing('user');
+        $owner = $account->user;
+
+        DB::transaction(function () use ($account): void {
+            $logoPath = $account->logo_path;
+
+            $account->delete();
+
+            $this->logos->delete($logoPath);
+        });
+
+        if ($owner !== null) {
+            $this->netWorthSnapshots->recordForUser($owner);
+        }
     }
 
     public function logoUrl(Account $account): ?string

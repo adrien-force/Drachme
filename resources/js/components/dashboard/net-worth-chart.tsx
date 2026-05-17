@@ -12,12 +12,16 @@ import {
     DASHBOARD_CHART_PLOT_CLASS,
     DashboardChartCard,
 } from '@/components/dashboard/dashboard-chart-card';
+import { enUS, fr } from 'date-fns/locale';
+
 import { useTranslation } from '@/hooks/use-translation';
+import { formatDashboardDateRangeLabel } from '@/lib/dashboard-date-range-label';
 import { formatCurrency } from '@/lib/format-currency';
-import type { NetWorthPoint } from '@/types/dashboard.types';
+import type { DashboardDateRange, NetWorthPoint } from '@/types/dashboard.types';
 
 type NetWorthChartProps = {
     data: NetWorthPoint[];
+    dateRange: DashboardDateRange;
 };
 
 function ChartTooltip({
@@ -41,13 +45,15 @@ function ChartTooltip({
     );
 }
 
-export function NetWorthChart({ data }: NetWorthChartProps) {
-    const { t } = useTranslation();
+export function NetWorthChart({ data, dateRange }: NetWorthChartProps) {
+    const { t, locale } = useTranslation();
+    const dateLocale = locale === 'fr' ? fr : enUS;
+    const rangeLabel = formatDashboardDateRangeLabel(dateRange, t, dateLocale);
 
     return (
         <DashboardChartCard
             title={t('dashboard.net_worth_chart_title')}
-            description={t('dashboard.net_worth_chart_description')}
+            description={rangeLabel}
             className="animate-in fade-in duration-500 fill-mode-both"
         >
             <div className={DASHBOARD_CHART_PLOT_CLASS}>

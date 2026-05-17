@@ -1,4 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
+import { Trash2 } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 
 import { FadeIn } from '@/components/motion/fade-in';
@@ -6,6 +7,14 @@ import { GlassPanel } from '@/components/glass-panel';
 import { LogoUploadField } from '@/components/logo-upload-field';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -36,6 +45,7 @@ export default function AccountsForm({
         account !== null ? String(account.current_balance) : '',
     );
     const [submitting, setSubmitting] = useState(false);
+    const [deleteOpen, setDeleteOpen] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     const balanceReconcile = useMemo(() => {
@@ -343,9 +353,63 @@ export default function AccountsForm({
                                     <Link href="/accounts">{t('accounts.cancel')}</Link>
                                 </Button>
                             </div>
+
+                            {isEditing && account ? (
+                                <div className="border-destructive/30 mt-8 space-y-3 border-t pt-6">
+                                    <div>
+                                        <h2 className="text-destructive text-sm font-semibold">
+                                            {t('accounts.delete')}
+                                        </h2>
+                                        <p className="text-muted-foreground mt-1 text-sm">
+                                            {t('accounts.delete_confirm', {
+                                                name: account.name,
+                                            })}
+                                        </p>
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        variant="destructive"
+                                        onClick={() => setDeleteOpen(true)}
+                                    >
+                                        <Trash2 className="mr-2 size-4" />
+                                        {t('accounts.delete')}
+                                    </Button>
+                                </div>
+                            ) : null}
                         </form>
                     </GlassPanel>
                 </FadeIn>
+
+                {isEditing && account ? (
+                    <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>{t('accounts.delete')}</DialogTitle>
+                                <DialogDescription>
+                                    {t('accounts.delete_confirm', { name: account.name })}
+                                </DialogDescription>
+                            </DialogHeader>
+                            <DialogFooter>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setDeleteOpen(false)}
+                                >
+                                    {t('accounts.cancel')}
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="destructive"
+                                    onClick={() =>
+                                        router.delete(`/accounts/${account.id}`)
+                                    }
+                                >
+                                    {t('accounts.delete')}
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                ) : null}
             </div>
         </>
     );

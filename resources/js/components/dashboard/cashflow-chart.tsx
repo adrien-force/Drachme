@@ -11,10 +11,13 @@ import {
     ChartTooltipContent,
     type ChartConfig,
 } from '@/components/ui/chart';
+import { enUS, fr } from 'date-fns/locale';
+
 import { useTranslation } from '@/hooks/use-translation';
+import { formatDashboardDateRangeLabel } from '@/lib/dashboard-date-range-label';
 import { transactionsUrlForCashflowBar } from '@/lib/dashboard-cashflow-link';
 import { formatCurrency } from '@/lib/format-currency';
-import type { CashflowPoint } from '@/types/dashboard.types';
+import type { CashflowPoint, DashboardDateRange } from '@/types/dashboard.types';
 
 const chartConfig = {
     income: {
@@ -34,10 +37,13 @@ const tooltipCursor = {
 
 type CashflowChartProps = {
     data: CashflowPoint[];
+    dateRange: DashboardDateRange;
 };
 
-export function CashflowChart({ data }: CashflowChartProps) {
-    const { t } = useTranslation();
+export function CashflowChart({ data, dateRange }: CashflowChartProps) {
+    const { t, locale } = useTranslation();
+    const dateLocale = locale === 'fr' ? fr : enUS;
+    const rangeLabel = formatDashboardDateRangeLabel(dateRange, t, dateLocale);
 
     const handleBarClick = (
         state: {
@@ -61,8 +67,7 @@ export function CashflowChart({ data }: CashflowChartProps) {
     return (
         <DashboardChartCard
             title={t('dashboard.cashflow_chart_title')}
-            description={t('dashboard.cashflow_chart_description')}
-            hint={t('dashboard.cashflow_bar_hint')}
+            description={rangeLabel}
             className="animate-in fade-in duration-500 fill-mode-both delay-150"
         >
             <ChartContainer

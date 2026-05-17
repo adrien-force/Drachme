@@ -20,6 +20,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/use-translation';
+import { formatDashboardDateRangeLabel } from '@/lib/dashboard-date-range-label';
 import { dashboardUrl } from '@/lib/dashboard-query';
 import { cn } from '@/lib/utils';
 import type { DashboardDateRange } from '@/types/dashboard.types';
@@ -51,10 +52,7 @@ export function DashboardDateRangePicker({
         selectedRange,
     );
 
-    const label =
-        dateRange.preset !== 'custom'
-            ? t(`dashboard.range_${dateRange.preset}`)
-            : `${format(parseISO(dateRange.from), 'PP', { locale: dateLocale })} – ${format(parseISO(dateRange.to), 'PP', { locale: dateLocale })}`;
+    const label = formatDashboardDateRangeLabel(dateRange, t, dateLocale);
 
     const navigate = (next: DashboardDateRange) => {
         router.get(dashboardUrl(next), {}, { preserveScroll: true });

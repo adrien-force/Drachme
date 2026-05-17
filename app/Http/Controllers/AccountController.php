@@ -211,7 +211,7 @@ class AccountController extends Controller
         return to_route('accounts.show', $account);
     }
 
-    public function destroy(Account $account): RedirectResponse
+    public function archive(Account $account): RedirectResponse
     {
         $this->authorize('delete', $account);
 
@@ -220,6 +220,20 @@ class AccountController extends Controller
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => __('ui.accounts.archived'),
+        ]);
+
+        return to_route('accounts.index');
+    }
+
+    public function destroy(Account $account): RedirectResponse
+    {
+        $this->authorize('delete', $account);
+
+        $this->accounts->delete($account);
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('ui.accounts.deleted'),
         ]);
 
         return to_route('accounts.index');

@@ -64,10 +64,37 @@ class AccountCrudTest extends TestCase
 
         $this
             ->actingAs($user)
-            ->delete(route('accounts.destroy', $account))
+            ->post(route('accounts.archive', $account))
             ->assertRedirect(route('accounts.index'));
 
         $this->assertTrue($account->fresh()->is_archived);
+    }
+
+    public function test_user_can_delete_account_and_its_transactions(): void
+    {
+        $user = User::factory()->create();
+        $account = Account::factory()->for($user)->create();
+        Transaction::factory()->for($user)->for($account)->count(3)->create();
+
+        $this
+            ->actingAs($user)
+            ->delete(route('accounts.destroy', $account))
+            ->assertRedirect(route('accounts.index'));
+
+        $this->assertNull($account->fresh());
+        $this->assertDatabaseCount('transactions', 0);
+    }
+
+    public function test_user_cannot_delete_another_users_account(): void
+    {
+        $owner = User::factory()->create();
+        $intruder = User::factory()->create();
+        $account = Account::factory()->for($owner)->create();
+
+        $this
+            ->actingAs($intruder)
+            ->delete(route('accounts.destroy', $account))
+            ->assertForbidden();
     }
 
     public function test_archived_accounts_are_hidden_from_index(): void

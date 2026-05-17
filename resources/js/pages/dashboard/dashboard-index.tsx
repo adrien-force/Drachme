@@ -178,10 +178,10 @@ function DashboardPage({
 
                 <div className="grid auto-rows-fr gap-4 lg:grid-cols-2">
                     <FadeIn delay={0.2} className="h-full">
-                        <NetWorthChart data={netWorthHistory} />
+                        <NetWorthChart data={netWorthHistory} dateRange={dateRange} />
                     </FadeIn>
                     <FadeIn delay={0.25} className="h-full">
-                        <CashflowChart data={cashflow} />
+                        <CashflowChart data={cashflow} dateRange={dateRange} />
                     </FadeIn>
                     {accountAllocation.length > 0 ? (
                         <FadeIn delay={0.28} className="h-full">

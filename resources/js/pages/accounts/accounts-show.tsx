@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, Pencil, Plus, Upload } from 'lucide-react';
+import { Archive, ArrowLeft, Pencil, Plus, Upload } from 'lucide-react';
 
 import { AccountBalanceChart } from '@/components/accounts/account-balance-chart';
 import { AccountBalanceDateRange } from '@/components/accounts/account-balance-date-range';
@@ -34,6 +34,14 @@ export default function AccountsShow({
             buildAccountShowQuery(balanceHistory, transactionFilters),
             { preserveScroll: true, replace: true },
         );
+    };
+
+    const archiveAccount = () => {
+        if (!window.confirm(t('accounts.archive_confirm', { name: account.name }))) {
+            return;
+        }
+
+        router.post(`/accounts/${account.id}/archive`);
     };
 
     return (
@@ -101,6 +109,17 @@ export default function AccountsShow({
                                     {t('accounts.edit')}
                                 </Link>
                             </Button>
+                            {!account.is_archived ? (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={archiveAccount}
+                                >
+                                    <Archive className="mr-2 size-4" />
+                                    {t('accounts.archive')}
+                                </Button>
+                            ) : null}
                         </div>
                     </div>
                 </div>
