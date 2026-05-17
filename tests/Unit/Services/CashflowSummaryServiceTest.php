@@ -33,7 +33,7 @@ class CashflowSummaryServiceTest extends TestCase
     public function test_totals_for_period_by_amount_uses_amount_signs(): void
     {
         $user = User::factory()->create();
-        $account = Account::factory()->for($user)->create();
+        $account = Account::factory()->for($user)->create(['type' => AccountType::Checking]);
 
         Transaction::factory()->for($user)->for($account)->create([
             'date' => '2024-08-10',
@@ -99,7 +99,7 @@ class CashflowSummaryServiceTest extends TestCase
         $user = User::factory()->create(['month_start_day' => 27]);
         $this->actingAs($user);
 
-        $account = Account::factory()->for($user)->create();
+        $account = Account::factory()->for($user)->create(['type' => AccountType::Checking]);
 
         Transaction::factory()->for($user)->for($account)->create([
             'date' => '2026-05-05',
@@ -124,7 +124,7 @@ class CashflowSummaryServiceTest extends TestCase
     public function test_archived_account_transactions_are_excluded(): void
     {
         $user = User::factory()->create();
-        $active = Account::factory()->for($user)->create();
+        $active = Account::factory()->for($user)->create(['type' => AccountType::Checking]);
         $archived = Account::factory()->for($user)->create([
             'is_archived' => true,
         ]);
