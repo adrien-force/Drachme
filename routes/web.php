@@ -10,6 +10,7 @@ use App\Http\Controllers\ImportController;
 use App\Http\Controllers\ImportProviderController;
 use App\Http\Controllers\ShellPlaceholderController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\TransferController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -39,6 +40,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('transactions/{transaction}', [TransactionController::class, 'update'])->name('transactions.update');
     Route::patch('transactions/{transaction}/category', [TransactionController::class, 'updateCategory'])
         ->name('transactions.update-category');
+    Route::get('transfers', [TransferController::class, 'index'])->name('transfers.index');
+    Route::post('transfers/accept', [TransferController::class, 'accept'])->name('transfers.accept');
+    Route::post('transfers/dismiss', [TransferController::class, 'dismiss'])->name('transfers.dismiss');
+    Route::post('transfers', [TransferController::class, 'store'])->name('transfers.store');
     Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
     Route::post('categories', [CategoryController::class, 'store'])->name('categories.store');
     Route::put('categories/{category}', [CategoryController::class, 'update'])->name('categories.update');

@@ -48,6 +48,11 @@ export const appNavSections: AppNavSection[] = [
                 href: '/transactions',
                 icon: ArrowLeftRight,
             },
+            {
+                titleKey: 'nav.transfers',
+                href: '/transfers',
+                icon: SlidersHorizontal,
+            },
         ],
     },
     {
