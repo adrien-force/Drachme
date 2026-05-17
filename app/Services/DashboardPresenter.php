@@ -32,6 +32,7 @@ class DashboardPresenter
         $netWorthValue = (float) $totals['net_worth'];
         $portfolioHistory = $this->portfolioSnapshots->evolutionSeriesForUser($user);
         $portfolioValue = $this->resolvePortfolioValue($user, $portfolioHistory);
+        $accountAllocation = $this->accountAllocationByType($totals['breakdown']['accounts']);
 
         $netWorthHistory = $this->netWorthHistory($user, $netWorthValue);
 
@@ -42,12 +43,67 @@ class DashboardPresenter
                 'monthly_cashflow' => $monthlyCashflow,
                 'portfolio_value' => $portfolioValue,
                 'portfolio_change_pct' => $this->portfolioChangePct($portfolioHistory, $portfolioValue),
+                'total_assets' => (float) $totals['total_assets'],
             ],
             'netWorthHistory' => $netWorthHistory,
             'portfolioHistory' => $portfolioHistory,
+            'accountAllocation' => $accountAllocation,
             'cashflow' => $cashflowSeries,
             'isDemoData' => ! $this->hasRealData($user, $netWorthHistory, $portfolioHistory),
         ];
+    }
+
+    /**
+     * @param  list<array{
+     *     id: int,
+     *     name: string,
+     *     type: string,
+     *     balance: string,
+     *     positions_value?: string,
+     *     bucket: 'asset'|'liability',
+     * }>  $accounts
+     * @return list<array{type: string, label: string, value: float}>
+     */
+    private function accountAllocationByType(array $accounts): array
+    {
+        /** @var array<string, float> $byType */
+        $byType = [];
+
+        foreach ($accounts as $account) {
+            if (($account['bucket'] ?? '') === 'liability') {
+                continue;
+            }
+
+            $type = (string) ($account['type'] ?? '');
+            $balance = max(0.0, (float) ($account['balance'] ?? 0));
+            $positionsValue = isset($account['positions_value'])
+                ? (float) $account['positions_value']
+                : 0.0;
+            $value = $balance + $positionsValue;
+
+            if ($value < 0.001) {
+                continue;
+            }
+
+            $byType[$type] = ($byType[$type] ?? 0.0) + $value;
+        }
+
+        $slices = [];
+
+        foreach ($byType as $type => $value) {
+            $slices[] = [
+                'type' => $type,
+                'label' => (string) __("ui.accounts.types.{$type}"),
+                'value' => round($value, 2),
+            ];
+        }
+
+        usort(
+            $slices,
+            static fn (array $a, array $b): int => $b['value'] <=> $a['value'],
+        );
+
+        return $slices;
     }
 
     /**

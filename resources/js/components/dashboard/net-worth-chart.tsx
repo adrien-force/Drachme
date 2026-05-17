@@ -15,6 +15,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { useTranslation } from '@/hooks/use-translation';
 import { formatCurrency } from '@/lib/format-currency';
 import type { NetWorthPoint } from '@/types/dashboard.types';
 
@@ -44,11 +45,15 @@ function ChartTooltip({
 }
 
 export function NetWorthChart({ data }: NetWorthChartProps) {
+    const { t } = useTranslation();
+
     return (
         <Card className="animate-in fade-in duration-500 fill-mode-both">
             <CardHeader>
-                <CardTitle>Patrimoine net</CardTitle>
-                <CardDescription>Évolution sur 12 mois</CardDescription>
+                <CardTitle>{t('dashboard.net_worth_chart_title')}</CardTitle>
+                <CardDescription>
+                    {t('dashboard.net_worth_chart_description')}
+                </CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="h-72 w-full">

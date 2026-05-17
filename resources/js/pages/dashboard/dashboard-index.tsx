@@ -1,6 +1,7 @@
 import { Head } from '@inertiajs/react';
 import { Info } from 'lucide-react';
 
+import { AccountAllocationChart } from '@/components/dashboard/account-allocation-chart';
 import { CashflowChart } from '@/components/dashboard/cashflow-chart';
 import { NetWorthChart } from '@/components/dashboard/net-worth-chart';
 import { PortfolioEvolutionChart } from '@/components/dashboard/portfolio-evolution-chart';
@@ -22,6 +23,7 @@ export default function DashboardIndex({
     kpis,
     netWorthHistory,
     portfolioHistory,
+    accountAllocation,
     cashflow,
     isDemoData,
 }: DashboardPageProps) {
@@ -123,15 +125,15 @@ export default function DashboardIndex({
                             <Card className="border-0 bg-transparent shadow-none">
                                 <CardHeader className="pb-2">
                                     <CardDescription>
-                                        {t('dashboard.monthly_change')}
+                                        {t('dashboard.total_assets')}
                                     </CardDescription>
                                     <CardTitle className="text-2xl tabular-nums">
-                                        {formatPercent(kpis.net_worth_change_pct)}
+                                        {formatCurrency(kpis.total_assets)}
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <p className="text-muted-foreground text-sm">
-                                        {t('dashboard.monthly_change_hint')}
+                                        {t('dashboard.total_assets_hint')}
                                     </p>
                                 </CardContent>
                             </Card>
@@ -170,8 +172,18 @@ export default function DashboardIndex({
                     <FadeIn delay={0.25}>
                         <CashflowChart data={cashflow} />
                     </FadeIn>
+                    {accountAllocation.length > 0 ? (
+                        <FadeIn delay={0.28}>
+                            <AccountAllocationChart data={accountAllocation} />
+                        </FadeIn>
+                    ) : null}
                     {portfolioHistory.length > 0 ? (
-                        <FadeIn delay={0.3} className="lg:col-span-2">
+                        <FadeIn
+                            delay={0.3}
+                            className={
+                                accountAllocation.length > 0 ? '' : 'lg:col-span-2'
+                            }
+                        >
                             <PortfolioEvolutionChart data={portfolioHistory} />
                         </FadeIn>
                     ) : null}

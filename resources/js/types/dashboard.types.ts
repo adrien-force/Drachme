@@ -4,6 +4,13 @@ export type DashboardKpis = {
     monthly_cashflow: number;
     portfolio_value: number;
     portfolio_change_pct: number;
+    total_assets: number;
+};
+
+export type AccountAllocationSlice = {
+    type: string;
+    label: string;
+    value: number;
 };
 
 export type NetWorthPoint = {
@@ -33,6 +40,7 @@ export type DashboardPageProps = {
     kpis: DashboardKpis;
     netWorthHistory: NetWorthPoint[];
     portfolioHistory: PortfolioEvolutionPoint[];
+    accountAllocation: AccountAllocationSlice[];
     cashflow: CashflowPoint[];
     isDemoData: boolean;
 };

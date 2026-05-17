@@ -30,8 +30,10 @@ class DashboardTest extends TestCase
             ->component('dashboard/dashboard-index')
             ->where('isDemoData', true)
             ->has('kpis')
+            ->has('accountAllocation')
             ->has('netWorthHistory', 12)
             ->has('cashflow', 12)
-            ->where('kpis.monthly_cashflow', 0));
+            ->where('kpis.monthly_cashflow', 0)
+            ->where('kpis.total_assets', 0));
     }
 }
