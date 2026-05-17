@@ -38,6 +38,7 @@ export type ProviderRecord = {
     logo_url: string | null;
     default_account_id: number | null;
     default_account_name: string | null;
+    account_ids: number[];
     import_type: ImportProviderType;
     column_mapping: {
         columns: ColumnMappingEntry[];

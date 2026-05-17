@@ -17,6 +17,17 @@ class ImportProviderFactory extends Factory
 {
     protected $model = ImportProvider::class;
 
+    public function configure(): static
+    {
+        return $this->afterCreating(function (ImportProvider $provider): void {
+            if ($provider->default_account_id === null) {
+                return;
+            }
+
+            $provider->accounts()->syncWithoutDetaching([$provider->default_account_id]);
+        });
+    }
+
     /**
      * @return array<string, mixed>
      */

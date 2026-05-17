@@ -251,6 +251,30 @@ class ImportWizardTest extends TestCase
     }
 
     #[Test]
+    public function user_can_start_import_on_account_not_linked_to_provider(): void
+    {
+        $user = User::factory()->create();
+        $linked = Account::factory()->for($user)->create(['name' => 'Linked']);
+        $other = Account::factory()->for($user)->create(['name' => 'Other']);
+
+        $provider = ImportProvider::factory()->for($user)->create([
+            'default_account_id' => $linked->id,
+        ]);
+        $provider->accounts()->sync([$linked->id]);
+
+        $this->actingAs($user)
+            ->post(route('import.store'), [
+                'import_provider_id' => $provider->id,
+                'account_id' => $other->id,
+            ])
+            ->assertRedirect();
+
+        $batch = ImportBatch::query()->first();
+        $this->assertNotNull($batch);
+        $this->assertSame($other->id, $batch->account_id);
+    }
+
+    #[Test]
     public function commit_removes_orphan_transactions_from_same_preview_batch(): void
     {
         $user = User::factory()->create();

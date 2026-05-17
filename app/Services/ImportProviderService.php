@@ -41,6 +41,7 @@ class ImportProviderService
      * @param  array{
      *     name: string,
      *     default_account_id?: int|null,
+     *     account_ids?: list<int>|null,
      *     import_type?: string|ImportProviderType,
      *     column_mapping: array<string, mixed>,
      *     csv_options?: array<string, mixed>|null,
@@ -48,7 +49,7 @@ class ImportProviderService
      */
     public function create(User $user, array $data): ImportProvider
     {
-        return ImportProvider::query()->create([
+        $provider = ImportProvider::query()->create([
             'user_id' => $user->id,
             'name' => $data['name'],
             'default_account_id' => $data['default_account_id'] ?? null,
@@ -56,12 +57,21 @@ class ImportProviderService
             'column_mapping' => $data['column_mapping'],
             'csv_options' => $this->mergeCsvOptions($data['csv_options'] ?? null),
         ]);
+
+        $this->syncLinkedAccounts(
+            $provider,
+            $data['account_ids'] ?? null,
+            $data['default_account_id'] ?? null,
+        );
+
+        return $provider;
     }
 
     /**
      * @param  array{
      *     name: string,
      *     default_account_id?: int|null,
+     *     account_ids?: list<int>|null,
      *     import_type?: string|ImportProviderType,
      *     column_mapping: array<string, mixed>,
      *     csv_options?: array<string, mixed>|null,
@@ -78,6 +88,16 @@ class ImportProviderService
         ]);
 
         $provider->save();
+
+        if (array_key_exists('account_ids', $data)) {
+            $this->syncLinkedAccounts(
+                $provider,
+                $data['account_ids'],
+                $data['default_account_id'] ?? null,
+            );
+        } elseif (($data['default_account_id'] ?? null) !== null) {
+            $provider->accounts()->syncWithoutDetaching([$data['default_account_id']]);
+        }
 
         return $provider;
     }
@@ -467,6 +487,30 @@ class ImportProviderService
     private function resolveOptionalPositionPrice(array $fields, ImportPositionColumnField $field): ?float
     {
         return $this->resolvePositionPrice($fields, $field);
+    }
+
+    /**
+     * @param  list<int>|null  $accountIds
+     */
+    private function syncLinkedAccounts(
+        ImportProvider $provider,
+        ?array $accountIds,
+        ?int $defaultAccountId,
+    ): void {
+        if ($accountIds === null && $defaultAccountId === null) {
+            return;
+        }
+
+        $ids = collect($accountIds ?? [])
+            ->map(static fn (mixed $id): int => (int) $id)
+            ->unique()
+            ->values();
+
+        if ($defaultAccountId !== null && ! $ids->contains($defaultAccountId)) {
+            $ids->push($defaultAccountId);
+        }
+
+        $provider->accounts()->sync($ids->all());
     }
 
     private function resolveImportType(mixed $importType): ImportProviderType

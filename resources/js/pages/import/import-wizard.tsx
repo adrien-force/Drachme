@@ -1,10 +1,11 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { ChevronLeft, ChevronRight, FileUp, Upload } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, ChevronRight, FileUp, Upload } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { EntityLogo } from '@/components/entity-logo';
 import { FadeIn } from '@/components/motion/fade-in';
 import { GlassPanel } from '@/components/glass-panel';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -100,44 +101,50 @@ export default function ImportWizard({
 
     const isPositionsProvider = selectedProvider?.import_type === 'positions';
 
-    const eligibleAccounts = useMemo(() => {
-        if (!isPositionsProvider) {
-            return accounts;
+    const selectedAccount = useMemo(
+        () => accounts.find((account) => String(account.id) === accountId),
+        [accounts, accountId],
+    );
+
+    const suggestedAccountId = useMemo(() => {
+        if (!selectedProvider) {
+            return null;
         }
 
-        return accounts.filter((account) => account.type === 'invest');
-    }, [accounts, isPositionsProvider]);
-
-    useEffect(() => {
         if (
-            selectedProvider?.default_account_id &&
-            accountId === '' &&
-            step === 'setup'
-        ) {
-            const defaultAccount = accounts.find(
+            selectedProvider.default_account_id !== null &&
+            accounts.some(
                 (account) => account.id === selectedProvider.default_account_id,
-            );
-
-            if (
-                defaultAccount &&
-                (!isPositionsProvider || defaultAccount.type === 'invest')
-            ) {
-                setAccountId(String(selectedProvider.default_account_id));
-            }
+            )
+        ) {
+            return selectedProvider.default_account_id;
         }
-    }, [selectedProvider, accountId, step, accounts, isPositionsProvider]);
+
+        const linkedId = selectedProvider.account_ids.find((id) =>
+            accounts.some((account) => account.id === id),
+        );
+
+        return linkedId ?? null;
+    }, [selectedProvider, accounts]);
 
     useEffect(() => {
-        if (!isPositionsProvider || accountId === '') {
+        if (suggestedAccountId === null || accountId !== '' || step !== 'setup') {
             return;
         }
 
-        const account = accounts.find((item) => String(item.id) === accountId);
+        setAccountId(String(suggestedAccountId));
+    }, [suggestedAccountId, accountId, step]);
 
-        if (account && account.type !== 'invest') {
-            setAccountId('');
-        }
-    }, [isPositionsProvider, accountId, accounts]);
+    const showUnlinkedWarning =
+        selectedProvider !== undefined &&
+        selectedProvider.account_ids.length > 0 &&
+        accountId !== '' &&
+        !selectedProvider.account_ids.includes(Number(accountId));
+
+    const showInvestWarning =
+        isPositionsProvider &&
+        selectedAccount !== undefined &&
+        selectedAccount.type !== 'invest';
 
     const duplicateCount = useMemo(() => {
         if (!batch?.preview_rows) {
@@ -281,7 +288,7 @@ export default function ImportWizard({
                                         />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {eligibleAccounts.map((account) => (
+                                        {accounts.map((account) => (
                                             <SelectItem
                                                 key={account.id}
                                                 value={String(account.id)}
@@ -303,11 +310,30 @@ export default function ImportWizard({
                             </div>
                         </div>
 
+                        {showUnlinkedWarning ? (
+                            <Alert className="border-amber-500/40 bg-amber-500/10">
+                                <AlertTriangle className="text-amber-600 dark:text-amber-400" />
+                                <AlertDescription>
+                                    {t('import.account_not_linked')}
+                                </AlertDescription>
+                            </Alert>
+                        ) : null}
+
+                        {showInvestWarning ? (
+                            <Alert variant="destructive">
+                                <AlertTriangle />
+                                <AlertDescription>
+                                    {t('import.account_not_invest')}
+                                </AlertDescription>
+                            </Alert>
+                        ) : null}
+
                         <Button
                             disabled={
                                 providerId === '' ||
                                 accountId === '' ||
-                                setupForm.processing
+                                setupForm.processing ||
+                                showInvestWarning
                             }
                             onClick={startImport}
                         >

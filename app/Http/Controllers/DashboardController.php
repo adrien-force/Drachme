@@ -24,7 +24,7 @@ class DashboardController extends Controller
         abort_if($user === null, 403);
 
         $monthStartDay = BillingPeriod::normalizeStartDay((int) ($user->month_start_day ?? 1));
-        $range = DashboardDateRange::fromRequest($request, $monthStartDay);
+        $range = DashboardDateRange::fromRequest($request, $monthStartDay, $user);
 
         return Inertia::render(
             'dashboard/dashboard-index',

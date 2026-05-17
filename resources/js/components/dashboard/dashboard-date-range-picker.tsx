@@ -29,7 +29,7 @@ type DashboardDateRangePickerProps = {
     className?: string;
 };
 
-const PRESET_VALUES = ['3m', '6m', '12m', 'ytd', 'custom'] as const;
+const PRESET_VALUES = ['3m', '6m', '12m', 'ytd', 'all', 'custom'] as const;
 
 export function DashboardDateRangePicker({
     dateRange,

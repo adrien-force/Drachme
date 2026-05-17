@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Support;
 
+use App\Models\Account;
+use App\Models\PortfolioSnapshot;
+use App\Models\Transaction;
+use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 
@@ -19,11 +23,14 @@ final class DashboardDateRange
 
     public const PRESET_CUSTOM = 'custom';
 
+    public const PRESET_ALL = 'all';
+
     private const VALID_PRESETS = [
         self::PRESET_3M,
         self::PRESET_6M,
         self::PRESET_12M,
         self::PRESET_YTD,
+        self::PRESET_ALL,
         self::PRESET_CUSTOM,
     ];
 
@@ -33,7 +40,7 @@ final class DashboardDateRange
         public readonly string $preset,
     ) {}
 
-    public static function fromRequest(Request $request, int $monthStartDay): self
+    public static function fromRequest(Request $request, int $monthStartDay, User $user): self
     {
         $today = CarbonImmutable::today();
         $monthStartDay = BillingPeriod::normalizeStartDay($monthStartDay);
@@ -72,6 +79,10 @@ final class DashboardDateRange
             return new self($from, $today, $preset);
         }
 
+        if ($preset === self::PRESET_ALL) {
+            return new self(self::resolveAllTimeStart($user), $today, $preset);
+        }
+
         $periodCount = match ($preset) {
             self::PRESET_3M => 3,
             self::PRESET_6M => 6,
@@ -93,5 +104,49 @@ final class DashboardDateRange
             'from' => $this->from->toDateString(),
             'to' => $this->to->toDateString(),
         ];
+    }
+
+    private static function resolveAllTimeStart(User $user): CarbonImmutable
+    {
+        $candidates = [];
+
+        $earliestOpenedAt = Account::query()
+            ->where('user_id', $user->id)
+            ->whereNotNull('opened_at')
+            ->min('opened_at');
+
+        if ($earliestOpenedAt !== null) {
+            $candidates[] = CarbonImmutable::parse((string) $earliestOpenedAt)->startOfDay();
+        }
+
+        $firstTransactionDate = Transaction::query()
+            ->where('user_id', $user->id)
+            ->min('date');
+
+        if ($firstTransactionDate !== null) {
+            $candidates[] = CarbonImmutable::parse((string) $firstTransactionDate)->startOfDay();
+        }
+
+        $firstPortfolioImport = PortfolioSnapshot::query()
+            ->where('user_id', $user->id)
+            ->min('imported_at');
+
+        if ($firstPortfolioImport !== null) {
+            $candidates[] = CarbonImmutable::parse((string) $firstPortfolioImport)->startOfDay();
+        }
+
+        if ($candidates === []) {
+            return CarbonImmutable::today();
+        }
+
+        $start = $candidates[0];
+
+        foreach ($candidates as $candidate) {
+            if ($candidate->lessThan($start)) {
+                $start = $candidate;
+            }
+        }
+
+        return $start;
     }
 }

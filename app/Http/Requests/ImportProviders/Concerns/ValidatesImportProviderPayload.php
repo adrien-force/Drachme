@@ -76,6 +76,12 @@ trait ValidatesImportProviderPayload
                 'integer',
                 Rule::exists('accounts', 'id')->where(fn ($query) => $query->where('user_id', $userId)),
             ],
+            'account_ids' => ['nullable', 'array'],
+            'account_ids.*' => [
+                'integer',
+                'distinct',
+                Rule::exists('accounts', 'id')->where(fn ($query) => $query->where('user_id', $userId)),
+            ],
         ], $this->importProviderMappingRules());
     }
 }

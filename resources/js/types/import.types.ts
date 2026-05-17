@@ -4,6 +4,7 @@ export type ImportWizardProvider = {
     id: number;
     name: string;
     default_account_id: number | null;
+    account_ids: number[];
     import_type: ImportProviderType;
     logo_url: string | null;
 };

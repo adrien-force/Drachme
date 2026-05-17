@@ -37,4 +37,24 @@ class DashboardDateRangeTest extends TestCase
                 ->where('dateRange.preset', 'custom')
                 ->has('netWorthHistory'));
     }
+
+    public function test_dashboard_accepts_all_time_preset(): void
+    {
+        $user = User::factory()->create();
+
+        Account::factory()->for($user)->create([
+            'opened_at' => '2024-03-15',
+            'initial_balance' => '1000.00',
+            'current_balance' => '1000.00',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard', ['preset' => 'all']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('dashboard/dashboard-index')
+                ->where('dateRange.preset', 'all')
+                ->where('dateRange.from', '2024-03-15')
+                ->has('netWorthHistory'));
+    }
 }

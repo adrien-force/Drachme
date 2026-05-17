@@ -58,11 +58,11 @@ function DashboardPage({
                 )}
 
                 <div
-                    className={`grid gap-4 ${showPortfolioKpi ? 'md:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-3'}`}
+                    className={`grid auto-rows-fr gap-4 ${showPortfolioKpi ? 'md:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-3'}`}
                 >
-                    <FadeIn delay={0.05}>
-                        <GlassPanel className="p-0">
-                            <Card className="border-0 bg-transparent shadow-none">
+                    <FadeIn delay={0.05} className="h-full">
+                        <GlassPanel className="h-full p-0">
+                            <Card className="flex h-full flex-col border-0 bg-transparent shadow-none">
                                 <CardHeader className="pb-2">
                                     <CardDescription>
                                         {t('dashboard.net_worth')}
@@ -71,7 +71,7 @@ function DashboardPage({
                                         {formatCurrency(kpis.net_worth)}
                                     </CardTitle>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="mt-auto">
                                     <p
                                         className={
                                             kpis.net_worth_change_pct >= 0
@@ -91,9 +91,9 @@ function DashboardPage({
                     </FadeIn>
 
                     {showPortfolioKpi ? (
-                        <FadeIn delay={0.08}>
-                            <GlassPanel className="p-0">
-                                <Card className="border-0 bg-transparent shadow-none">
+                        <FadeIn delay={0.08} className="h-full">
+                            <GlassPanel className="h-full p-0">
+                                <Card className="flex h-full flex-col border-0 bg-transparent shadow-none">
                                     <CardHeader className="pb-2">
                                         <CardDescription>
                                             {t('dashboard.portfolio_value')}
@@ -102,7 +102,7 @@ function DashboardPage({
                                             {formatCurrency(kpis.portfolio_value)}
                                         </CardTitle>
                                     </CardHeader>
-                                    <CardContent>
+                                    <CardContent className="mt-auto">
                                         {portfolioHistory.length >= 2 ? (
                                             <p
                                                 className={
@@ -117,16 +117,23 @@ function DashboardPage({
                                                     ),
                                                 })}
                                             </p>
-                                        ) : null}
+                                        ) : (
+                                            <p
+                                                className="text-muted-foreground text-sm"
+                                                aria-hidden
+                                            >
+                                                {'\u00a0'}
+                                            </p>
+                                        )}
                                     </CardContent>
                                 </Card>
                             </GlassPanel>
                         </FadeIn>
                     ) : null}
 
-                    <FadeIn delay={0.1}>
-                        <GlassPanel className="p-0">
-                            <Card className="border-0 bg-transparent shadow-none">
+                    <FadeIn delay={0.1} className="h-full">
+                        <GlassPanel className="h-full p-0">
+                            <Card className="flex h-full flex-col border-0 bg-transparent shadow-none">
                                 <CardHeader className="pb-2">
                                     <CardDescription>
                                         {t('dashboard.total_assets')}
@@ -135,7 +142,7 @@ function DashboardPage({
                                         {formatCurrency(kpis.total_assets)}
                                     </CardTitle>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="mt-auto">
                                     <p className="text-muted-foreground text-sm">
                                         {t('dashboard.total_assets_hint')}
                                     </p>
@@ -144,9 +151,9 @@ function DashboardPage({
                         </GlassPanel>
                     </FadeIn>
 
-                    <FadeIn delay={0.15}>
-                        <GlassPanel className="p-0">
-                            <Card className="border-0 bg-transparent shadow-none">
+                    <FadeIn delay={0.15} className="h-full">
+                        <GlassPanel className="h-full p-0">
+                            <Card className="flex h-full flex-col border-0 bg-transparent shadow-none">
                                 <CardHeader className="pb-2">
                                     <CardDescription>
                                         {t('dashboard.monthly_cashflow')}
@@ -159,7 +166,7 @@ function DashboardPage({
                                         })}
                                     </CardTitle>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="mt-auto">
                                     <p className="text-muted-foreground text-sm">
                                         {t('dashboard.monthly_cashflow_hint')}
                                     </p>
@@ -169,24 +176,22 @@ function DashboardPage({
                     </FadeIn>
                 </div>
 
-                <div className="grid gap-4 lg:grid-cols-2">
-                    <FadeIn delay={0.2}>
+                <div className="grid auto-rows-fr gap-4 lg:grid-cols-2">
+                    <FadeIn delay={0.2} className="h-full">
                         <NetWorthChart data={netWorthHistory} />
                     </FadeIn>
-                    <FadeIn delay={0.25}>
+                    <FadeIn delay={0.25} className="h-full">
                         <CashflowChart data={cashflow} />
                     </FadeIn>
                     {accountAllocation.length > 0 ? (
-                        <FadeIn delay={0.28}>
+                        <FadeIn delay={0.28} className="h-full">
                             <AccountAllocationChart data={accountAllocation} />
                         </FadeIn>
                     ) : null}
                     {portfolioHistory.length > 0 ? (
                         <FadeIn
                             delay={0.3}
-                            className={
-                                accountAllocation.length > 0 ? '' : 'lg:col-span-2'
-                            }
+                            className={`h-full ${accountAllocation.length > 0 ? '' : 'lg:col-span-2'}`}
                         >
                             <PortfolioEvolutionChart data={portfolioHistory} />
                         </FadeIn>

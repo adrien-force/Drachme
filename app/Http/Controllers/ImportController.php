@@ -124,13 +124,14 @@ class ImportController extends Controller
         $userId = Auth::id();
 
         $providers = ImportProvider::query()
-            ->with('defaultAccount')
+            ->with(['defaultAccount', 'accounts:id'])
             ->orderBy('name')
             ->get()
             ->map(fn (ImportProvider $provider): array => [
                 'id' => $provider->id,
                 'name' => $provider->name,
                 'default_account_id' => $provider->default_account_id,
+                'account_ids' => $provider->accounts->pluck('id')->values()->all(),
                 'import_type' => $provider->import_type->value,
                 'logo_url' => $provider->defaultAccount !== null
                     ? $this->accounts->logoUrl($provider->defaultAccount)

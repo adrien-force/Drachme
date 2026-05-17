@@ -37,7 +37,7 @@ class ImportProviderController extends Controller
         $this->authorize('viewAny', ImportProvider::class);
 
         $providers = ImportProvider::query()
-            ->with('defaultAccount:id,name,logo_path')
+            ->with(['defaultAccount:id,name,logo_path', 'accounts:id'])
             ->orderBy('name')
             ->get()
             ->map(fn (ImportProvider $provider): array => $this->serializeProvider($provider));
@@ -58,7 +58,7 @@ class ImportProviderController extends Controller
     {
         $this->authorize('view', $importProvider);
 
-        $importProvider->load('defaultAccount:id,name,logo_path');
+        $importProvider->load(['defaultAccount:id,name,logo_path', 'accounts:id']);
 
         return Inertia::render('providers/providers-show', $this->formPayload($importProvider));
     }
@@ -67,7 +67,7 @@ class ImportProviderController extends Controller
     {
         $this->authorize('update', $importProvider);
 
-        $importProvider->load('defaultAccount:id,name,logo_path');
+        $importProvider->load(['defaultAccount:id,name,logo_path', 'accounts:id']);
 
         return Inertia::render('providers/providers-form', $this->formPayload($importProvider));
     }
@@ -117,6 +117,7 @@ class ImportProviderController extends Controller
         /** @var array{
          *     name: string,
          *     default_account_id?: int|null,
+         *     account_ids?: list<int>|null,
          *     column_mapping: array<string, mixed>,
          *     csv_options?: array<string, mixed>|null,
          * } $data */
@@ -139,6 +140,7 @@ class ImportProviderController extends Controller
         /** @var array{
          *     name: string,
          *     default_account_id?: int|null,
+         *     account_ids?: list<int>|null,
          *     column_mapping: array<string, mixed>,
          *     csv_options?: array<string, mixed>|null,
          * } $data */
@@ -181,6 +183,9 @@ class ImportProviderController extends Controller
             'logo_url' => $account !== null ? $this->accounts->logoUrl($account) : null,
             'default_account_id' => $provider->default_account_id,
             'default_account_name' => $account?->name,
+            'account_ids' => $provider->relationLoaded('accounts')
+                ? $provider->accounts->pluck('id')->values()->all()
+                : [],
             'import_type' => $provider->import_type->value,
             'column_mapping' => $provider->column_mapping,
             'csv_options' => $provider->csv_options,

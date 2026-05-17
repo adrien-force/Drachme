@@ -39,7 +39,7 @@ export type CashflowPoint = {
 };
 
 export type DashboardDateRange = {
-    preset: '3m' | '6m' | '12m' | 'ytd' | 'custom';
+    preset: '3m' | '6m' | '12m' | 'ytd' | 'all' | 'custom';
     from: string;
     to: string;
 };

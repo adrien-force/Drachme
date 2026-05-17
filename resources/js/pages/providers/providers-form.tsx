@@ -10,6 +10,7 @@ import { ProviderCsvMappingTable } from '@/components/providers/provider-csv-map
 import { ProviderNormalizedPositionPreviewTable } from '@/components/providers/provider-normalized-position-preview-table';
 import { ProviderNormalizedPreviewTable } from '@/components/providers/provider-normalized-preview-table';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -63,6 +64,9 @@ export default function ProvidersForm({
     const [name, setName] = useState(provider?.name ?? '');
     const [defaultAccountId, setDefaultAccountId] = useState<string>(
         provider?.default_account_id ? String(provider.default_account_id) : NONE_ACCOUNT,
+    );
+    const [linkedAccountIds, setLinkedAccountIds] = useState<number[]>(
+        provider?.account_ids ?? [],
     );
     const [csvOptions, setCsvOptions] = useState<CsvOptions>(
         provider?.csv_options ?? defaultCsvOptions,
@@ -310,6 +314,36 @@ export default function ProvidersForm({
         }
     };
 
+    const toggleLinkedAccount = (accountId: number, checked: boolean) => {
+        setLinkedAccountIds((current) => {
+            if (checked) {
+                return current.includes(accountId)
+                    ? current
+                    : [...current, accountId];
+            }
+
+            if (String(accountId) === defaultAccountId) {
+                setDefaultAccountId(NONE_ACCOUNT);
+            }
+
+            return current.filter((id) => id !== accountId);
+        });
+    };
+
+    const handleDefaultAccountChange = (value: string) => {
+        setDefaultAccountId(value);
+
+        if (value === NONE_ACCOUNT) {
+            return;
+        }
+
+        const numericId = Number(value);
+
+        setLinkedAccountIds((current) =>
+            current.includes(numericId) ? current : [...current, numericId],
+        );
+    };
+
     const handleSubmit = () => {
         if (!canSave) {
             return;
@@ -322,6 +356,7 @@ export default function ProvidersForm({
             import_type: importType,
             default_account_id:
                 defaultAccountId === NONE_ACCOUNT ? null : Number(defaultAccountId),
+            account_ids: linkedAccountIds,
             column_mapping: mappingPayload(columnMappings),
             csv_options: csvOptions,
         };
@@ -374,7 +409,7 @@ export default function ProvidersForm({
                                 </Label>
                                 <Select
                                     value={defaultAccountId}
-                                    onValueChange={setDefaultAccountId}
+                                    onValueChange={handleDefaultAccountChange}
                                 >
                                     <SelectTrigger id="default-account" className="w-full">
                                         <SelectValue />
@@ -394,6 +429,50 @@ export default function ProvidersForm({
                                     </SelectContent>
                                 </Select>
                             </div>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label>{t('providers.linked_accounts')}</Label>
+                            <p className="text-muted-foreground text-xs">
+                                {t('providers.linked_accounts_hint')}
+                            </p>
+                            {accounts.length === 0 ? (
+                                <p className="text-muted-foreground text-sm">
+                                    {t('providers.linked_accounts_none')}
+                                </p>
+                            ) : (
+                                <div className="border-border/60 max-h-48 space-y-2 overflow-y-auto rounded-lg border p-3">
+                                    {accounts.map((account) => {
+                                        const checked = linkedAccountIds.includes(
+                                            account.id,
+                                        );
+
+                                        return (
+                                            <label
+                                                key={account.id}
+                                                className="hover:bg-muted/40 flex cursor-pointer items-center gap-3 rounded-md px-2 py-1.5"
+                                            >
+                                                <Checkbox
+                                                    checked={checked}
+                                                    onCheckedChange={(value) =>
+                                                        toggleLinkedAccount(
+                                                            account.id,
+                                                            value === true,
+                                                        )
+                                                    }
+                                                />
+                                                <EntityLogo
+                                                    name={account.name}
+                                                    logoUrl={account.logo_url}
+                                                    className="size-6 shrink-0"
+                                                />
+                                                <span className="text-sm">
+                                                    {account.name}
+                                                </span>
+                                            </label>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
                         <div className="grid gap-2">
                             <Label>{t('providers.import_type_label')}</Label>

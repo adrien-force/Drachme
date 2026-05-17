@@ -5,6 +5,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\ImportProviders;
 
+use App\Enums\AccountType;
 use App\Enums\ImportColumnField;
 use App\Enums\ImportProviderType;
 use App\Models\Account;
@@ -56,6 +57,31 @@ class ImportProviderCrudTest extends TestCase
         $this->assertNotNull($provider);
         $this->assertSame($user->id, $provider->user_id);
         $this->assertSame($account->id, $provider->default_account_id);
+    }
+
+    public function test_user_can_link_multiple_accounts_to_provider(): void
+    {
+        $user = User::factory()->create();
+        $checking = Account::factory()->for($user)->create(['name' => 'Checking']);
+        $invest = Account::factory()->for($user)->create([
+            'name' => 'PEA',
+            'type' => AccountType::Invest,
+        ]);
+
+        $payload = $this->validPayload($checking->id);
+        $payload['account_ids'] = [$checking->id, $invest->id];
+
+        $this
+            ->actingAs($user)
+            ->post(route('providers.store'), $payload)
+            ->assertRedirect(route('providers.index'));
+
+        $provider = ImportProvider::query()->first();
+        $this->assertNotNull($provider);
+        $this->assertEqualsCanonicalizing(
+            [$checking->id, $invest->id],
+            $provider->accounts()->pluck('accounts.id')->all(),
+        );
     }
 
     public function test_default_account_must_belong_to_same_user(): void

@@ -31,6 +31,8 @@ yarn-error.log
 Thumbs.db
 *.log
 
+/tmp
+
 # Local scripts
 .amend-commit.sh
 .fix-controller.sh

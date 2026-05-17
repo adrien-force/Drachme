@@ -2,12 +2,9 @@ import { router } from '@inertiajs/react';
 import { Bar, BarChart, CartesianGrid, Legend, XAxis, YAxis } from 'recharts';
 
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+    DASHBOARD_CHART_PLOT_CLASS,
+    DashboardChartCard,
+} from '@/components/dashboard/dashboard-chart-card';
 import {
     ChartContainer,
     ChartTooltip,
@@ -62,76 +59,72 @@ export function CashflowChart({ data }: CashflowChartProps) {
     };
 
     return (
-        <Card className="animate-in fade-in duration-500 fill-mode-both delay-150">
-            <CardHeader>
-                <CardTitle>{t('dashboard.cashflow_chart_title')}</CardTitle>
-                <CardDescription>{t('dashboard.cashflow_chart_description')}</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <p className="text-muted-foreground mb-3 text-xs">
-                    {t('dashboard.cashflow_bar_hint')}
-                </p>
-                <ChartContainer
-                    config={chartConfig}
-                    className="aspect-auto h-72 w-full [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted/15"
+        <DashboardChartCard
+            title={t('dashboard.cashflow_chart_title')}
+            description={t('dashboard.cashflow_chart_description')}
+            hint={t('dashboard.cashflow_bar_hint')}
+            className="animate-in fade-in duration-500 fill-mode-both delay-150"
+        >
+            <ChartContainer
+                config={chartConfig}
+                className={`${DASHBOARD_CHART_PLOT_CLASS} aspect-auto [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted/15`}
+            >
+                <BarChart
+                    data={data}
+                    margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
+                    onClick={handleBarClick}
+                    style={{ cursor: 'pointer' }}
                 >
-                    <BarChart
-                        data={data}
-                        margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
-                        onClick={handleBarClick}
-                        style={{ cursor: 'pointer' }}
-                    >
-                        <CartesianGrid
-                            stroke="var(--border)"
-                            strokeDasharray="4 4"
-                            vertical={false}
-                        />
-                        <XAxis
-                            dataKey="label"
-                            tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
-                            tickLine={false}
-                            axisLine={false}
-                            interval="preserveStartEnd"
-                        />
-                        <YAxis
-                            tickFormatter={(v) => formatCurrency(Number(v))}
-                            tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
-                            tickLine={false}
-                            axisLine={false}
-                            width={72}
-                        />
-                        <ChartTooltip
-                            cursor={tooltipCursor}
-                            content={
-                                <ChartTooltipContent
-                                    formatter={(value) =>
-                                        formatCurrency(Number(value), { precise: true })
-                                    }
-                                />
-                            }
-                        />
-                        <Legend
-                            formatter={(value) =>
-                                value === 'income'
-                                    ? t('dashboard.cashflow_income')
-                                    : t('dashboard.cashflow_expense')
-                            }
-                        />
-                        <Bar
-                            dataKey="income"
-                            name="income"
-                            fill="var(--color-income)"
-                            radius={[4, 4, 0, 0]}
-                        />
-                        <Bar
-                            dataKey="expense"
-                            name="expense"
-                            fill="var(--color-expense)"
-                            radius={[4, 4, 0, 0]}
-                        />
-                    </BarChart>
-                </ChartContainer>
-            </CardContent>
-        </Card>
+                    <CartesianGrid
+                        stroke="var(--border)"
+                        strokeDasharray="4 4"
+                        vertical={false}
+                    />
+                    <XAxis
+                        dataKey="label"
+                        tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
+                        tickLine={false}
+                        axisLine={false}
+                        interval="preserveStartEnd"
+                    />
+                    <YAxis
+                        tickFormatter={(v) => formatCurrency(Number(v))}
+                        tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
+                        tickLine={false}
+                        axisLine={false}
+                        width={72}
+                    />
+                    <ChartTooltip
+                        cursor={tooltipCursor}
+                        content={
+                            <ChartTooltipContent
+                                formatter={(value) =>
+                                    formatCurrency(Number(value), { precise: true })
+                                }
+                            />
+                        }
+                    />
+                    <Legend
+                        formatter={(value) =>
+                            value === 'income'
+                                ? t('dashboard.cashflow_income')
+                                : t('dashboard.cashflow_expense')
+                        }
+                    />
+                    <Bar
+                        dataKey="income"
+                        name="income"
+                        fill="var(--color-income)"
+                        radius={[4, 4, 0, 0]}
+                    />
+                    <Bar
+                        dataKey="expense"
+                        name="expense"
+                        fill="var(--color-expense)"
+                        radius={[4, 4, 0, 0]}
+                    />
+                </BarChart>
+            </ChartContainer>
+        </DashboardChartCard>
     );
 }

@@ -11,12 +11,9 @@ import {
 import type { PieSectorDataItem } from 'recharts/types/polar/Pie';
 
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+    DASHBOARD_CHART_PLOT_CLASS,
+    DashboardChartCard,
+} from '@/components/dashboard/dashboard-chart-card';
 import { useTranslation } from '@/hooks/use-translation';
 import { resolveChartSliceColors } from '@/lib/chart-slice-colors';
 import { formatCurrency } from '@/lib/format-currency';
@@ -142,14 +139,15 @@ export function AccountAllocationChart({ data }: AccountAllocationChartProps) {
     };
 
     return (
-        <Card className="animate-in fade-in duration-500 fill-mode-both">
-            <CardHeader>
-                <CardTitle>{t('dashboard.allocation_title')}</CardTitle>
-                <CardDescription>{t('dashboard.allocation_description')}</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-                    <div className="relative mx-auto h-60 w-full max-w-[240px] sm:mx-0 sm:flex-1">
+        <DashboardChartCard
+            title={t('dashboard.allocation_title')}
+            description={t('dashboard.allocation_description')}
+            className="animate-in fade-in duration-500 fill-mode-both"
+        >
+            <div
+                className={`${DASHBOARD_CHART_PLOT_CLASS} flex flex-col gap-6 sm:flex-row sm:items-stretch`}
+            >
+                <div className="relative mx-auto w-full max-w-[240px] sm:mx-0 sm:h-full sm:min-h-0 sm:flex-1">
                         <div
                             aria-hidden
                             className="pointer-events-none absolute inset-0 flex items-center justify-center"
@@ -242,7 +240,7 @@ export function AccountAllocationChart({ data }: AccountAllocationChartProps) {
                             </PieChart>
                         </ResponsiveContainer>
                     </div>
-                    <ul className="flex flex-1 flex-col gap-3 text-sm">
+                <ul className="flex flex-1 flex-col justify-center gap-3 text-sm sm:min-h-0">
                         {data.map((slice, index) => (
                             <li
                                 key={slice.type}
@@ -265,9 +263,8 @@ export function AccountAllocationChart({ data }: AccountAllocationChartProps) {
                                 </span>
                             </li>
                         ))}
-                    </ul>
-                </div>
-            </CardContent>
-        </Card>
+                </ul>
+            </div>
+        </DashboardChartCard>
     );
 }
