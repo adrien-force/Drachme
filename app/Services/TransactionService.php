@@ -110,6 +110,29 @@ class TransactionService
         return $transaction->fresh() ?? $transaction;
     }
 
+    public function updateCategory(Transaction $transaction, ?int $categoryId): Transaction
+    {
+        $user = $transaction->user;
+        if ($user === null) {
+            throw new InvalidArgumentException('transaction_invalid');
+        }
+
+        if ($categoryId !== null) {
+            $category = Category::query()
+                ->where('user_id', $user->id)
+                ->whereKey($categoryId)
+                ->first();
+
+            if ($category === null) {
+                throw new InvalidArgumentException('transaction_category_forbidden');
+            }
+        }
+
+        $transaction->update(['category_id' => $categoryId]);
+
+        return $transaction->fresh(['category:id,name,color']) ?? $transaction;
+    }
+
     public function delete(Transaction $transaction): void
     {
         if ($transaction->transfer_pair_id !== null) {

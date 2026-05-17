@@ -114,7 +114,8 @@
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.145 0 0);
     --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.145 0 0);
+    /* Elevated surfaces (selects, dropdowns, popovers) — muted gray, not page background */
+    --popover: oklch(0.269 0 0);
     --popover-foreground: oklch(0.985 0 0);
     --secondary: oklch(0.269 0 0);
     --secondary-foreground: oklch(0.985 0 0);
@@ -191,6 +192,23 @@
         backdrop-filter: blur(var(--glass-blur)) saturate(1.2);
         -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.2);
         box-shadow: 0 0 0 1px oklch(1 0 0 / 0.04);
+    }
+
+    /* Scrollable menus: thin scrollbar, no horizontal overflow */
+    [data-slot='select-content'],
+    [data-slot='popover-content'] .overflow-y-auto {
+        scrollbar-width: thin;
+        scrollbar-color: oklch(0.45 0 0 / 0.6) transparent;
+    }
+
+    [data-slot='popover-content'] .overflow-y-auto::-webkit-scrollbar {
+        width: 6px;
+        height: 0;
+    }
+
+    [data-slot='popover-content'] .overflow-y-auto::-webkit-scrollbar-thumb {
+        border-radius: 9999px;
+        background: oklch(0.45 0 0 / 0.6);
     }
 
     [data-slot='sidebar-wrapper'] {

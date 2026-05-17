@@ -14,8 +14,9 @@ import {
 } from '@/components/ui/popover';
 import {
     buildSelectOptionTree,
-    selectOptionAncestorRootIds,
+    selectOptionAncestorIds,
 } from '@/lib/category-tree';
+import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 import type { CategorySelectOption, CategorySelectTreeNode } from '@/types/category.types';
 
@@ -47,8 +48,8 @@ type CategoryTreeRowProps = {
     node: CategorySelectTreeNode;
     depth: number;
     value: number | null;
-    expandedRootIds: Set<number>;
-    onToggleRoot: (rootId: number, open: boolean) => void;
+    expandedIds: Set<number>;
+    onToggleExpanded: (id: number, open: boolean) => void;
     onSelect: (id: number) => void;
 };
 
@@ -56,14 +57,14 @@ function CategoryTreeRow({
     node,
     depth,
     value,
-    expandedRootIds,
-    onToggleRoot,
+    expandedIds,
+    onToggleExpanded,
     onSelect,
 }: CategoryTreeRowProps) {
+    const { t } = useTranslation();
     const isSelected = value === node.id;
     const hasChildren = node.children.length > 0;
-    const isRoot = depth === 0;
-    const isExpanded = isRoot && expandedRootIds.has(node.id);
+    const isExpanded = expandedIds.has(node.id);
 
     const rowButton = (
         <button
@@ -80,84 +81,70 @@ function CategoryTreeRow({
         </button>
     );
 
-    if (isRoot) {
-        const chevronSlot = hasChildren ? (
-            <CollapsibleTrigger asChild>
-                <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="size-7 shrink-0"
-                    aria-label={isExpanded ? 'Réduire' : 'Développer'}
-                >
-                    <ChevronRight
-                        className={cn(
-                            'size-4 transition-transform',
-                            isExpanded && 'rotate-90',
-                        )}
-                    />
-                </Button>
-            </CollapsibleTrigger>
-        ) : (
-            <span
-                className="inline-flex size-7 shrink-0 items-center justify-center"
-                aria-hidden
+    const chevronSlot = hasChildren ? (
+        <CollapsibleTrigger asChild>
+            <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-7 shrink-0"
+                aria-label={
+                    isExpanded ? t('categories.collapse') : t('categories.expand')
+                }
             >
-                <ChevronRight className="text-muted-foreground/35 size-4" />
-            </span>
-        );
+                <ChevronRight
+                    className={cn(
+                        'size-4 transition-transform',
+                        isExpanded && 'rotate-90',
+                    )}
+                />
+            </Button>
+        </CollapsibleTrigger>
+    ) : depth === 0 ? (
+        <span
+            className="inline-flex size-7 shrink-0 items-center justify-center"
+            aria-hidden
+        >
+            <ChevronRight className="text-muted-foreground/35 size-4" />
+        </span>
+    ) : (
+        <span className="size-7 shrink-0" aria-hidden />
+    );
 
-        const header = (
-            <div className="flex items-center gap-0.5">
-                {chevronSlot}
-                {rowButton}
-            </div>
-        );
+    const header = (
+        <div
+            className="flex min-w-0 items-center gap-0.5"
+            style={depth > 0 ? { paddingLeft: `${depth * 0.75}rem` } : undefined}
+        >
+            {chevronSlot}
+            {rowButton}
+        </div>
+    );
 
-        if (!hasChildren) {
-            return header;
-        }
-
-        return (
-            <Collapsible
-                open={isExpanded}
-                onOpenChange={(open) => onToggleRoot(node.id, open)}
-            >
-                {header}
-                <CollapsibleContent>
-                    {node.children.map((child) => (
-                        <CategoryTreeRow
-                            key={child.id}
-                            node={child}
-                            depth={1}
-                            value={value}
-                            expandedRootIds={expandedRootIds}
-                            onToggleRoot={onToggleRoot}
-                            onSelect={onSelect}
-                        />
-                    ))}
-                </CollapsibleContent>
-            </Collapsible>
-        );
+    if (!hasChildren) {
+        return header;
     }
 
     return (
-        <div>
-            <div style={{ paddingLeft: `${depth * 0.75}rem` }}>{rowButton}</div>
-            {hasChildren
-                ? node.children.map((child) => (
-                      <CategoryTreeRow
-                          key={child.id}
-                          node={child}
-                          depth={depth + 1}
-                          value={value}
-                          expandedRootIds={expandedRootIds}
-                          onToggleRoot={onToggleRoot}
-                          onSelect={onSelect}
-                      />
-                  ))
-                : null}
-        </div>
+        <Collapsible
+            open={isExpanded}
+            onOpenChange={(open) => onToggleExpanded(node.id, open)}
+        >
+            {header}
+            <CollapsibleContent>
+                {node.children.map((child) => (
+                    <CategoryTreeRow
+                        key={child.id}
+                        node={child}
+                        depth={depth + 1}
+                        value={value}
+                        expandedIds={expandedIds}
+                        onToggleExpanded={onToggleExpanded}
+                        onSelect={onSelect}
+                    />
+                ))}
+            </CollapsibleContent>
+        </Collapsible>
     );
 }
 
@@ -179,24 +166,24 @@ export function CategorySelect({
         [options, value],
     );
 
-    const [expandedRootIds, setExpandedRootIds] = useState<Set<number>>(() => new Set());
+    const [expandedIds, setExpandedIds] = useState<Set<number>>(() => new Set());
 
     useEffect(() => {
         if (!open) {
             return;
         }
 
-        const ancestors = selectOptionAncestorRootIds(tree, value);
-        setExpandedRootIds(new Set(ancestors));
+        const ancestors = selectOptionAncestorIds(tree, value);
+        setExpandedIds(new Set(ancestors));
     }, [open, tree, value]);
 
-    const toggleRoot = (rootId: number, isOpen: boolean) => {
-        setExpandedRootIds((current) => {
+    const toggleExpanded = (categoryId: number, isOpen: boolean) => {
+        setExpandedIds((current) => {
             const next = new Set(current);
             if (isOpen) {
-                next.add(rootId);
+                next.add(categoryId);
             } else {
-                next.delete(rootId);
+                next.delete(categoryId);
             }
 
             return next;
@@ -236,9 +223,10 @@ export function CategorySelect({
                 </Button>
             </PopoverTrigger>
             <PopoverContent
-                className="max-h-80 w-[var(--radix-popover-trigger-width)] overflow-y-auto p-1"
+                className="w-[var(--radix-popover-trigger-width)] p-0"
                 align="start"
             >
+                <div className="max-h-80 overflow-x-hidden overflow-y-auto overscroll-contain p-1">
                 <button
                     type="button"
                     onClick={() => pick(null)}
@@ -276,11 +264,12 @@ export function CategorySelect({
                         node={node}
                         depth={0}
                         value={value}
-                        expandedRootIds={expandedRootIds}
-                        onToggleRoot={toggleRoot}
+                        expandedIds={expandedIds}
+                        onToggleExpanded={toggleExpanded}
                         onSelect={pick}
                     />
                 ))}
+                </div>
             </PopoverContent>
         </Popover>
     );
@@ -322,24 +311,24 @@ export function CategoryFilterSelect({
         [options, selectedCategoryId],
     );
 
-    const [expandedRootIds, setExpandedRootIds] = useState<Set<number>>(() => new Set());
+    const [expandedIds, setExpandedIds] = useState<Set<number>>(() => new Set());
 
     useEffect(() => {
         if (!open) {
             return;
         }
 
-        const ancestors = selectOptionAncestorRootIds(tree, selectedCategoryId);
-        setExpandedRootIds(new Set(ancestors));
+        const ancestors = selectOptionAncestorIds(tree, selectedCategoryId);
+        setExpandedIds(new Set(ancestors));
     }, [open, tree, selectedCategoryId]);
 
-    const toggleRoot = (rootId: number, isOpen: boolean) => {
-        setExpandedRootIds((current) => {
+    const toggleExpanded = (categoryId: number, isOpen: boolean) => {
+        setExpandedIds((current) => {
             const next = new Set(current);
             if (isOpen) {
-                next.add(rootId);
+                next.add(categoryId);
             } else {
-                next.delete(rootId);
+                next.delete(categoryId);
             }
 
             return next;
@@ -378,9 +367,10 @@ export function CategoryFilterSelect({
                 </Button>
             </PopoverTrigger>
             <PopoverContent
-                className="max-h-80 w-[var(--radix-popover-trigger-width)] overflow-y-auto p-1"
+                className="w-[var(--radix-popover-trigger-width)] p-0"
                 align="start"
             >
+                <div className="max-h-80 overflow-x-hidden overflow-y-auto overscroll-contain p-1">
                 <button
                     type="button"
                     onClick={() => {
@@ -418,11 +408,12 @@ export function CategoryFilterSelect({
                         node={node}
                         depth={0}
                         value={selectedCategoryId}
-                        expandedRootIds={expandedRootIds}
-                        onToggleRoot={toggleRoot}
+                        expandedIds={expandedIds}
+                        onToggleExpanded={toggleExpanded}
                         onSelect={pickCategory}
                     />
                 ))}
+                </div>
             </PopoverContent>
         </Popover>
     );

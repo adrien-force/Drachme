@@ -37,6 +37,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('transactions.apply-category-rules');
     Route::get('transactions/{transaction}/edit', [TransactionController::class, 'edit'])->name('transactions.edit');
     Route::put('transactions/{transaction}', [TransactionController::class, 'update'])->name('transactions.update');
+    Route::patch('transactions/{transaction}/category', [TransactionController::class, 'updateCategory'])
+        ->name('transactions.update-category');
     Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
     Route::post('categories', [CategoryController::class, 'store'])->name('categories.store');
     Route::put('categories/{category}', [CategoryController::class, 'update'])->name('categories.update');

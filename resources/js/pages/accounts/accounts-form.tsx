@@ -6,6 +6,7 @@ import { GlassPanel } from '@/components/glass-panel';
 import { LogoUploadField } from '@/components/logo-upload-field';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -29,6 +30,7 @@ export default function AccountsForm({
     const [accountName, setAccountName] = useState(account?.name ?? '');
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [removeLogo, setRemoveLogo] = useState(false);
+    const [openedAt, setOpenedAt] = useState<string | null>(account?.opened_at ?? null);
     const [submitting, setSubmitting] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -51,8 +53,7 @@ export default function AccountsForm({
             payload.append('institution', institution);
         }
 
-        const openedAt = formData.get('opened_at');
-        if (typeof openedAt === 'string' && openedAt !== '') {
+        if (openedAt !== null && openedAt !== '') {
             payload.append('opened_at', openedAt);
         }
 
@@ -198,11 +199,11 @@ export default function AccountsForm({
 
                             <div className="grid gap-2">
                                 <Label htmlFor="opened_at">{t('accounts.opened_at')}</Label>
-                                <Input
+                                <DatePicker
                                     id="opened_at"
-                                    name="opened_at"
-                                    type="date"
-                                    defaultValue={account?.opened_at ?? ''}
+                                    value={openedAt}
+                                    clearable
+                                    onChange={setOpenedAt}
                                 />
                                 <InputError message={errors.opened_at} />
                             </div>

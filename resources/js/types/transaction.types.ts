@@ -1,4 +1,10 @@
 import type { CategorySelectOption } from '@/types/category.types';
+import type {
+    PaginatedMeta,
+    SortOrder,
+    TransactionFlow,
+    TransactionSortColumn,
+} from '@/types/account.types';
 
 export type TransactionType = 'expense' | 'income' | 'transfer';
 
@@ -48,14 +54,36 @@ export type AccountTransactionItem = {
     category_color?: string | null;
 };
 
+export type TransactionListFilters = {
+    search: string;
+    date_from: string | null;
+    date_to: string | null;
+    type: TransactionType | null;
+    flow: TransactionFlow | null;
+    category_id: string | null;
+    account_id: number | null;
+    amount_min: string | null;
+    amount_max: string | null;
+    sort: TransactionSortColumn;
+    order: SortOrder;
+    per_page: number;
+    page: number;
+};
+
+export type PaginatedTransactions = {
+    data: TransactionListItem[];
+    meta: PaginatedMeta;
+};
+
 export type TransactionsIndexPageProps = {
-    transactions: TransactionListItem[];
+    transactions: PaginatedTransactions;
     categoryOptions: CategorySelectOption[];
-    filters: {
-        category_id: string | null;
-    };
+    accountOptions: TransactionAccountOption[];
+    filters: TransactionListFilters;
     transactionEdit: TransactionsFormPageProps | null;
     uncategorizedCount: number;
+    perPageOptions: number[];
+    typeOptions: TransactionTypeOption[];
 };
 
 export type TransactionsFormPageProps = {

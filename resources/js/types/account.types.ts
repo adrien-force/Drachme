@@ -56,7 +56,13 @@ export type AccountBalanceHistory = {
 
 export type TransactionFlow = 'credit' | 'debit';
 
-export type TransactionSortColumn = 'date' | 'label' | 'amount' | 'type' | 'category';
+export type TransactionSortColumn =
+    | 'date'
+    | 'label'
+    | 'amount'
+    | 'type'
+    | 'category'
+    | 'account';
 
 export type SortOrder = 'asc' | 'desc';
 

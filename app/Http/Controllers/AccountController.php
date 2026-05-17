@@ -13,7 +13,7 @@ use App\Models\Account;
 use App\Models\Transaction;
 use App\Services\AccountBalanceHistoryService;
 use App\Services\AccountService;
-use App\Services\AccountTransactionListService;
+use App\Services\TransactionListService;
 use App\Services\CategoryService;
 use App\Services\TransactionCategoryRuleApplier;
 use App\Services\TransactionFormPresenter;
@@ -30,7 +30,7 @@ class AccountController extends Controller
     public function __construct(
         private readonly AccountService $accounts,
         private readonly AccountBalanceHistoryService $balanceHistory,
-        private readonly AccountTransactionListService $transactionList,
+        private readonly TransactionListService $transactionList,
         private readonly CategoryService $categories,
         private readonly TransactionFormPresenter $transactionForm,
         private readonly TransactionCategoryRuleApplier $categoryRuleApplier,
@@ -70,7 +70,7 @@ class AccountController extends Controller
         $account->loadMax('transactions', 'date');
 
         $transactionFilters = $request->transactionFilters();
-        $paginator = $this->transactionList->paginate($account, $transactionFilters);
+        $paginator = $this->transactionList->paginateForAccount($account, $transactionFilters);
 
         $user = $request->user();
         if ($user !== null) {

@@ -9,6 +9,7 @@ import { TransactionTypeBadge } from '@/components/transactions/transaction-type
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -129,11 +130,10 @@ export function TransactionFormPanel({
                 <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                         <Label htmlFor="transaction-date">{t('transactions.date')}</Label>
-                        <Input
+                        <DatePicker
                             id="transaction-date"
-                            type="date"
-                            value={form.data.date}
-                            onChange={(event) => form.setData('date', event.target.value)}
+                            value={form.data.date || null}
+                            onChange={(date) => form.setData('date', date ?? '')}
                         />
                         <InputError message={form.errors.date} />
                     </div>

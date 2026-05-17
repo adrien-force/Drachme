@@ -199,6 +199,43 @@ class CategoryService
         return $depth;
     }
 
+    /**
+     * Category id plus all descendant ids (for list filters).
+     *
+     * @return list<int>
+     */
+    public function selfAndDescendantIds(User $user, int $categoryId): array
+    {
+        $categories = Category::query()
+            ->where('user_id', $user->id)
+            ->get(['id', 'parent_id']);
+
+        if (! $categories->contains('id', $categoryId)) {
+            return [];
+        }
+
+        /** @var array<int, list<int>> $childrenByParent */
+        $childrenByParent = [];
+        foreach ($categories as $category) {
+            if ($category->parent_id !== null) {
+                $childrenByParent[$category->parent_id][] = $category->id;
+            }
+        }
+
+        $ids = [$categoryId];
+        $stack = [$categoryId];
+
+        while ($stack !== []) {
+            $current = array_pop($stack);
+            foreach ($childrenByParent[$current] ?? [] as $childId) {
+                $ids[] = $childId;
+                $stack[] = $childId;
+            }
+        }
+
+        return array_values(array_unique($ids));
+    }
+
     private function resolveParent(User $user, ?int $parentId, ?Category $except = null): ?Category
     {
         if ($parentId === null || $parentId === 0) {

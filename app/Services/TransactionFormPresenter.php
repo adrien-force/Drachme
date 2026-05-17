@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Enums\TransactionType;
 use App\Models\Account;
 use App\Models\Transaction;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 
 class TransactionFormPresenter
@@ -58,6 +59,40 @@ class TransactionFormPresenter
             'typeOptions' => $this->typeOptions(),
             'categoryOptions' => $user !== null ? $this->categories->flatSelectOptions($user) : [],
             'suggestedCategory' => $suggestedCategory,
+        ];
+    }
+
+    /**
+     * @param  LengthAwarePaginator<int, Transaction>  $paginator
+     *
+     * @return array{
+     *     data: list<array<string, mixed>>,
+     *     meta: array{
+     *         current_page: int,
+     *         last_page: int,
+     *         per_page: int,
+     *         total: int,
+     *         from: int|null,
+     *         to: int|null,
+     *     },
+     * }
+     */
+    public function serializePaginator(LengthAwarePaginator $paginator): array
+    {
+        return [
+            'data' => array_values(
+                collect($paginator->items())
+                    ->map(fn (Transaction $transaction): array => $this->serializeTransaction($transaction))
+                    ->all(),
+            ),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'from' => $paginator->firstItem(),
+                'to' => $paginator->lastItem(),
+            ],
         ];
     }
 

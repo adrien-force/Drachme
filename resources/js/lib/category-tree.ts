@@ -97,8 +97,8 @@ export function buildSelectOptionTree(
     return roots;
 }
 
-/** Root ids that must be expanded to reveal `categoryId`. */
-export function selectOptionAncestorRootIds(
+/** Ancestor category ids that must be expanded to reveal `categoryId`. */
+export function selectOptionAncestorIds(
     tree: CategorySelectTreeNode[],
     categoryId: number | null,
 ): number[] {
@@ -127,4 +127,12 @@ export function selectOptionAncestorRootIds(
     };
 
     return findPath(tree, []) ?? [];
+}
+
+/** @deprecated Use selectOptionAncestorIds */
+export function selectOptionAncestorRootIds(
+    tree: CategorySelectTreeNode[],
+    categoryId: number | null,
+): number[] {
+    return selectOptionAncestorIds(tree, categoryId);
 }

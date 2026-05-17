@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Transactions\ApplyCategoryRulesRequest;
+use App\Http\Requests\Transactions\IndexTransactionsRequest;
 use App\Http\Requests\Transactions\StoreTransactionRequest;
+use App\Http\Requests\Transactions\UpdateTransactionCategoryRequest;
 use App\Http\Requests\Transactions\UpdateTransactionRequest;
-use App\Services\CategoryService;
-use App\Services\TransactionCategoryRuleApplier;
 use App\Models\Account;
 use App\Models\Transaction;
+use App\Services\AccountService;
+use App\Services\CategoryService;
+use App\Services\TransactionCategoryRuleApplier;
 use App\Services\TransactionFormPresenter;
+use App\Services\TransactionListService;
 use App\Services\TransactionService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
@@ -28,11 +32,13 @@ class TransactionController extends Controller
     public function __construct(
         private readonly TransactionService $transactions,
         private readonly TransactionFormPresenter $formPresenter,
+        private readonly TransactionListService $transactionList,
         private readonly CategoryService $categories,
         private readonly TransactionCategoryRuleApplier $categoryRuleApplier,
+        private readonly AccountService $accounts,
     ) {}
 
-    public function index(Request $request): Response
+    public function index(IndexTransactionsRequest $request): Response
     {
         $this->authorize('viewAny', Transaction::class);
 
@@ -41,35 +47,48 @@ class TransactionController extends Controller
             $this->categories->seedDefaultsForUser($user);
         }
 
-        $query = Transaction::query()
-            ->with(['account:id,name,logo_path', 'category:id,name,color']);
-
-        $categoryFilter = $request->input('category_id');
-        if ($categoryFilter === 'uncategorized') {
-            $query->whereNull('category_id');
-        } elseif (is_string($categoryFilter) && $categoryFilter !== '') {
-            $query->where('category_id', (int) $categoryFilter);
-        }
-
-        $items = $query
-            ->orderByDesc('date')
-            ->orderByDesc('id')
-            ->limit(100)
-            ->get()
-            ->map(fn (Transaction $transaction): array => $this->formPresenter->serializeTransaction($transaction));
+        $listFilters = $request->listFilters();
+        $paginator = $user !== null
+            ? $this->transactionList->paginateForUser($user, $listFilters)
+            : null;
 
         $transactionEdit = $this->resolveTransactionEditPayload($request);
 
+        $accountOptions = $user !== null
+            ? Account::query()
+                ->active()
+                ->where('user_id', $user->id)
+                ->orderBy('name')
+                ->get(['id', 'name', 'logo_path'])
+                ->map(fn (Account $account): array => [
+                    'id' => $account->id,
+                    'name' => $account->name,
+                    'logo_url' => $this->accounts->logoUrl($account),
+                ])
+                ->values()
+                ->all()
+            : [];
+
         return Inertia::render('transactions/transactions-index', [
-            'transactions' => $items,
+            'transactions' => $paginator !== null
+                ? $this->formPresenter->serializePaginator($paginator)
+                : ['data' => [], 'meta' => [
+                    'current_page' => 1,
+                    'last_page' => 1,
+                    'per_page' => IndexTransactionsRequest::perPageOptions()[1],
+                    'total' => 0,
+                    'from' => null,
+                    'to' => null,
+                ]],
             'categoryOptions' => $user !== null ? $this->categories->flatSelectOptions($user) : [],
-            'filters' => [
-                'category_id' => is_string($categoryFilter) ? $categoryFilter : null,
-            ],
+            'accountOptions' => $accountOptions,
+            'filters' => $request->listFiltersForFrontend(),
             'transactionEdit' => $transactionEdit ?? null,
             'uncategorizedCount' => $user !== null
                 ? $this->categoryRuleApplier->countUncategorized($user)
                 : 0,
+            'perPageOptions' => IndexTransactionsRequest::perPageOptions(),
+            'typeOptions' => $this->transactionTypeOptions(),
         ]);
     }
 
@@ -100,7 +119,7 @@ class TransactionController extends Controller
 
         $accountId = $request->integer('account_id');
         $presetAccount = $accountId > 0
-            ? Account::query()->active()->find($accountId)
+            ? Account::query()->active()->whereKey($accountId)->first()
             : null;
 
         if ($presetAccount !== null) {
@@ -185,13 +204,31 @@ class TransactionController extends Controller
         return to_route('accounts.show', $transaction->account_id);
     }
 
+    public function updateCategory(
+        UpdateTransactionCategoryRequest $request,
+        Transaction $transaction,
+    ): RedirectResponse {
+        try {
+            $this->transactions->updateCategory($transaction, $request->categoryId());
+        } catch (InvalidArgumentException $exception) {
+            return back()->withErrors($this->mapServiceError($exception));
+        }
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('ui.transactions.category_updated'),
+        ]);
+
+        return back();
+    }
+
     /**
      * @return array<string, mixed>|null
      */
-    private function resolveTransactionEditPayload(Request $request): ?array
+    private function resolveTransactionEditPayload(IndexTransactionsRequest $request): ?array
     {
-        $editId = $request->integer('edit_transaction');
-        if ($editId <= 0) {
+        $editId = $request->editTransactionId();
+        if ($editId === null) {
             return null;
         }
 
@@ -204,6 +241,20 @@ class TransactionController extends Controller
         $transaction->load(['account:id,name,logo_path', 'category:id,name,color']);
 
         return $this->formPresenter->payload($transaction, null);
+    }
+
+    /**
+     * @return list<array{value: string, label: string}>
+     */
+    private function transactionTypeOptions(): array
+    {
+        return array_values(array_map(
+            static fn (\App\Enums\TransactionType $type): array => [
+                'value' => $type->value,
+                'label' => (string) __("ui.transactions.types.{$type->value}"),
+            ],
+            \App\Enums\TransactionType::cases(),
+        ));
     }
 
     /**

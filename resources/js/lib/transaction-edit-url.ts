@@ -2,8 +2,10 @@ import type {
     AccountBalanceHistory,
     AccountTransactionFilters,
 } from '@/types/account.types';
+import type { TransactionListFilters } from '@/types/transaction.types';
 
 import { buildAccountShowQuery } from '@/lib/account-show-query';
+import { buildTransactionsIndexQuery } from '@/lib/transactions-index-query';
 
 export function accountTransactionEditUrl(
     accountId: number,
@@ -20,14 +22,11 @@ export function accountTransactionEditUrl(
 
 export function transactionsIndexEditUrl(
     transactionId: number,
-    filters: { category_id: string | null },
+    filters: TransactionListFilters,
 ): string {
-    const params = new URLSearchParams();
-    params.set('edit_transaction', String(transactionId));
+    const query = buildTransactionsIndexQuery(filters, transactionId);
 
-    if (filters.category_id) {
-        params.set('category_id', filters.category_id);
-    }
-
-    return `/transactions?${params.toString()}`;
+    return `/transactions?${new URLSearchParams(
+        Object.entries(query).map(([key, value]) => [key, String(value)]),
+    ).toString()}`;
 }
