@@ -34,44 +34,46 @@ class TransferDetector
             return [];
         }
 
+        /** @var array<string, true> $dismissedKeys */
         $dismissedKeys = DismissedTransferSuggestion::query()
             ->where('user_id', $user->id)
             ->get(['transaction_a_id', 'transaction_b_id'])
-            ->map(static fn (DismissedTransferSuggestion $row): string => $row->transaction_a_id.':'.$row->transaction_b_id)
-            ->flip();
+            ->mapWithKeys(static fn (DismissedTransferSuggestion $row): array => [
+                $row->transaction_a_id.':'.$row->transaction_b_id => true,
+            ])
+            ->all();
 
-        $suggestions = [];
-        $count = $transactions->count();
+        /** @var array<string, list<Transaction>> $incomesByAmount */
+        $incomesByAmount = [];
 
-        for ($i = 0; $i < $count - 1; $i++) {
-            $left = $transactions->get($i);
-            if (! $left instanceof Transaction) {
+        /** @var list<Transaction> $outgoings */
+        $outgoings = [];
+
+        foreach ($transactions as $transaction) {
+            $amount = (float) $transaction->amount;
+
+            if ($amount > 0) {
+                $incomesByAmount[$this->amountKey($amount)][] = $transaction;
+
                 continue;
             }
 
-            for ($j = $i + 1; $j < $count; $j++) {
-                $right = $transactions->get($j);
-                if (! $right instanceof Transaction) {
+            if ($amount < 0) {
+                $outgoings[] = $transaction;
+            }
+        }
+
+        $suggestions = [];
+
+        foreach ($outgoings as $outgoing) {
+            $candidates = $incomesByAmount[$this->amountKey((float) $outgoing->amount)] ?? [];
+
+            foreach ($candidates as $incoming) {
+                if ($outgoing->account_id === $incoming->account_id) {
                     continue;
                 }
 
-                if ($left->account_id === $right->account_id) {
-                    continue;
-                }
-
-                if ($this->daysApart($left, $right) > $daysWindow) {
-                    continue;
-                }
-
-                if (! $this->isOppositeAmountPair($left, $right)) {
-                    continue;
-                }
-
-                [$outgoing, $incoming] = (float) $left->amount < 0
-                    ? [$left, $right]
-                    : [$right, $left];
-
-                if ((float) $incoming->amount <= 0 || (float) $outgoing->amount >= 0) {
+                if ($this->daysApart($outgoing, $incoming) > $daysWindow) {
                     continue;
                 }
 
@@ -80,7 +82,7 @@ class TransferDetector
                     $incoming->id,
                 );
 
-                if ($dismissedKeys->has($canonicalA.':'.$canonicalB)) {
+                if (isset($dismissedKeys[$canonicalA.':'.$canonicalB])) {
                     continue;
                 }
 
@@ -102,24 +104,17 @@ class TransferDetector
         return $suggestions;
     }
 
+    private function amountKey(float $amount): string
+    {
+        return number_format(abs($amount), 2, '.', '');
+    }
+
     private function daysApart(Transaction $left, Transaction $right): int
     {
         $leftDate = CarbonImmutable::parse($left->date);
         $rightDate = CarbonImmutable::parse($right->date);
 
         return (int) $leftDate->diffInDays($rightDate, absolute: true);
-    }
-
-    private function isOppositeAmountPair(Transaction $left, Transaction $right): bool
-    {
-        $leftAmount = (float) $left->amount;
-        $rightAmount = (float) $right->amount;
-
-        if (($leftAmount > 0 && $rightAmount > 0) || ($leftAmount < 0 && $rightAmount < 0)) {
-            return false;
-        }
-
-        return abs(abs($leftAmount) - abs($rightAmount)) < 0.001;
     }
 
     private function scoreLabelMatch(string $leftLabel, string $rightLabel): int

@@ -67,4 +67,43 @@ class TransferDetectorTest extends TestCase
 
         $this->assertCount(0, $suggestions);
     }
+
+    public function test_find_candidates_stays_fast_with_many_unrelated_transactions(): void
+    {
+        $user = User::factory()->create();
+        $accounts = Account::factory()->for($user)->count(4)->create();
+
+        foreach (range(1, 400) as $index) {
+            $day = str_pad((string) (($index % 28) + 1), 2, '0', STR_PAD_LEFT);
+            Transaction::factory()
+                ->for($user)
+                ->for($accounts[$index % 4])
+                ->create([
+                    'date' => "2024-03-{$day}",
+                    'amount' => '-'.number_format(($index % 97) + 1, 2, '.', ''),
+                    'label' => "Noise {$index}",
+                ]);
+        }
+
+        $from = $accounts[0];
+        $to = $accounts[1];
+
+        Transaction::factory()->for($user)->for($from)->create([
+            'date' => '2024-06-01',
+            'label' => 'Virement épargne',
+            'amount' => '-250.00',
+        ]);
+        Transaction::factory()->for($user)->for($to)->create([
+            'date' => '2024-06-02',
+            'label' => 'Virement épargne',
+            'amount' => '250.00',
+        ]);
+
+        $startedAt = microtime(true);
+        $suggestions = app(TransferDetector::class)->findCandidates($user);
+        $elapsed = microtime(true) - $startedAt;
+
+        $this->assertLessThan(0.5, $elapsed, 'Transfer detection should not use O(n²) scanning');
+        $this->assertCount(1, $suggestions);
+    }
 }
