@@ -6,6 +6,7 @@ namespace Tests\Feature\Positions;
 
 use App\Enums\AccountType;
 use App\Models\Account;
+use App\Models\PortfolioSnapshot;
 use App\Models\Position;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -37,6 +38,38 @@ class PositionCrudTest extends TestCase
                 ->where('positions.0.market_value', 500));
     }
 
+    public function test_positions_index_includes_account_portfolio_value_series(): void
+    {
+        $user = User::factory()->create();
+        $account = Account::factory()->for($user)->create(['type' => AccountType::Invest]);
+
+        PortfolioSnapshot::query()->create([
+            'user_id' => $user->id,
+            'account_id' => $account->id,
+            'imported_at' => '2026-01-01 10:00:00',
+            'total_market_value' => '1200.00',
+            'positions_count' => 2,
+            'lines' => [],
+        ]);
+
+        PortfolioSnapshot::query()->create([
+            'user_id' => $user->id,
+            'account_id' => $account->id,
+            'imported_at' => '2026-02-01 10:00:00',
+            'total_market_value' => '1500.50',
+            'positions_count' => 2,
+            'lines' => [],
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('positions.index', $account))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->has('portfolioValueSeries', 2)
+                ->where('portfolioValueSeries.0.value', 1200)
+                ->where('portfolioValueSeries.1.value', 1500.5));
+    }
+
     public function test_non_invest_account_positions_index_is_forbidden(): void
     {
         $user = User::factory()->create();
@@ -46,6 +79,29 @@ class PositionCrudTest extends TestCase
             ->actingAs($user)
             ->get(route('positions.index', $account))
             ->assertForbidden();
+    }
+
+    public function test_user_can_create_position_with_market_symbol(): void
+    {
+        $user = User::factory()->create();
+        $account = Account::factory()->for($user)->create(['type' => AccountType::Invest]);
+
+        $this
+            ->actingAs($user)
+            ->post(route('positions.store', $account), [
+                'isin' => 'US0378331005',
+                'market_symbol' => 'AAPL',
+                'label' => 'Apple',
+                'quantity' => '10',
+                'average_price' => '150',
+            ])
+            ->assertRedirect(route('positions.index', $account));
+
+        $this->assertDatabaseHas('positions', [
+            'account_id' => $account->id,
+            'isin' => 'US0378331005',
+            'market_symbol' => 'AAPL',
+        ]);
     }
 
     public function test_user_can_create_position(): void

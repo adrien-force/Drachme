@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Positions;
 
 use App\Http\Requests\Positions\Concerns\ValidatesInvestAccount;
+use App\Http\Requests\Positions\Concerns\ValidatesPositionMarketSymbol;
 use App\Models\Position;
 use App\Support\Isin;
 use Illuminate\Foundation\Http\FormRequest;
@@ -13,6 +14,7 @@ use Illuminate\Validation\Rule;
 class UpdatePositionRequest extends FormRequest
 {
     use ValidatesInvestAccount;
+    use ValidatesPositionMarketSymbol;
 
     public function authorize(): bool
     {
@@ -42,6 +44,7 @@ class UpdatePositionRequest extends FormRequest
                     ->where('account_id', $account->id)
                     ->ignore($position?->id),
             ],
+            'market_symbol' => $this->marketSymbolRules(),
             'label' => ['required', 'string', 'max:255'],
             'quantity' => ['required', 'numeric', 'gt:0'],
             'average_price' => ['required', 'numeric', 'gte:0'],
@@ -56,6 +59,8 @@ class UpdatePositionRequest extends FormRequest
                 'isin' => Isin::normalize((string) $this->input('isin')),
             ]);
         }
+
+        $this->normalizeMarketSymbolInput();
     }
 
     /**
@@ -66,6 +71,7 @@ class UpdatePositionRequest extends FormRequest
         return [
             'isin.regex' => __('ui.positions.validation.isin_format'),
             'isin.unique' => __('ui.positions.validation.isin_unique'),
+            'market_symbol.regex' => __('ui.positions.validation.market_symbol_format'),
         ];
     }
 

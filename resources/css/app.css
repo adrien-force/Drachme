@@ -136,6 +136,14 @@
     --chart-3: var(--chart-secondary);
     --chart-4: oklch(0.627 0.265 303.9);
     --chart-5: oklch(0.645 0.246 16.439);
+    --chart-background: transparent;
+    --chart-foreground: var(--foreground);
+    --chart-foreground-muted: var(--muted-foreground);
+    --chart-line-primary: var(--primary);
+    --chart-line-secondary: var(--chart-secondary);
+    --chart-tooltip-background: var(--popover);
+    --chart-tooltip-foreground: var(--popover-foreground);
+    --chart-tooltip-muted: var(--muted-foreground);
     --sidebar: oklch(0.2 0.02 260 / 0.55);
     --sidebar-foreground: oklch(0.985 0 0);
     --sidebar-primary: oklch(0.985 0 0);

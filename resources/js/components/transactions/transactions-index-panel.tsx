@@ -13,6 +13,7 @@ import { CategoryFilterSelect } from '@/components/categories/category-select';
 import { EntityLogo } from '@/components/entity-logo';
 import { RecurringBadge } from '@/components/recurring/recurring-badge';
 import { ApplyCategoryRulesButton } from '@/components/transactions/apply-category-rules-button';
+import { TransactionsSankeyChart } from '@/components/transactions/transactions-sankey-chart';
 import { TransactionInlineCategorySelect } from '@/components/transactions/transaction-inline-category-select';
 import { TransactionTypeBadge } from '@/components/transactions/transaction-type-badge';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,7 @@ import type {
     PaginatedTransactions,
     TransactionAccountOption,
     TransactionListFilters,
+    TransactionSankeyFlow,
     TransactionTypeOption,
 } from '@/types/transaction.types';
 
@@ -67,6 +69,7 @@ function SortIcon({ column, sort, order }: SortIconProps) {
 
 type TransactionsIndexPanelProps = {
     transactions: PaginatedTransactions;
+    sankeyFlow: TransactionSankeyFlow;
     filters: TransactionListFilters;
     categoryOptions: CategorySelectOption[];
     accountOptions: TransactionAccountOption[];
@@ -77,6 +80,7 @@ type TransactionsIndexPanelProps = {
 
 export function TransactionsIndexPanel({
     transactions,
+    sankeyFlow,
     filters,
     categoryOptions,
     accountOptions,
@@ -425,6 +429,9 @@ export function TransactionsIndexPanel({
                     accountId={filters.account_id ?? undefined}
                 />
             </div>
+
+            <TransactionsSankeyChart flow={sankeyFlow} />
+
             {transactions.data.length === 0 ? (
                 <p className="text-muted-foreground text-sm">
                     {hasActiveFilters

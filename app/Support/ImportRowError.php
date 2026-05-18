@@ -118,6 +118,11 @@ class ImportRowError
         return (string) __('ui.providers.errors.position_price_missing');
     }
 
+    public static function positionMarketSymbolInvalid(string $value): string
+    {
+        return (string) __('ui.providers.errors.position_market_symbol_invalid', ['value' => $value]);
+    }
+
     private static function fieldLabel(ImportColumnField $field): string
     {
         return (string) __("ui.providers.fields.{$field->value}");

@@ -12,6 +12,7 @@ use App\Services\MarketDataService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Tests\Support\YahooChartFixture;
 use Tests\TestCase;
 
 class MarketDataServiceTest extends TestCase
@@ -23,28 +24,17 @@ class MarketDataServiceTest extends TestCase
         parent::setUp();
 
         config([
-            'alpha_vantage.api_key' => 'test-key',
-            'alpha_vantage.cache_ttl' => 3600,
+            'market_data.enabled' => true,
+            'market_data.cache_ttl' => 3600,
         ]);
     }
 
-    public function test_fetch_price_for_isin_uses_global_quote(): void
+    public function test_fetch_price_for_isin_uses_yahoo_quote(): void
     {
         Http::fake([
-            'www.alphavantage.co/query*' => Http::sequence()
-                ->push([
-                    'bestMatches' => [
-                        [
-                            '1. symbol' => 'IWDA.AS',
-                            '2. name' => 'iShares Core MSCI World',
-                        ],
-                    ],
-                ])
-                ->push([
-                    'Global Quote' => [
-                        '05. price' => '102.500000',
-                    ],
-                ]),
+            'query1.finance.yahoo.com/*' => Http::response(
+                YahooChartFixture::chart(102.5),
+            ),
         ]);
 
         Cache::flush();
@@ -52,9 +42,33 @@ class MarketDataServiceTest extends TestCase
         $price = app(MarketDataService::class)->fetchPriceForIsin(
             'IE00B4L5Y983',
             'MSCI World',
+            'IWDA.AS',
         );
 
         $this->assertSame('102.500000', $price);
+    }
+
+    public function test_fetch_price_resolves_symbol_from_isin_via_openfigi(): void
+    {
+        Http::fake([
+            'api.openfigi.com/*' => Http::response(
+                YahooChartFixture::openFigiMapping('WPEA', 'FP'),
+            ),
+            'query1.finance.yahoo.com/*' => Http::response(
+                YahooChartFixture::chart(88.25),
+            ),
+        ]);
+
+        Cache::flush();
+
+        $price = app(MarketDataService::class)->fetchPriceForIsin('IE0002XZSHO1', 'MSCI World PEA');
+
+        $this->assertSame('88.250000', $price);
+        $this->assertDatabaseHas('isin_market_symbols', [
+            'isin' => 'IE0002XZSHO1',
+            'symbol' => 'WPEA.PA',
+            'source' => 'openfigi',
+        ]);
     }
 
     public function test_refresh_for_user_updates_positions(): void
@@ -67,20 +81,15 @@ class MarketDataServiceTest extends TestCase
         Position::factory()->for($user)->for($account)->create([
             'isin' => 'IE00B4L5Y983',
             'label' => 'MSCI World',
+            'market_symbol' => 'IWDA.AS',
             'last_price' => null,
             'last_price_at' => null,
         ]);
 
         Http::fake([
-            'www.alphavantage.co/query*' => Http::sequence()
-                ->push([
-                    'bestMatches' => [
-                        ['1. symbol' => 'IWDA.AS', '2. name' => 'MSCI World'],
-                    ],
-                ])
-                ->push([
-                    'Global Quote' => ['05. price' => '99.100000'],
-                ]),
+            'query1.finance.yahoo.com/*' => Http::response(
+                YahooChartFixture::chart(99.1),
+            ),
         ]);
 
         Cache::flush();
@@ -102,12 +111,11 @@ class MarketDataServiceTest extends TestCase
         Position::factory()->for($user)->for($account)->create([
             'isin' => 'IE00B4L5Y983',
             'label' => 'MSCI World',
+            'market_symbol' => 'IWDA.AS',
         ]);
 
         Http::fake([
-            'www.alphavantage.co/query*' => Http::response([
-                'Note' => 'Thank you for using Alpha Vantage! Our standard API call frequency is 5 calls per minute and 500 calls per day.',
-            ]),
+            'query1.finance.yahoo.com/*' => Http::response([], 429),
         ]);
 
         Cache::flush();

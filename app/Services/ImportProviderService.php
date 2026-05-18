@@ -10,6 +10,7 @@ use App\Enums\ImportPositionColumnField;
 use App\Enums\ImportProviderType;
 use App\Models\ImportProvider;
 use App\Support\Isin;
+use App\Support\MarketSymbol;
 use App\Models\User;
 use App\Support\DateFormatDetector;
 use App\Support\ImportRowError;
@@ -263,9 +264,26 @@ class ImportProviderService
             $label = Isin::normalize($isinRaw);
         }
 
+        $marketSymbol = null;
+
+        if (array_key_exists(ImportPositionColumnField::MarketSymbol->value, $fields)) {
+            $symbolRaw = trim($fields[ImportPositionColumnField::MarketSymbol->value]);
+
+            if ($symbolRaw !== '') {
+                $marketSymbol = MarketSymbol::normalize($symbolRaw);
+
+                if ($marketSymbol === null) {
+                    throw new InvalidArgumentException(
+                        ImportRowError::positionMarketSymbolInvalid($symbolRaw),
+                    );
+                }
+            }
+        }
+
         return [
             'label' => $label,
             'isin' => Isin::normalize($isinRaw),
+            'market_symbol' => $marketSymbol,
             'quantity' => number_format($quantity, 6, '.', ''),
             'average_price' => number_format($averagePrice ?? $lastPrice ?? 0.0, 6, '.', ''),
             'last_price' => $lastPrice !== null

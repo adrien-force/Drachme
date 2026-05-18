@@ -289,6 +289,7 @@ class ImportBatchService
                 'line' => $line,
                 'label' => $normalized['label'],
                 'isin' => $isin,
+                'market_symbol' => $normalized['market_symbol'] ?? null,
                 'quantity' => $quantity,
                 'average_price' => (float) $normalized['average_price'],
                 'last_price' => $normalized['last_price'] !== null
@@ -369,6 +370,9 @@ class ImportBatchService
         $this->positions->upsertFromImport($user, $account, [
             'isin' => (string) ($row['isin'] ?? ''),
             'label' => (string) ($row['label'] ?? ''),
+            'market_symbol' => array_key_exists('market_symbol', $row) && is_string($row['market_symbol'])
+                ? $row['market_symbol']
+                : null,
             'quantity' => (string) ($row['quantity'] ?? '0'),
             'average_price' => (string) ($row['average_price'] ?? '0'),
             'last_price' => array_key_exists('last_price', $row) && $row['last_price'] !== null

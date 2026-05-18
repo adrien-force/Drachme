@@ -146,6 +146,42 @@ class TransactionListTest extends TestCase
         ]);
     }
 
+    public function test_sankey_reflects_all_filtered_transactions_not_current_page(): void
+    {
+        $user = User::factory()->create();
+        $account = Account::factory()->for($user)->create();
+        $category = Category::factory()->for($user)->create([
+            'name' => 'Courses',
+            'color' => '#22c55e',
+        ]);
+
+        Transaction::factory()->for($user)->for($account)->count(30)->create([
+            'amount' => -10,
+            'category_id' => $category->id,
+        ]);
+
+        $this
+            ->actingAs($user)
+            ->get(route('transactions.index', ['per_page' => 25, 'page' => 1]))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->has('transactions.data', 25)
+                ->where('transactions.meta.total', 30)
+                ->where('sankeyFlow.links.0.value', 300));
+
+        $this
+            ->actingAs($user)
+            ->get(route('transactions.index', [
+                'per_page' => 25,
+                'date_from' => '2000-01-01',
+                'date_to' => '2000-12-31',
+            ]))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('sankeyFlow.nodes', [])
+                ->where('sankeyFlow.links', []));
+    }
+
     public function test_list_query_completes_quickly_with_many_rows(): void
     {
         $user = User::factory()->create();

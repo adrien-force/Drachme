@@ -77,11 +77,10 @@ return [
         ],
 
         'market_data' => [
-            'driver' => 'daily',
-            'path' => storage_path('logs/market-data.log'),
+            'driver' => 'stack',
+            'channels' => ['single'],
+            'ignore_exceptions' => true,
             'level' => env('LOG_LEVEL', 'info'),
-            'days' => env('LOG_DAILY_DAYS', 14),
-            'replace_placeholders' => true,
         ],
 
         'slack' => [

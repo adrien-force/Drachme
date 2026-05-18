@@ -30,6 +30,9 @@ export function ProviderNormalizedPositionPreviewTable({
                         <th className="px-3 py-2 text-xs font-medium uppercase">
                             {t('providers.position_fields.isin')}
                         </th>
+                        <th className="px-3 py-2 text-xs font-medium uppercase">
+                            {t('providers.position_fields.market_symbol')}
+                        </th>
                         <th className="px-3 py-2 text-right text-xs font-medium uppercase">
                             {t('providers.position_fields.quantity')}
                         </th>
@@ -55,7 +58,7 @@ export function ProviderNormalizedPositionPreviewTable({
                             </td>
                             {'error' in row ? (
                                 <td
-                                    colSpan={5}
+                                    colSpan={6}
                                     className="text-destructive px-3 py-2 text-sm"
                                 >
                                     {row.error}
@@ -70,6 +73,9 @@ export function ProviderNormalizedPositionPreviewTable({
                                     </td>
                                     <td className="px-3 py-2 font-mono text-xs uppercase">
                                         {row.isin}
+                                    </td>
+                                    <td className="px-3 py-2 font-mono text-xs uppercase">
+                                        {row.market_symbol ?? '—'}
                                     </td>
                                     <td className="px-3 py-2 text-right tabular-nums">
                                         {row.quantity}

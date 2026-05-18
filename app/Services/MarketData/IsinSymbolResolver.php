@@ -6,51 +6,49 @@ namespace App\Services\MarketData;
 
 use App\Models\IsinMarketSymbol;
 use App\Support\Isin;
+use App\Support\MarketSymbol;
 
 class IsinSymbolResolver
 {
     public function __construct(
-        private readonly AlphaVantageClient $client,
+        private readonly OpenFigiClient $openFigi,
     ) {}
 
-    public function resolve(string $isin, ?string $label = null): ?string
+    /**
+     * Resolves the Yahoo ticker: manual symbol, DB cache, then OpenFIGI ISIN lookup.
+     */
+    public function resolve(string $isin, ?string $label = null, ?string $marketSymbol = null): ?string
     {
-        $normalized = Isin::normalize($isin);
+        $explicit = MarketSymbol::normalize($marketSymbol);
 
+        if ($explicit !== null) {
+            return $explicit;
+        }
+
+        $normalized = Isin::normalize($isin);
         $cached = IsinMarketSymbol::query()->find($normalized);
 
         if ($cached !== null) {
             return $cached->symbol;
         }
 
-        $keywords = $label !== null && trim($label) !== ''
-            ? trim($label)
-            : $normalized;
+        $yahooSymbol = $this->openFigi->resolveYahooSymbol($normalized);
 
-        $body = $this->client->symbolSearch($keywords);
-        $matches = $body['bestMatches'] ?? null;
-
-        if (! is_array($matches) || $matches === []) {
+        if ($yahooSymbol === null) {
             return null;
         }
 
-        $first = $matches[0];
+        $normalizedSymbol = MarketSymbol::normalize($yahooSymbol);
 
-        if (! is_array($first)) {
-            return null;
-        }
-
-        $symbol = $first['1. symbol'] ?? null;
-
-        if (! is_string($symbol) || $symbol === '') {
+        if ($normalizedSymbol === null) {
             return null;
         }
 
         IsinMarketSymbol::query()->updateOrCreate(
             ['isin' => $normalized],
-            ['symbol' => $symbol, 'source' => 'search'],
+            ['symbol' => $normalizedSymbol, 'source' => 'openfigi'],
         );
 
-        return $symbol;
+        return $normalizedSymbol;
     }
 }

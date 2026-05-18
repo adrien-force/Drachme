@@ -7,9 +7,13 @@ namespace App\Http\Controllers;
 use App\Enums\AccountType;
 use App\Http\Requests\Positions\StorePositionRequest;
 use App\Http\Requests\Positions\UpdatePositionRequest;
+use App\Exceptions\MarketDataQuotaExceededException;
 use App\Models\Account;
 use App\Models\Position;
+use App\Services\MarketDataService;
+use App\Services\PortfolioSnapshotService;
 use App\Services\PositionService;
+use App\Services\PositionShowPresenter;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -22,6 +26,9 @@ class PositionController extends Controller
 
     public function __construct(
         private readonly PositionService $positions,
+        private readonly PositionShowPresenter $positionShow,
+        private readonly MarketDataService $marketData,
+        private readonly PortfolioSnapshotService $portfolioSnapshots,
     ) {}
 
     public function index(Account $account): Response
@@ -40,8 +47,82 @@ class PositionController extends Controller
             'account' => $this->serializeAccount($account),
             'positions' => $positions->values()->all(),
             'totalValue' => $totalValue,
+            'portfolioValueSeries' => $this->portfolioSnapshots->portfolioValueSeriesForAccount($account),
             'pageDescription' => __('ui.positions.description', ['account' => $account->name]),
         ]);
+    }
+
+    public function show(Position $position): Response
+    {
+        $this->authorize('view', $position);
+
+        $account = $position->account;
+
+        if ($account === null) {
+            abort(404);
+        }
+
+        $this->abortUnlessInvest($account);
+
+        return Inertia::render('positions/positions-show', $this->positionShow->present($position));
+    }
+
+    public function refreshPrice(Position $position): RedirectResponse
+    {
+        $this->authorize('view', $position);
+        $this->abortUnlessInvestAccount($position);
+
+        try {
+            $result = $this->marketData->refreshPosition($position);
+
+            Inertia::flash('toast', [
+                'type' => $result === 'updated' ? 'success' : 'warning',
+                'message' => $result === 'updated'
+                    ? __('ui.positions.market_price_refreshed')
+                    : __('ui.positions.market_price_skipped'),
+            ]);
+        } catch (MarketDataQuotaExceededException) {
+            Inertia::flash('toast', [
+                'type' => 'warning',
+                'message' => __('ui.investments.market_data_quota'),
+            ]);
+        } catch (InvalidArgumentException) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => __('ui.investments.market_data_not_configured'),
+            ]);
+        }
+
+        return to_route('positions.show', $position);
+    }
+
+    public function refreshHistory(Position $position): RedirectResponse
+    {
+        $this->authorize('view', $position);
+        $this->abortUnlessInvestAccount($position);
+
+        try {
+            $points = $this->marketData->refreshDailyHistoryForPosition($position);
+
+            Inertia::flash('toast', [
+                'type' => count($points) > 0 ? 'success' : 'warning',
+                'message' => count($points) > 0
+                    ? __('ui.positions.market_history_refreshed', ['days' => count($points)])
+                    : __('ui.positions.market_history_skipped'),
+            ]);
+        } catch (MarketDataQuotaExceededException) {
+            Inertia::flash('toast', [
+                'type' => 'warning',
+                'message' => __('ui.investments.market_data_quota'),
+            ]);
+        } catch (InvalidArgumentException) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => __('ui.investments.market_data_not_configured'),
+            ]);
+        }
+
+        return to_route('positions.show', $position);
     }
 
     public function store(StorePositionRequest $request, Account $account): RedirectResponse
@@ -57,6 +138,7 @@ class PositionController extends Controller
          *     quantity: float|string,
          *     average_price: float|string,
          *     last_price?: float|string|null,
+         *     market_symbol?: string|null,
          * } $data */
         $data = $request->validated();
 
@@ -82,6 +164,7 @@ class PositionController extends Controller
          *     quantity: float|string,
          *     average_price: float|string,
          *     last_price?: float|string|null,
+         *     market_symbol?: string|null,
          * } $data */
         $data = $request->validated();
 
@@ -125,6 +208,17 @@ class PositionController extends Controller
         }
     }
 
+    private function abortUnlessInvestAccount(Position $position): void
+    {
+        $account = $position->account;
+
+        if ($account === null) {
+            abort(404);
+        }
+
+        $this->abortUnlessInvest($account);
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -151,6 +245,7 @@ class PositionController extends Controller
             'id' => $position->id,
             'account_id' => $position->account_id,
             'isin' => $position->isin,
+            'market_symbol' => $position->market_symbol,
             'label' => $position->label,
             'quantity' => (float) $position->quantity,
             'average_price' => (float) $position->average_price,

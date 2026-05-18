@@ -18,6 +18,15 @@ export function guessPositionFieldFromHeader(header: string): ImportPositionColu
     }
 
     if (
+        key.includes('symbol') ||
+        key.includes('symbole') ||
+        key.includes('ticker') ||
+        key === 'code'
+    ) {
+        return 'market_symbol';
+    }
+
+    if (
         key === 'name' ||
         key.includes('libelle') ||
         key.includes('label') ||

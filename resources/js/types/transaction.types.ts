@@ -77,8 +77,25 @@ export type PaginatedTransactions = {
     meta: PaginatedMeta;
 };
 
+export type TransactionSankeyNode = {
+    name: string;
+    category: 'source' | 'outcome';
+    color: string | null;
+    kind: 'account' | 'category';
+};
+
+export type TransactionSankeyFlow = {
+    nodes: TransactionSankeyNode[];
+    links: Array<{
+        source: number;
+        target: number;
+        value: number;
+    }>;
+};
+
 export type TransactionsIndexPageProps = {
     transactions: PaginatedTransactions;
+    sankeyFlow: TransactionSankeyFlow;
     categoryOptions: CategorySelectOption[];
     accountOptions: TransactionAccountOption[];
     filters: TransactionListFilters;

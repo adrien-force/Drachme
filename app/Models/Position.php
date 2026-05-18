@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * @property string $isin
+ * @property string|null $market_symbol
  * @property string $label
  * @property string $quantity
  * @property string $average_price
@@ -23,6 +24,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'user_id',
     'account_id',
     'isin',
+    'market_symbol',
     'label',
     'quantity',
     'average_price',

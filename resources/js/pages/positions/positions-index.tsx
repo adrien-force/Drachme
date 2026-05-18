@@ -1,9 +1,10 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { ArrowLeft, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, LineChart, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 import { FadeIn } from '@/components/motion/fade-in';
 import { GlassPanel } from '@/components/glass-panel';
+import { PositionPriceChart } from '@/components/positions/position-price-chart';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatCurrency } from '@/lib/format-currency';
+import { show as showPosition } from '@/routes/positions';
 import type { PositionRecord, PositionsIndexPageProps } from '@/types/position.types';
 
 type FormMode =
@@ -29,6 +31,7 @@ export default function PositionsIndex({
     account,
     positions,
     totalValue,
+    portfolioValueSeries,
     pageDescription,
 }: PositionsIndexPageProps) {
     const { t } = useTranslation();
@@ -37,6 +40,7 @@ export default function PositionsIndex({
 
     const form = useForm({
         isin: '',
+        market_symbol: '',
         label: '',
         quantity: '',
         average_price: '',
@@ -47,6 +51,7 @@ export default function PositionsIndex({
         form.clearErrors();
         form.setData({
             isin: '',
+            market_symbol: '',
             label: '',
             quantity: '',
             average_price: '',
@@ -59,6 +64,7 @@ export default function PositionsIndex({
         form.clearErrors();
         form.setData({
             isin: position.isin,
+            market_symbol: position.market_symbol ?? '',
             label: position.label,
             quantity: String(position.quantity),
             average_price: String(position.average_price),
@@ -71,6 +77,9 @@ export default function PositionsIndex({
     const submitForm = () => {
         const payload = {
             isin: form.data.isin.trim().toUpperCase(),
+            market_symbol: form.data.market_symbol.trim() === ''
+                ? null
+                : form.data.market_symbol.trim().toUpperCase(),
             label: form.data.label,
             quantity: form.data.quantity,
             average_price: form.data.average_price,
@@ -155,6 +164,17 @@ export default function PositionsIndex({
                     </div>
                 </FadeIn>
 
+                {portfolioValueSeries.length > 0 ? (
+                    <FadeIn delay={0.04}>
+                        <PositionPriceChart
+                            title={t('positions.account_portfolio_value_chart_title')}
+                            description={t('positions.account_portfolio_value_chart_hint')}
+                            series={portfolioValueSeries}
+                            valueLabel={t('positions.total_value')}
+                        />
+                    </FadeIn>
+                ) : null}
+
                 {positions.length === 0 ? (
                     <FadeIn>
                         <GlassPanel className="p-8 text-center">
@@ -175,6 +195,12 @@ export default function PositionsIndex({
                                         <p className="font-medium">{position.label}</p>
                                         <p className="text-muted-foreground font-mono text-xs">
                                             {position.isin}
+                                            {position.market_symbol ? (
+                                                <>
+                                                    {' · '}
+                                                    {position.market_symbol}
+                                                </>
+                                            ) : null}
                                         </p>
                                         <p className="text-muted-foreground text-sm">
                                             {t('positions.quantity')}:{' '}
@@ -205,6 +231,19 @@ export default function PositionsIndex({
                                             })}
                                         </p>
                                         <div className="flex gap-1">
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                asChild
+                                            >
+                                                <Link
+                                                    href={showPosition.url(position.id)}
+                                                    title={t('positions.open_detail')}
+                                                >
+                                                    <LineChart className="size-4" />
+                                                </Link>
+                                            </Button>
                                             <Button
                                                 type="button"
                                                 variant="ghost"
@@ -253,6 +292,27 @@ export default function PositionsIndex({
                                 }
                             />
                             <InputError message={form.errors.isin} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="position-market-symbol">
+                                {t('positions.market_symbol')}
+                            </Label>
+                            <Input
+                                id="position-market-symbol"
+                                value={form.data.market_symbol}
+                                placeholder={t('positions.market_symbol_placeholder')}
+                                className="font-mono uppercase"
+                                onChange={(event) =>
+                                    form.setData(
+                                        'market_symbol',
+                                        event.target.value.toUpperCase(),
+                                    )
+                                }
+                            />
+                            <p className="text-muted-foreground text-xs">
+                                {t('positions.market_symbol_hint')}
+                            </p>
+                            <InputError message={form.errors.market_symbol} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="position-label">{t('positions.label')}</Label>

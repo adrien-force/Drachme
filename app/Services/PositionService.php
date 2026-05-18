@@ -9,6 +9,7 @@ use App\Models\Account;
 use App\Models\Position;
 use App\Models\User;
 use App\Support\Isin;
+use App\Support\MarketSymbol;
 use InvalidArgumentException;
 
 class PositionService
@@ -20,6 +21,7 @@ class PositionService
      *     quantity: float|string,
      *     average_price: float|string,
      *     last_price?: float|string|null,
+     *     market_symbol?: string|null,
      * }  $data
      */
     public function create(User $user, Account $account, array $data): Position
@@ -30,6 +32,7 @@ class PositionService
             'user_id' => $user->id,
             'account_id' => $account->id,
             'isin' => Isin::normalize($data['isin']),
+            'market_symbol' => $this->normalizeMarketSymbol($data),
             'label' => $data['label'],
             'quantity' => $data['quantity'],
             'average_price' => $data['average_price'],
@@ -47,6 +50,7 @@ class PositionService
      *     quantity: float|string,
      *     average_price: float|string,
      *     last_price?: float|string|null,
+     *     market_symbol?: string|null,
      * }  $data
      */
     public function update(Position $position, array $data): Position
@@ -62,6 +66,7 @@ class PositionService
 
         $position->fill([
             'isin' => Isin::normalize($data['isin']),
+            'market_symbol' => $this->normalizeMarketSymbol($data),
             'label' => $data['label'],
             'quantity' => $data['quantity'],
             'average_price' => $data['average_price'],
@@ -87,6 +92,7 @@ class PositionService
      *     quantity: float|string,
      *     average_price: float|string,
      *     last_price?: float|string|null,
+     *     market_symbol?: string|null,
      * }  $data
      */
     public function upsertFromImport(User $user, Account $account, array $data): Position
@@ -129,5 +135,19 @@ class PositionService
         if ($account === null || $account->type !== AccountType::Invest) {
             throw new InvalidArgumentException('positions.not_invest_account');
         }
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function normalizeMarketSymbol(array $data): ?string
+    {
+        if (! array_key_exists('market_symbol', $data)) {
+            return null;
+        }
+
+        return MarketSymbol::normalize(
+            is_string($data['market_symbol']) ? $data['market_symbol'] : null,
+        );
     }
 }

@@ -4,6 +4,7 @@ export type PositionRecord = {
     id: number;
     account_id: number;
     isin: string;
+    market_symbol: string | null;
     label: string;
     quantity: number;
     average_price: number;
@@ -25,6 +26,7 @@ export type PositionsIndexPageProps = {
     account: PositionAccountSummary;
     positions: PositionRecord[];
     totalValue: number;
+    portfolioValueSeries: PositionPortfolioValuePoint[];
     pageDescription: string;
 };
 
@@ -65,5 +67,35 @@ export type InvestmentAccountRow = {
 
 export type InvestmentsIndexPageProps = {
     accounts: InvestmentAccountRow[];
+    marketDataConfigured: boolean;
+};
+
+export type PositionInferredMovement = {
+    snapshot_id: number;
+    imported_at: string;
+    side: 'buy' | 'sell';
+    quantity: number;
+    quantity_before: number;
+    quantity_after: number;
+    unit_price: number | null;
+    inferred: true;
+};
+
+export type PositionSnapshotPricePoint = {
+    date: string;
+    price: number;
+};
+
+export type PositionPortfolioValuePoint = {
+    date: string;
+    value: number;
+};
+
+export type PositionsShowPageProps = {
+    position: PositionRecord;
+    account: Pick<PositionAccountSummary, 'id' | 'name' | 'currency'>;
+    inferredMovements: PositionInferredMovement[];
+    portfolioValueSeries: PositionPortfolioValuePoint[];
+    marketPriceSeries: PositionSnapshotPricePoint[];
     marketDataConfigured: boolean;
 };

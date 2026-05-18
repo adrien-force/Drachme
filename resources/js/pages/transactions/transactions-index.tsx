@@ -12,6 +12,7 @@ import type { TransactionsIndexPageProps } from '@/types/transaction.types';
 
 export default function TransactionsIndex({
     transactions,
+    sankeyFlow,
     categoryOptions,
     accountOptions,
     filters,
@@ -55,6 +56,7 @@ export default function TransactionsIndex({
                     <GlassPanel className="p-4 md:p-6">
                         <TransactionsIndexPanel
                             transactions={transactions}
+                            sankeyFlow={sankeyFlow}
                             filters={filters}
                             categoryOptions={categoryOptions}
                             accountOptions={accountOptions}

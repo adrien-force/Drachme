@@ -31,7 +31,7 @@ class ImportProviderWizardTest extends TestCase
                 ->where('provider', null)
                 ->has('accounts', 1)
                 ->has('fieldOptions', 7)
-                ->has('positionFieldOptions', 6));
+                ->has('positionFieldOptions', 7));
     }
 
     public function test_preview_returns_normalized_rows(): void

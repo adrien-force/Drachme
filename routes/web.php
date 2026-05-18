@@ -35,6 +35,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('accounts/{account}', [AccountController::class, 'update'])->name('accounts.update');
     Route::post('accounts/{account}/archive', [AccountController::class, 'archive'])->name('accounts.archive');
     Route::delete('accounts/{account}', [AccountController::class, 'destroy'])->name('accounts.destroy');
+    Route::get('positions/{position}', [PositionController::class, 'show'])->name('positions.show');
+    Route::post('positions/{position}/refresh-price', [PositionController::class, 'refreshPrice'])
+        ->name('positions.refresh-price');
+    Route::post('positions/{position}/refresh-history', [PositionController::class, 'refreshHistory'])
+        ->name('positions.refresh-history');
     Route::get('accounts/{account}/positions', [PositionController::class, 'index'])->name('positions.index');
     Route::post('accounts/{account}/positions', [PositionController::class, 'store'])->name('positions.store');
     Route::put('accounts/{account}/positions/{position}', [PositionController::class, 'update'])->name('positions.update');

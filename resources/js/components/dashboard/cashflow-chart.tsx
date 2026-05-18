@@ -59,9 +59,7 @@ export function CashflowChart({ data, dateRange }: CashflowChartProps) {
             return;
         }
 
-        const flow = entry.dataKey === 'income' ? 'credit' : 'debit';
-
-        router.get(transactionsUrlForCashflowBar(entry.payload, flow));
+        router.get(transactionsUrlForCashflowBar(entry.payload));
     };
 
     return (

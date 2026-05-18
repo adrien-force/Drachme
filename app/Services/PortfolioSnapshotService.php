@@ -347,6 +347,34 @@ class PortfolioSnapshotService
     /**
      * @param  array<int, array<string, mixed>>|null  $lines
      */
+    /**
+     * Account total market value at each import snapshot (for positions list chart).
+     *
+     * @return list<array{ date: string, value: float }>
+     */
+    public function portfolioValueSeriesForAccount(Account $account, int $limit = 48): array
+    {
+        $snapshots = PortfolioSnapshot::query()
+            ->where('account_id', $account->id)
+            ->orderBy('imported_at')
+            ->orderBy('id')
+            ->limit($limit)
+            ->get();
+
+        $points = [];
+
+        foreach ($snapshots as $snapshot) {
+            $importedAt = $this->resolveImportedAt($snapshot->imported_at);
+
+            $points[] = [
+                'date' => $importedAt->toDateString(),
+                'value' => (float) $snapshot->total_market_value,
+            ];
+        }
+
+        return $points;
+    }
+
     private function restorePositionsFromLines(User $user, Account $account, ?array $lines): void
     {
         Position::query()

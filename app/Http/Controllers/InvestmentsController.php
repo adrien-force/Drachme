@@ -75,8 +75,7 @@ class InvestmentsController extends Controller
 
         return Inertia::render('investments/investments-index', [
             'accounts' => $portfolioRows->values()->all(),
-            'marketDataConfigured' => is_string(config('alpha_vantage.api_key'))
-                && config('alpha_vantage.api_key') !== '',
+            'marketDataConfigured' => MarketDataService::isConfigured(),
         ]);
     }
 

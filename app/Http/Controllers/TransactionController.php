@@ -18,6 +18,7 @@ use App\Services\RecurringPatternService;
 use App\Services\TransactionCategoryRuleApplier;
 use App\Services\TransactionFormPresenter;
 use App\Services\TransactionListService;
+use App\Services\TransactionSankeyService;
 use App\Services\TransactionService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
@@ -35,6 +36,7 @@ class TransactionController extends Controller
         private readonly TransactionService $transactions,
         private readonly TransactionFormPresenter $formPresenter,
         private readonly TransactionListService $transactionList,
+        private readonly TransactionSankeyService $transactionSankey,
         private readonly CategoryService $categories,
         private readonly TransactionCategoryRuleApplier $categoryRuleApplier,
         private readonly RecurringPatternService $recurringPatterns,
@@ -92,6 +94,9 @@ class TransactionController extends Controller
                 : 0,
             'perPageOptions' => IndexTransactionsRequest::perPageOptions(),
             'typeOptions' => $this->transactionTypeOptions(),
+            'sankeyFlow' => $user !== null
+                ? $this->transactionSankey->buildForUser($user, $listFilters)
+                : ['nodes' => [], 'links' => []],
         ]);
     }
 

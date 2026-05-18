@@ -12,6 +12,7 @@ export type ImportColumnField =
 export type ImportPositionColumnField =
     | 'position_label'
     | 'isin'
+    | 'market_symbol'
     | 'quantity'
     | 'average_price'
     | 'last_price'
@@ -89,6 +90,7 @@ export type NormalizedPositionPreviewRow =
           line: number;
           label: string;
           isin: string;
+          market_symbol: string | null;
           quantity: number;
           average_price: number;
           last_price: number | null;

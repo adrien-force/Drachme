@@ -8,6 +8,7 @@ enum ImportPositionColumnField: string
 {
     case PositionLabel = 'position_label';
     case Isin = 'isin';
+    case MarketSymbol = 'market_symbol';
     case Quantity = 'quantity';
     case AveragePrice = 'average_price';
     case LastPrice = 'last_price';
