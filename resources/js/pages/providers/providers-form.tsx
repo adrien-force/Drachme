@@ -25,6 +25,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import { readCsrfToken } from '@/lib/csrf';
 import { detectDateFormat } from '@/lib/detect-date-format';
 import {
+    columnCountFromMappings,
     extractDateSamples,
     getDateColumnIndex,
     mappingPayload,
@@ -109,20 +110,26 @@ export default function ProvidersForm({
         [sampleText, csvParseOptions],
     );
 
-    const columnCount = rawRows[0]?.length ?? headerCells?.length ?? 0;
+    const sampleColumnCount = rawRows[0]?.length ?? headerCells?.length ?? 0;
+    const savedColumnCount = columnCountFromMappings(columnMappings);
+    const columnCount = sampleColumnCount > 0 ? sampleColumnCount : savedColumnCount;
     const isPositionsImport = importType === 'positions';
     const activeFieldOptions = isPositionsImport ? positionFieldOptions : fieldOptions;
 
     useEffect(() => {
+        if (sampleColumnCount === 0) {
+            return;
+        }
+
         setColumnMappings((current) =>
             buildColumnMappingsForType(
-                columnCount,
+                sampleColumnCount,
                 current,
                 importType,
                 headerCells ?? undefined,
             ),
         );
-    }, [columnCount, importType, headerCells]);
+    }, [sampleColumnCount, importType, headerCells]);
 
     const dateColumnIndex = isPositionsImport ? null : getDateColumnIndex(columnMappings);
     const hasDateSamples =
@@ -273,9 +280,11 @@ export default function ProvidersForm({
         setImportType(nextType);
         setTransactionPreviewRows([]);
         setPositionPreviewRows([]);
+        const mappingCount =
+            sampleColumnCount > 0 ? sampleColumnCount : columnCountFromMappings(columnMappings);
         setColumnMappings((current) =>
             buildColumnMappingsForType(
-                columnCount,
+                mappingCount,
                 current,
                 nextType,
                 headerCells ?? undefined,
@@ -522,7 +531,9 @@ export default function ProvidersForm({
                         <div>
                             <h2 className="font-semibold">{t('providers.sample_title')}</h2>
                             <p className="text-muted-foreground text-sm">
-                                {t('providers.sample_description')}
+                                {isEditing
+                                    ? t('providers.sample_description_edit')
+                                    : t('providers.sample_description')}
                             </p>
                         </div>
                         <CsvSampleDropzone
@@ -532,7 +543,7 @@ export default function ProvidersForm({
                             onFileNameChange={setSampleFileName}
                             disabled={submitting}
                         />
-                        {columnCount > 0 && (
+                        {columnMappings.length > 0 && (
                             <ProviderCsvMappingTable
                                 rows={rawRows}
                                 columnMappings={columnMappings}
@@ -541,12 +552,12 @@ export default function ProvidersForm({
                                 onMappingChange={updateMappingField}
                             />
                         )}
-                        {columnCount > 0 && !mappingValid && (
+                        {columnMappings.length > 0 && !mappingValid && (
                             <p className="text-destructive text-sm">
                                 {t('providers.mapping_incomplete')}
                             </p>
                         )}
-                        {columnCount > 0 && !isPositionsImport && hasAmountSignedColumn && (
+                        {columnMappings.length > 0 && !isPositionsImport && hasAmountSignedColumn && (
                             <p className="text-muted-foreground text-xs">
                                 {t('providers.amount_signed_hint')}
                             </p>
@@ -683,7 +694,9 @@ export default function ProvidersForm({
                         )}
                         {!previewLoading && previewRows.length === 0 && (
                             <p className="text-muted-foreground text-sm">
-                                {t('providers.preview_empty')}
+                                {isEditing && mappingValid && !hasSample
+                                    ? t('providers.preview_requires_sample')
+                                    : t('providers.preview_empty')}
                             </p>
                         )}
                         {!previewLoading && previewRows.length > 0 && isPositionsImport ? (

@@ -1,6 +1,9 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Archive, ArrowLeft, Pencil, Plus, Upload } from 'lucide-react';
+import { ArrowLeft, Pencil, Plus, RefreshCw, Upload } from 'lucide-react';
+import { useState } from 'react';
 
+import { CreditCardSettlementsPanel } from '@/components/accounts/credit-card-settlements-panel';
+import { CreditCardSetupHelp } from '@/components/accounts/credit-card-setup-help';
 import { AccountBalanceChart } from '@/components/accounts/account-balance-chart';
 import { AccountBalanceDateRange } from '@/components/accounts/account-balance-date-range';
 import { AccountTransactionsPanel } from '@/components/accounts/account-transactions-panel';
@@ -23,10 +26,25 @@ export default function AccountsShow({
     categoryOptions,
     perPageOptions,
     balanceHistory,
+    creditCardSettlements,
     transactionEdit,
     uncategorizedCount,
 }: AccountsShowPageProps) {
     const { t } = useTranslation();
+    const isCreditCard = account.type === 'credit_card';
+    const [syncingSettlements, setSyncingSettlements] = useState(false);
+
+    const syncSettlements = () => {
+        setSyncingSettlements(true);
+        router.post(
+            `/accounts/${account.id}/sync-settlements`,
+            {},
+            {
+                preserveScroll: true,
+                onFinish: () => setSyncingSettlements(false),
+            },
+        );
+    };
 
     const closeTransactionEdit = () => {
         router.get(
@@ -34,14 +52,6 @@ export default function AccountsShow({
             buildAccountShowQuery(balanceHistory, transactionFilters),
             { preserveScroll: true, replace: true },
         );
-    };
-
-    const archiveAccount = () => {
-        if (!window.confirm(t('accounts.archive_confirm', { name: account.name }))) {
-            return;
-        }
-
-        router.post(`/accounts/${account.id}/archive`);
     };
 
     return (
@@ -80,6 +90,22 @@ export default function AccountsShow({
                                     {account.institution}
                                 </p>
                             )}
+                            {isCreditCard && account.settlement_account !== null ? (
+                                <p className="text-muted-foreground mt-1 text-sm">
+                                    {t('accounts.settlement_account_linked', {
+                                        name: account.settlement_account.name,
+                                    })}
+                                </p>
+                            ) : null}
+                            {isCreditCard &&
+                            account.settlement_label_pattern !== null &&
+                            account.settlement_label_pattern.trim() !== '' ? (
+                                <p className="text-muted-foreground mt-1 text-sm">
+                                    {t('accounts.settlement_label_pattern_linked', {
+                                        pattern: account.settlement_label_pattern,
+                                    })}
+                                </p>
+                            ) : null}
                         </div>
                         <div className="flex flex-wrap gap-2">
                             {account.type === 'invest' && (
@@ -103,58 +129,96 @@ export default function AccountsShow({
                                     {t('accounts.import')}
                                 </Link>
                             </Button>
+                            {isCreditCard ? (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={syncingSettlements}
+                                    onClick={syncSettlements}
+                                >
+                                    <RefreshCw
+                                        className={`mr-2 size-4 ${syncingSettlements ? 'animate-spin' : ''}`}
+                                    />
+                                    {t('accounts.sync_settlements')}
+                                </Button>
+                            ) : null}
                             <Button asChild size="sm">
                                 <Link href={`/accounts/${account.id}/edit`}>
                                     <Pencil className="mr-2 size-4" />
                                     {t('accounts.edit')}
                                 </Link>
                             </Button>
-                            {!account.is_archived ? (
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={archiveAccount}
-                                >
-                                    <Archive className="mr-2 size-4" />
-                                    {t('accounts.archive')}
-                                </Button>
-                            ) : null}
                         </div>
                     </div>
                 </div>
 
-                <FadeIn>
-                    <GlassPanel className="p-6">
-                        <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
-                            {t('accounts.current_balance')}
-                        </p>
-                        <p className="mt-2 text-3xl font-semibold tabular-nums">
-                            {formatCurrency(account.current_balance, { precise: true })}
-                        </p>
-                    </GlassPanel>
-                </FadeIn>
+                {isCreditCard ? (
+                    <FadeIn>
+                        <CreditCardSetupHelp />
+                    </FadeIn>
+                ) : null}
 
-                <FadeIn delay={0.03}>
-                    <GlassPanel className="space-y-4 p-6">
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <div>
-                                <h2 className="text-lg font-semibold">
-                                    {t('accounts.balance_chart.title')}
-                                </h2>
-                                <p className="text-muted-foreground text-sm">
-                                    {t('accounts.balance_chart.description')}
+                {isCreditCard ? (
+                    <FadeIn>
+                        <GlassPanel className="p-6">
+                            <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+                                {t('accounts.credit_card_settlements.open_period_title')}
+                            </p>
+                            <p className="mt-2 text-3xl font-semibold tabular-nums">
+                                {formatCurrency(account.current_period_spend ?? 0, {
+                                    precise: true,
+                                })}
+                            </p>
+                            <p className="text-muted-foreground mt-1 text-sm">
+                                {t('accounts.credit_card_current_period_hint')}
+                            </p>
+                        </GlassPanel>
+                    </FadeIn>
+                ) : null}
+
+                {isCreditCard && creditCardSettlements !== null ? (
+                    <CreditCardSettlementsPanel
+                        accountId={account.id}
+                        data={creditCardSettlements}
+                    />
+                ) : null}
+
+                {!isCreditCard && balanceHistory !== null ? (
+                    <>
+                        <FadeIn>
+                            <GlassPanel className="p-6">
+                                <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+                                    {t('accounts.current_balance')}
                                 </p>
-                            </div>
-                            <AccountBalanceDateRange
-                                accountId={account.id}
-                                balanceHistory={balanceHistory}
-                                transactionFilters={transactionFilters}
-                            />
-                        </div>
-                        <AccountBalanceChart points={balanceHistory.points} />
-                    </GlassPanel>
-                </FadeIn>
+                                <p className="mt-2 text-3xl font-semibold tabular-nums">
+                                    {formatCurrency(account.current_balance, { precise: true })}
+                                </p>
+                            </GlassPanel>
+                        </FadeIn>
+
+                        <FadeIn delay={0.03}>
+                            <GlassPanel className="space-y-4 p-6">
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <h2 className="text-lg font-semibold">
+                                            {t('accounts.balance_chart.title')}
+                                        </h2>
+                                        <p className="text-muted-foreground text-sm">
+                                            {t('accounts.balance_chart.description')}
+                                        </p>
+                                    </div>
+                                    <AccountBalanceDateRange
+                                        accountId={account.id}
+                                        balanceHistory={balanceHistory}
+                                        transactionFilters={transactionFilters}
+                                    />
+                                </div>
+                                <AccountBalanceChart points={balanceHistory.points} />
+                            </GlassPanel>
+                        </FadeIn>
+                    </>
+                ) : null}
 
                 <FadeIn delay={0.05}>
                     <GlassPanel className="p-6">

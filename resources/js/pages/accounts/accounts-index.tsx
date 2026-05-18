@@ -17,6 +17,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/use-translation';
+import { accountDisplayBalance } from '@/lib/account-display-balance';
 import { formatCurrency } from '@/lib/format-currency';
 import { cn } from '@/lib/utils';
 import type { AccountType, AccountsIndexPageProps } from '@/types/account.types';
@@ -157,7 +158,7 @@ export default function AccountsIndex({
                                             {t('accounts.type')}
                                         </th>
                                         <th className="px-4 py-3 text-right font-medium">
-                                            {t('accounts.current_balance')}
+                                            {t('accounts.balance_column')}
                                         </th>
                                         <th className="px-4 py-3 font-medium">
                                             {t('accounts.last_activity')}
@@ -197,9 +198,23 @@ export default function AccountsIndex({
                                                 <AccountTypeBadge type={account.type} />
                                             </td>
                                             <td className="px-4 py-3 text-right font-medium tabular-nums">
-                                                {formatCurrency(account.current_balance, {
-                                                    precise: true,
-                                                })}
+                                                {account.type === 'credit_card' ? (
+                                                    <div className="flex flex-col items-end gap-0.5">
+                                                        <span>
+                                                            {formatCurrency(
+                                                                accountDisplayBalance(account),
+                                                                { precise: true },
+                                                            )}
+                                                        </span>
+                                                        <span className="text-muted-foreground text-xs font-normal">
+                                                            {t('accounts.current_period_short')}
+                                                        </span>
+                                                    </div>
+                                                ) : (
+                                                    formatCurrency(account.current_balance, {
+                                                        precise: true,
+                                                    })
+                                                )}
                                             </td>
                                             <td className="text-muted-foreground px-4 py-3 tabular-nums">
                                                 {formatLastActivity(

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\AccountType;
+use App\Support\AccountNetWorth;
 use App\Models\Account;
 use App\Models\NetWorthSnapshot;
 use App\Models\User;
@@ -52,17 +53,18 @@ class NetWorthSnapshotService
                 ? $account->type
                 : AccountType::from((string) $account->type);
 
+            if (! AccountNetWorth::countsTowardNetWorth($type)) {
+                continue;
+            }
+
             $balance = (float) $account->current_balance;
             $positionsValue = $type === AccountType::Invest
                 ? $this->portfolioValuation->totalForAccount($account)
                 : 0.0;
-            $bucket = $this->balanceBucket($type, $balance);
+            $bucket = AccountNetWorth::balanceBucket($type, $balance);
 
             if ($bucket === 'liability') {
-                $amount = $type === AccountType::Credit
-                    ? max(0.0, $balance)
-                    : abs(min(0.0, $balance));
-                $totalLiabilities += $amount;
+                $totalLiabilities += AccountNetWorth::liabilityAmount($type, $balance);
             } else {
                 $totalAssets += max(0.0, $balance) + $positionsValue;
             }
@@ -175,15 +177,4 @@ class NetWorthSnapshotService
         return $count;
     }
 
-    /**
-     * @return 'asset'|'liability'
-     */
-    private function balanceBucket(AccountType $type, float $balance): string
-    {
-        if ($type === AccountType::Credit) {
-            return 'liability';
-        }
-
-        return $balance < 0 ? 'liability' : 'asset';
-    }
 }

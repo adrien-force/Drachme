@@ -85,7 +85,7 @@ class TransactionController extends Controller
                     'from' => null,
                     'to' => null,
                 ]],
-            'categoryOptions' => $user !== null ? $this->categories->flatSelectOptions($user) : [],
+            'categoryOptions' => $user !== null ? $this->categories->flatSelectableOptions($user) : [],
             'accountOptions' => $accountOptions,
             'filters' => $request->listFiltersForFrontend(),
             'transactionEdit' => $transactionEdit ?? null,

@@ -124,7 +124,7 @@ class CategoryService
      */
     public function update(Category $category, array $data): Category
     {
-        if ($category->isUncategorized()) {
+        if ($category->is_system) {
             throw new InvalidArgumentException('category_system_protected');
         }
 
@@ -149,7 +149,7 @@ class CategoryService
 
     public function delete(Category $category, ?Category $mergeTarget): void
     {
-        if ($category->isUncategorized()) {
+        if ($category->is_system) {
             throw new InvalidArgumentException('category_system_protected');
         }
 
@@ -309,6 +309,27 @@ class CategoryService
      *     depth: int,
      *     color: string|null,
      *     is_system: bool,
+     *     slug: string|null,
+     *     sort_order: int,
+     * }>
+     */
+    public function flatSelectableOptions(User $user): array
+    {
+        return array_values(array_filter(
+            $this->flatSelectOptions($user),
+            static fn (array $option): bool => ($option['slug'] ?? null) !== Category::SLUG_CARD_SETTLEMENT,
+        ));
+    }
+
+    /**
+     * @return list<array{
+     *     id: int,
+     *     parent_id: int|null,
+     *     name: string,
+     *     depth: int,
+     *     color: string|null,
+     *     is_system: bool,
+     *     slug: string|null,
      *     sort_order: int,
      * }>
      */
@@ -350,6 +371,7 @@ class CategoryService
                 'depth' => $resolveDepth($category),
                 'color' => $category->color,
                 'is_system' => $category->is_system,
+                'slug' => $category->slug,
                 'sort_order' => $category->sort_order,
             ];
         }

@@ -113,6 +113,22 @@ class ImportProviderCrudTest extends TestCase
             ->assertSessionHasErrors('column_mapping');
     }
 
+    public function test_edit_form_includes_saved_mapping(): void
+    {
+        $user = User::factory()->create();
+        $provider = ImportProvider::factory()->for($user)->create();
+
+        $this
+            ->actingAs($user)
+            ->get(route('providers.edit', $provider))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('providers/providers-form')
+                ->has('provider.column_mapping.columns', 3)
+                ->where('provider.id', $provider->id)
+                ->where('provider.csv_options.delimiter', ';'));
+    }
+
     public function test_user_can_update_and_delete_provider(): void
     {
         $user = User::factory()->create();

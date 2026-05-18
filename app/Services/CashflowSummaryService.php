@@ -29,6 +29,11 @@ class CashflowSummaryService
         $base = Transaction::query()
             ->where('user_id', $user->id)
             ->where('type', '!=', TransactionType::Transfer)
+            ->whereHas(
+                'account',
+                static fn (Builder $accountQuery): Builder => $accountQuery
+                    ->where('type', '!=', AccountType::CreditCard),
+            )
             ->whereDate('date', '>=', $from->toDateString())
             ->whereDate('date', '<=', $to->toDateString());
 
@@ -202,6 +207,7 @@ class CashflowSummaryService
         $accountIds = Account::query()
             ->where('user_id', $user->id)
             ->active()
+            ->where('type', '!=', AccountType::CreditCard)
             ->when(
                 ! $includeInvestAccounts,
                 fn (Builder $accountQuery): Builder => $accountQuery->where('type', '!=', AccountType::Invest),

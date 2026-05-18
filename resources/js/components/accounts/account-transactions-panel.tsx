@@ -12,6 +12,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { CategoryBadge } from '@/components/categories/category-badge';
 import { CategoryFilterSelect } from '@/components/categories/category-select';
 import { ApplyCategoryRulesButton } from '@/components/transactions/apply-category-rules-button';
+import { CardSettlementBadge } from '@/components/transactions/card-settlement-badge';
 import { TransactionTypeBadge } from '@/components/transactions/transaction-type-badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -53,7 +54,7 @@ type AccountTransactionsPanelProps = {
     transactionTypeOptions: TransactionTypeOption[];
     categoryOptions: CategorySelectOption[];
     perPageOptions: number[];
-    balanceHistory: AccountBalanceHistory;
+    balanceHistory: AccountBalanceHistory | null;
     uncategorizedCount: number;
 };
 
@@ -462,18 +463,23 @@ export function AccountTransactionsPanel({
                                             {transaction.date}
                                         </td>
                                         <td className="px-3 py-2">
-                                            <Link
-                                                href={accountTransactionEditUrl(
-                                                    accountId,
-                                                    transaction.id,
-                                                    balanceHistory,
-                                                    transactionFilters,
-                                                )}
-                                                preserveScroll
-                                                className="hover:underline"
-                                            >
-                                                {transaction.label}
-                                            </Link>
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <Link
+                                                    href={accountTransactionEditUrl(
+                                                        accountId,
+                                                        transaction.id,
+                                                        balanceHistory,
+                                                        transactionFilters,
+                                                    )}
+                                                    preserveScroll
+                                                    className="hover:underline"
+                                                >
+                                                    {transaction.label}
+                                                </Link>
+                                                {transaction.is_card_settlement ? (
+                                                    <CardSettlementBadge />
+                                                ) : null}
+                                            </div>
                                         </td>
                                         <td className="px-3 py-2">
                                             <TransactionTypeBadge type={transaction.type} />

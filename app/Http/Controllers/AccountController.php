@@ -13,11 +13,16 @@ use App\Models\Account;
 use App\Models\Transaction;
 use App\Services\AccountBalanceHistoryService;
 use App\Services\AccountService;
+use App\Services\CreditCardSettlementService;
+use App\DataTransferObjects\CreditCardSettlementSyncResult;
+use App\Services\CreditCardSettlementSyncService;
+use App\Enums\SettlementPeriodMode;
 use App\Services\BalanceEngine;
 use App\Services\TransactionListService;
 use App\Services\CategoryService;
 use App\Services\TransactionCategoryRuleApplier;
 use App\Services\TransactionFormPresenter;
+use App\Support\AccountNetWorth;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -36,6 +41,8 @@ class AccountController extends Controller
         private readonly TransactionFormPresenter $transactionForm,
         private readonly TransactionCategoryRuleApplier $categoryRuleApplier,
         private readonly BalanceEngine $balanceEngine,
+        private readonly CreditCardSettlementService $creditCardSettlements,
+        private readonly CreditCardSettlementSyncService $creditCardSettlementSync,
     ) {}
 
     public function index(Request $request): Response
@@ -69,6 +76,7 @@ class AccountController extends Controller
     {
         $this->authorize('view', $account);
 
+        $account->load(['settlementAccount:id,name,type']);
         $account->loadMax('transactions', 'date');
 
         $transactionFilters = $request->transactionFilters();
@@ -78,6 +86,11 @@ class AccountController extends Controller
         if ($user !== null) {
             $this->categories->seedDefaultsForUser($user);
         }
+
+        $accountType = $account->type instanceof AccountType
+            ? $account->type
+            : AccountType::from((string) $account->type);
+        $isCreditCard = $accountType === AccountType::CreditCard;
 
         return Inertia::render('accounts/accounts-show', [
             'account' => $this->serializeAccount($account),
@@ -97,14 +110,19 @@ class AccountController extends Controller
             ],
             'transactionFilters' => $request->transactionFiltersForFrontend(),
             'transactionTypeOptions' => $this->transactionTypeOptions(),
-            'categoryOptions' => $user !== null ? $this->categories->flatSelectOptions($user) : [],
+            'categoryOptions' => $user !== null ? $this->categories->flatSelectableOptions($user) : [],
             'perPageOptions' => ShowAccountRequest::perPageOptions(),
-            'balanceHistory' => $this->balanceHistory->build(
-                $account,
-                $request->chartFrom(),
-                $request->chartTo(),
-                $request->chartAllTime(),
-            ),
+            'balanceHistory' => $isCreditCard
+                ? null
+                : $this->balanceHistory->build(
+                    $account,
+                    $request->chartFrom(),
+                    $request->chartTo(),
+                    $request->chartAllTime(),
+                ),
+            'creditCardSettlements' => $isCreditCard
+                ? $this->creditCardSettlements->build($account)
+                : null,
             'transactionEdit' => $this->resolveTransactionEditForAccount($request, $account),
             'uncategorizedCount' => $user !== null
                 ? $this->categoryRuleApplier->countUncategorized($user, $account->id)
@@ -141,9 +159,15 @@ class AccountController extends Controller
     {
         $this->authorize('create', Account::class);
 
+        $user = request()->user();
+
         return Inertia::render('accounts/accounts-form', [
             'account' => null,
             'accountTypes' => $this->accountTypeOptions(),
+            'settlementAccountOptions' => $user !== null
+                ? $this->settlementAccountOptions($user)
+                : [],
+            'settlementPeriodModeOptions' => $this->settlementPeriodModeOptions(),
         ]);
     }
 
@@ -164,6 +188,7 @@ class AccountController extends Controller
         $data = $request->validated();
 
         $account = $this->accounts->create($user, $data, $request->file('logo'));
+        $this->maybeSyncCreditCardSettlements($account);
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -179,9 +204,15 @@ class AccountController extends Controller
         $this->balanceEngine->recalculateAccount($account);
         $account->refresh();
 
+        $user = request()->user();
+
         return Inertia::render('accounts/accounts-form', [
             'account' => $this->serializeAccount($account),
             'accountTypes' => $this->accountTypeOptions(),
+            'settlementAccountOptions' => $user !== null
+                ? $this->settlementAccountOptions($user)
+                : [],
+            'settlementPeriodModeOptions' => $this->settlementPeriodModeOptions(),
         ]);
     }
 
@@ -196,17 +227,48 @@ class AccountController extends Controller
          * } $data */
         $data = $request->validated();
 
-        $this->accounts->update(
+        $account = $this->accounts->update(
             $account,
             $data,
             $request->file('logo'),
             $request->boolean('remove_logo'),
         );
+        $syncResult = $this->maybeSyncCreditCardSettlements($account);
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => __('ui.accounts.updated'),
+            'message' => $syncResult !== null
+                ? __('ui.accounts.settlement_sync_toast', [
+                    'linked' => $syncResult->linkedPairs,
+                    'marked' => $syncResult->markedSettlements,
+                ])
+                : __('ui.accounts.updated'),
         ]);
+
+        return to_route('accounts.show', $account);
+    }
+
+    public function syncSettlements(Account $account): RedirectResponse
+    {
+        $this->authorize('update', $account);
+
+        $account->refresh();
+        $result = $this->creditCardSettlementSync->syncForCard($account);
+
+        if ($result->skippedMissingConfig > 0) {
+            Inertia::flash('toast', [
+                'type' => 'warning',
+                'message' => __('ui.accounts.settlement_sync_missing_config'),
+            ]);
+        } else {
+            Inertia::flash('toast', [
+                'type' => 'success',
+                'message' => __('ui.accounts.settlement_sync_toast', [
+                    'linked' => $result->linkedPairs,
+                    'marked' => $result->markedSettlements,
+                ]),
+            ]);
+        }
 
         return to_route('accounts.show', $account);
     }
@@ -244,17 +306,26 @@ class AccountController extends Controller
      */
     private function serializeAccount(Account $account): array
     {
-        $type = $account->type;
+        $type = $account->type instanceof AccountType
+            ? $account->type
+            : AccountType::from((string) $account->type);
         $openedAt = $account->opened_at;
+        $currentBalance = (float) $account->current_balance;
 
         return [
             'id' => $account->id,
             'name' => $account->name,
             'logo_url' => $this->accounts->logoUrl($account),
             'institution' => $account->institution,
-            'type' => $type instanceof AccountType ? $type->value : (string) $type,
+            'type' => $type->value,
             'initial_balance' => (float) $account->initial_balance,
-            'current_balance' => (float) $account->current_balance,
+            'current_balance' => $currentBalance,
+            'amount_owed' => $type === AccountType::CreditCard
+                ? AccountNetWorth::creditCardAmountOwed($currentBalance)
+                : null,
+            'current_period_spend' => $type === AccountType::CreditCard
+                ? $this->creditCardSettlements->currentPeriodSpend($account)
+                : null,
             'transactions_net' => (float) $this->balanceEngine->transactionSum($account),
             'currency' => $account->currency,
             'opened_at' => $openedAt instanceof \DateTimeInterface
@@ -262,7 +333,41 @@ class AccountController extends Controller
                 : ($openedAt !== null ? \Illuminate\Support\Carbon::parse((string) $openedAt)->format('Y-m-d') : null),
             'is_archived' => $account->is_archived,
             'last_activity_at' => $this->formatDateField($account->transactions_max_date),
+            'settlement_account_id' => $account->settlement_account_id,
+            'billing_day' => $account->billing_day,
+            'settlement_label_pattern' => $account->settlement_label_pattern,
+            'settlement_period_mode' => $account->settlement_period_mode instanceof SettlementPeriodMode
+                ? $account->settlement_period_mode->value
+                : (string) ($account->settlement_period_mode ?? SettlementPeriodMode::SinceLastSettlement->value),
+            'settlement_account' => $account->relationLoaded('settlementAccount') && $account->settlementAccount !== null
+                ? [
+                    'id' => $account->settlementAccount->id,
+                    'name' => $account->settlementAccount->name,
+                ]
+                : null,
         ];
+    }
+
+    /**
+     * @return list<array{value: int, label: string}>
+     */
+    private function settlementAccountOptions(\App\Models\User $user): array
+    {
+        /** @var list<array{value: int, label: string}> $options */
+        $options = Account::query()
+            ->where('user_id', $user->id)
+            ->active()
+            ->where('type', AccountType::Checking)
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(static fn (Account $account): array => [
+                'value' => $account->id,
+                'label' => $account->name,
+            ])
+            ->values()
+            ->all();
+
+        return $options;
     }
 
     private function formatDateField(mixed $value): ?string
@@ -296,6 +401,7 @@ class AccountController extends Controller
             'amount' => (float) $transaction->amount,
             'type' => $type instanceof TransactionType ? $type->value : (string) $type,
             'is_transfer_linked' => $transaction->transfer_pair_id !== null,
+            'is_card_settlement' => (bool) $transaction->is_card_settlement,
             'category_id' => $transaction->category_id,
             'category_name' => $category?->name,
             'category_color' => $category?->color,
@@ -328,5 +434,32 @@ class AccountController extends Controller
             ],
             TransactionType::cases(),
         ));
+    }
+
+    /**
+     * @return list<array{value: string, label: string}>
+     */
+    private function settlementPeriodModeOptions(): array
+    {
+        return array_values(array_map(
+            static fn (SettlementPeriodMode $mode): array => [
+                'value' => $mode->value,
+                'label' => (string) __("ui.accounts.settlement_period_modes.{$mode->value}"),
+            ],
+            SettlementPeriodMode::cases(),
+        ));
+    }
+
+    private function maybeSyncCreditCardSettlements(Account $account): ?CreditCardSettlementSyncResult
+    {
+        $type = $account->type instanceof AccountType
+            ? $account->type
+            : AccountType::from((string) $account->type);
+
+        if ($type !== AccountType::CreditCard) {
+            return null;
+        }
+
+        return $this->creditCardSettlementSync->syncForCard($account);
     }
 }

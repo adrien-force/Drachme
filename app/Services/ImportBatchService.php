@@ -539,7 +539,8 @@ class ImportBatchService
             throw new InvalidArgumentException('import_forbidden');
         }
 
-        if ($provider->import_type === ImportProviderType::Positions && $account->type !== AccountType::Invest) {
+        if ($provider->import_type === ImportProviderType::Positions
+            && $account->type !== AccountType::Invest) {
             throw new InvalidArgumentException('import_account_must_be_invest');
         }
     }

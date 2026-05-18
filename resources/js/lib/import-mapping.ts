@@ -47,6 +47,14 @@ export function guessTransactionFieldFromHeader(header: string): ImportColumnFie
     return 'skip';
 }
 
+export function columnCountFromMappings(columns: ColumnMappingEntry[]): number {
+    if (columns.length === 0) {
+        return 0;
+    }
+
+    return Math.max(...columns.map((column) => column.index)) + 1;
+}
+
 export function buildColumnMappings(
     columnCount: number,
     existing: ColumnMappingEntry[],

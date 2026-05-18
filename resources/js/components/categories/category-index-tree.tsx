@@ -192,7 +192,7 @@ function CategoryIndexTreeRow({
                     </div>
                 </div>
             </div>
-            {!node.is_uncategorized ? (
+            {!node.is_system ? (
                 <div className="flex flex-wrap gap-2 sm:pl-8">
                     {node.depth < 3 ? (
                         <Button

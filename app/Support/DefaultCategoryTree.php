@@ -66,7 +66,11 @@ final class DefaultCategoryTree
             'icon' => (string) $node['icon'],
         ];
 
-        if ($slug === self::SLUG_UNCATEGORIZED) {
+        if ($slug === self::SLUG_UNCATEGORIZED || $slug === Category::SLUG_CARD_SETTLEMENT) {
+            $entry['is_system'] = true;
+        }
+
+        if (($node['is_system'] ?? false) === true) {
             $entry['is_system'] = true;
         }
 
@@ -211,6 +215,7 @@ final class DefaultCategoryTree
             'late_fees' => 'Pénalités de retard',
             'service_charge' => 'Frais de service',
             'internal_transfer' => 'Virement interne',
+            'card_settlement' => 'Règlement carte',
             'external_transfer' => 'Virement externe',
             'gifts_transfer' => 'Cadeaux envoyés',
             'bill_payment' => 'Paiement de facture',

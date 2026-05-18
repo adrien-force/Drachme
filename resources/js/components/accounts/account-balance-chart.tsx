@@ -11,18 +11,25 @@ import {
 } from '@/components/ui/chart';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatCurrency } from '@/lib/format-currency';
-import type { AccountBalancePoint } from '@/types/account.types';
+import type {
+    AccountBalanceHistoryMode,
+    AccountBalancePoint,
+} from '@/types/account.types';
 
 type AccountBalanceChartProps = {
     points: AccountBalancePoint[];
+    mode?: AccountBalanceHistoryMode;
 };
 
-export function AccountBalanceChart({ points }: AccountBalanceChartProps) {
+export function AccountBalanceChart({ points, mode = 'balance' }: AccountBalanceChartProps) {
     const { t, locale } = useTranslation();
 
     const chartConfig = {
         balance: {
-            label: t('accounts.current_balance'),
+            label:
+                mode === 'amount_owed'
+                    ? t('accounts.amount_owed')
+                    : t('accounts.current_balance'),
             color: 'var(--chart-net-worth)',
         },
     } satisfies ChartConfig;

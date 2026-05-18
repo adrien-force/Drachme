@@ -50,7 +50,7 @@ class CategoryRuleController extends Controller
 
         return Inertia::render('category-rules/category-rules-index', [
             'rules' => $items->values()->all(),
-            'categoryOptions' => $this->categories->flatSelectOptions($user),
+            'categoryOptions' => $this->categories->flatSelectableOptions($user),
         ]);
     }
 

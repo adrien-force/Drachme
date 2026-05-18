@@ -39,6 +39,8 @@ export function TransactionEditModal({
         notes: transaction?.notes ?? '',
         category_id: transaction?.category_id ?? null,
         apply_category_rules: true,
+        is_card_settlement: transaction?.is_card_settlement ?? false,
+        card_period_start: transaction?.card_period_start ?? null,
     });
 
     useEffect(() => {
@@ -55,6 +57,8 @@ export function TransactionEditModal({
             notes: transaction.notes ?? '',
             category_id: transaction.category_id,
             apply_category_rules: true,
+            is_card_settlement: transaction.is_card_settlement ?? false,
+            card_period_start: transaction.card_period_start ?? null,
         });
         form.clearErrors();
     }, [open, transaction?.id]);

@@ -1,7 +1,8 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Trash2 } from 'lucide-react';
+import { Archive, Trash2 } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 
+import { CreditCardSetupHelp } from '@/components/accounts/credit-card-setup-help';
 import { FadeIn } from '@/components/motion/fade-in';
 import { GlassPanel } from '@/components/glass-panel';
 import { LogoUploadField } from '@/components/logo-upload-field';
@@ -27,16 +28,36 @@ import {
 } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatCurrency } from '@/lib/format-currency';
-import type { AccountType, AccountsFormPageProps } from '@/types/account.types';
+import type {
+    AccountType,
+    AccountsFormPageProps,
+    SettlementPeriodMode,
+} from '@/types/account.types';
 
 export default function AccountsForm({
     account,
     accountTypes,
+    settlementAccountOptions,
+    settlementPeriodModeOptions,
 }: AccountsFormPageProps) {
     const { t } = useTranslation();
     const isEditing = account !== null;
     const formRef = useRef<HTMLFormElement>(null);
     const [type, setType] = useState<AccountType>(account?.type ?? 'checking');
+    const [settlementAccountId, setSettlementAccountId] = useState<string>(
+        account?.settlement_account_id != null
+            ? String(account.settlement_account_id)
+            : '',
+    );
+    const [billingDay, setBillingDay] = useState<string>(
+        account?.billing_day != null ? String(account.billing_day) : '',
+    );
+    const [settlementLabelPattern, setSettlementLabelPattern] = useState<string>(
+        account?.settlement_label_pattern ?? (account === null ? 'DEBIT DIFFERE' : ''),
+    );
+    const [settlementPeriodMode, setSettlementPeriodMode] = useState<SettlementPeriodMode>(
+        account?.settlement_period_mode ?? 'since_last_settlement',
+    );
     const [accountName, setAccountName] = useState(account?.name ?? '');
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [removeLogo, setRemoveLogo] = useState(false);
@@ -45,6 +66,7 @@ export default function AccountsForm({
         account !== null ? String(account.current_balance) : '',
     );
     const [submitting, setSubmitting] = useState(false);
+    const [archiveOpen, setArchiveOpen] = useState(false);
     const [deleteOpen, setDeleteOpen] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -91,6 +113,20 @@ export default function AccountsForm({
 
         payload.append('name', accountName);
         payload.append('type', type);
+
+        if (type === 'credit_card') {
+            if (settlementAccountId !== '') {
+                payload.append('settlement_account_id', settlementAccountId);
+            }
+            if (billingDay !== '') {
+                payload.append('billing_day', billingDay);
+            }
+            const trimmedPattern = settlementLabelPattern.trim();
+            if (trimmedPattern !== '') {
+                payload.append('settlement_label_pattern', trimmedPattern);
+            }
+            payload.append('settlement_period_mode', settlementPeriodMode);
+        }
 
         const institution = formData.get('institution');
         if (typeof institution === 'string' && institution !== '') {
@@ -226,6 +262,119 @@ export default function AccountsForm({
                                 <InputError message={errors.type} />
                             </div>
 
+                            {type === 'credit_card' ? (
+                                <>
+                                    <CreditCardSetupHelp />
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="settlement_account_id">
+                                            {t('accounts.settlement_account')}
+                                        </Label>
+                                        <Select
+                                            value={
+                                                settlementAccountId === ''
+                                                    ? undefined
+                                                    : settlementAccountId
+                                            }
+                                            onValueChange={setSettlementAccountId}
+                                        >
+                                            <SelectTrigger
+                                                id="settlement_account_id"
+                                                className="w-full"
+                                            >
+                                                <SelectValue
+                                                    placeholder={t(
+                                                        'accounts.settlement_account_placeholder',
+                                                    )}
+                                                />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {settlementAccountOptions.map((option) => (
+                                                    <SelectItem
+                                                        key={option.value}
+                                                        value={String(option.value)}
+                                                    >
+                                                        {option.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <InputError message={errors.settlement_account_id} />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="billing_day">
+                                            {t('accounts.billing_day')}
+                                        </Label>
+                                        <Input
+                                            id="billing_day"
+                                            name="billing_day"
+                                            type="number"
+                                            min={1}
+                                            max={28}
+                                            value={billingDay}
+                                            onChange={(event) =>
+                                                setBillingDay(event.target.value)
+                                            }
+                                        />
+                                        <p className="text-muted-foreground text-xs">
+                                            {t('accounts.billing_day_hint')}
+                                        </p>
+                                        <InputError message={errors.billing_day} />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="settlement_label_pattern">
+                                            {t('accounts.settlement_label_pattern')}
+                                        </Label>
+                                        <Input
+                                            id="settlement_label_pattern"
+                                            name="settlement_label_pattern"
+                                            type="text"
+                                            maxLength={128}
+                                            value={settlementLabelPattern}
+                                            placeholder={t(
+                                                'accounts.settlement_label_pattern_placeholder',
+                                            )}
+                                            onChange={(event) =>
+                                                setSettlementLabelPattern(event.target.value)
+                                            }
+                                        />
+                                        <p className="text-muted-foreground text-xs">
+                                            {t('accounts.settlement_label_pattern_hint')}
+                                        </p>
+                                        <InputError message={errors.settlement_label_pattern} />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="settlement_period_mode">
+                                            {t('accounts.settlement_period_mode')}
+                                        </Label>
+                                        <Select
+                                            value={settlementPeriodMode}
+                                            onValueChange={(value) =>
+                                                setSettlementPeriodMode(
+                                                    value as SettlementPeriodMode,
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger id="settlement_period_mode">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {settlementPeriodModeOptions.map((option) => (
+                                                    <SelectItem
+                                                        key={option.value}
+                                                        value={option.value}
+                                                    >
+                                                        {option.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <p className="text-muted-foreground text-xs">
+                                            {t('accounts.settlement_period_mode_hint')}
+                                        </p>
+                                        <InputError message={errors.settlement_period_mode} />
+                                    </div>
+                                </>
+                            ) : null}
 
                             {!isEditing ? (
                                 <div className="grid gap-2">
@@ -354,6 +503,27 @@ export default function AccountsForm({
                                 </Button>
                             </div>
 
+                            {isEditing && account && !account.is_archived ? (
+                                <div className="border-border/60 mt-8 space-y-3 border-t pt-6">
+                                    <div>
+                                        <h2 className="text-sm font-semibold">
+                                            {t('accounts.archive')}
+                                        </h2>
+                                        <p className="text-muted-foreground mt-1 text-sm">
+                                            {t('accounts.archive_hint')}
+                                        </p>
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => setArchiveOpen(true)}
+                                    >
+                                        <Archive className="mr-2 size-4" />
+                                        {t('accounts.archive')}
+                                    </Button>
+                                </div>
+                            ) : null}
+
                             {isEditing && account ? (
                                 <div className="border-destructive/30 mt-8 space-y-3 border-t pt-6">
                                     <div>
@@ -379,6 +549,34 @@ export default function AccountsForm({
                         </form>
                     </GlassPanel>
                 </FadeIn>
+
+                {isEditing && account && !account.is_archived ? (
+                    <Dialog open={archiveOpen} onOpenChange={setArchiveOpen}>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>{t('accounts.archive')}</DialogTitle>
+                                <DialogDescription>
+                                    {t('accounts.archive_confirm', { name: account.name })}
+                                </DialogDescription>
+                            </DialogHeader>
+                            <DialogFooter>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setArchiveOpen(false)}
+                                >
+                                    {t('accounts.cancel')}
+                                </Button>
+                                <Button
+                                    type="button"
+                                    onClick={() => router.post(`/accounts/${account.id}/archive`)}
+                                >
+                                    {t('accounts.archive')}
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                ) : null}
 
                 {isEditing && account ? (
                     <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>

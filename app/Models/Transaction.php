@@ -21,6 +21,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'type',
     'category_id',
     'transfer_pair_id',
+    'is_card_settlement',
+    'card_period_start',
     'import_batch_id',
     'import_hash',
     'notes',
@@ -39,6 +41,8 @@ class Transaction extends Model
             'date' => 'date',
             'amount' => 'decimal:2',
             'type' => TransactionType::class,
+            'is_card_settlement' => 'boolean',
+            'card_period_start' => 'date',
         ];
     }
 

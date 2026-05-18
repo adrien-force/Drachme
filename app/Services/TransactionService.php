@@ -10,6 +10,7 @@ use App\Models\Account;
 use App\Models\Category;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Support\CardSettlementFields;
 use InvalidArgumentException;
 
 class TransactionService
@@ -43,6 +44,8 @@ class TransactionService
             ($data['apply_category_rules'] ?? true) === true,
         );
 
+        $cardSettlement = CardSettlementFields::resolveForAccount($account, $data);
+
         $transaction = Transaction::query()->create([
             'user_id' => $user->id,
             'account_id' => $account->id,
@@ -52,6 +55,7 @@ class TransactionService
             'type' => $type,
             'category_id' => $categoryId,
             'notes' => $data['notes'] ?? null,
+            ...$cardSettlement,
         ]);
 
         TransactionChanged::dispatch($account);
@@ -89,6 +93,8 @@ class TransactionService
             ($data['apply_category_rules'] ?? false) === true,
         );
 
+        $cardSettlement = CardSettlementFields::resolveForAccount($account, $data);
+
         $transaction->update([
             'account_id' => $account->id,
             'date' => $data['date'],
@@ -97,6 +103,7 @@ class TransactionService
             'type' => $type,
             'category_id' => $categoryId,
             'notes' => $data['notes'] ?? null,
+            ...$cardSettlement,
         ]);
 
         TransactionChanged::dispatch($account);

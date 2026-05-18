@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\AccountType;
 use App\Models\Account;
 use App\Models\Transaction;
+use App\Support\AccountNetWorth;
 use Carbon\CarbonImmutable;
 
 class AccountBalanceHistoryService
@@ -18,6 +20,7 @@ class AccountBalanceHistoryService
      *     from: string,
      *     to: string,
      *     is_all_time: bool,
+     *     mode: 'balance'|'amount_owed',
      * }
      */
     public function build(
@@ -26,6 +29,11 @@ class AccountBalanceHistoryService
         ?string $to,
         bool $allTime = false,
     ): array {
+        $type = $account->type instanceof AccountType
+            ? $account->type
+            : AccountType::from((string) $account->type);
+        $amountOwedMode = $type === AccountType::CreditCard;
+
         $today = CarbonImmutable::today();
 
         $toDate = $to !== null && $to !== ''
@@ -95,18 +103,26 @@ class AccountBalanceHistoryService
                 }
             }
 
+            $displayBalance = $amountOwedMode
+                ? AccountNetWorth::creditCardAmountOwed($current)
+                : $current;
+
             $points[] = [
                 'date' => $dateStr,
-                'balance' => round($current, 2),
+                'balance' => round($displayBalance, 2),
             ];
 
             $cursor = $cursor->addDay();
         }
 
         if ($points === []) {
+            $displayBefore = $amountOwedMode
+                ? AccountNetWorth::creditCardAmountOwed($balanceBefore)
+                : $balanceBefore;
+
             $points[] = [
                 'date' => $fromDate->format('Y-m-d'),
-                'balance' => round($balanceBefore, 2),
+                'balance' => round($displayBefore, 2),
             ];
         }
 
@@ -115,6 +131,7 @@ class AccountBalanceHistoryService
             'from' => $fromDate->format('Y-m-d'),
             'to' => $toDate->format('Y-m-d'),
             'is_all_time' => $allTime,
+            'mode' => $amountOwedMode ? 'amount_owed' : 'balance',
         ];
     }
 

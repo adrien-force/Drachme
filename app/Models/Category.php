@@ -26,6 +26,8 @@ class Category extends Model
 {
     public const SLUG_UNCATEGORIZED = 'uncategorized';
 
+    public const SLUG_CARD_SETTLEMENT = 'card_settlement';
+
     /** @use HasFactory<CategoryFactory> */
     use BelongsToUser, HasFactory;
 
@@ -67,5 +69,10 @@ class Category extends Model
     public function isUncategorized(): bool
     {
         return $this->slug === self::SLUG_UNCATEGORIZED;
+    }
+
+    public function isCardSettlement(): bool
+    {
+        return $this->slug === self::SLUG_CARD_SETTLEMENT;
     }
 }

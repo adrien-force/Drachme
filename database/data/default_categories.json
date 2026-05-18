@@ -185,6 +185,7 @@
     "icon": "money-bill-transfer",
     "subcategories": [
       {"name": "internal_transfer", "color": "#59BDC5", "icon": "money-bill-transfer"},
+      {"name": "card_settlement", "color": "#59BDC5", "icon": "credit-card", "is_system": true},
       {"name": "external_transfer", "color": "#59BDC5", "icon": "envelope-open-dollar"},
       {"name": "gifts_transfer", "color": "#59BDC5", "icon": "hand-holding-dollar"},
       {"name": "bill_payment", "color": "#59BDC5", "icon": "file-invoice"},

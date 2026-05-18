@@ -5,27 +5,34 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\DataTransferObjects\TransferSuggestion;
+use App\Enums\AccountType;
 use App\Enums\TransactionType;
+use App\Models\Account;
 use App\Models\DismissedTransferSuggestion;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Support\SettlementLabelMatcher;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 class TransferDetector
 {
+    private const DEFAULT_DAYS_WINDOW = 3;
+
+    private const CREDIT_CARD_SETTLEMENT_DAYS_WINDOW = 7;
+
     /**
      * @return list<TransferSuggestion>
      */
-    public function findCandidates(User $user, int $daysWindow = 3): array
+    public function findCandidates(User $user, int $daysWindow = self::DEFAULT_DAYS_WINDOW): array
     {
         /** @var Collection<int, Transaction> $transactions */
         $transactions = Transaction::query()
             ->where('user_id', $user->id)
             ->whereNull('transfer_pair_id')
             ->whereIn('type', [TransactionType::Expense, TransactionType::Income])
-            ->with(['account:id,name,logo_path'])
+            ->with(['account:id,name,logo_path,type,settlement_account_id'])
             ->orderBy('date')
             ->orderBy('id')
             ->get();
@@ -33,6 +40,13 @@ class TransferDetector
         if ($transactions->count() < 2) {
             return [];
         }
+
+        /** @var array<int, Account> $accountsById */
+        $accountsById = Account::query()
+            ->where('user_id', $user->id)
+            ->get(['id', 'type', 'settlement_account_id', 'settlement_label_pattern'])
+            ->keyBy('id')
+            ->all();
 
         /** @var array<string, true> $dismissedKeys */
         $dismissedKeys = DismissedTransferSuggestion::query()
@@ -73,7 +87,9 @@ class TransferDetector
                     continue;
                 }
 
-                if ($this->daysApart($outgoing, $incoming) > $daysWindow) {
+                $pairDaysWindow = $this->daysWindowForPair($outgoing, $incoming, $accountsById, $daysWindow);
+
+                if ($this->daysApart($outgoing, $incoming) > $pairDaysWindow) {
                     continue;
                 }
 
@@ -86,10 +102,16 @@ class TransferDetector
                     continue;
                 }
 
+                $score = $this->scoreLabelMatch($outgoing->label, $incoming->label)
+                    + $this->scoreCreditCardSettlement($outgoing, $incoming, $accountsById)
+                    + $this->scoreConfiguredSettlementLabel($outgoing, $incoming, $accountsById)
+                    + $this->scoreSettlementLabel($outgoing->label)
+                    + $this->scoreSettlementLabel($incoming->label);
+
                 $suggestions[] = new TransferSuggestion(
                     outgoing: $outgoing,
                     incoming: $incoming,
-                    score: $this->scoreLabelMatch($outgoing->label, $incoming->label),
+                    score: $score,
                 );
             }
         }
@@ -102,6 +124,137 @@ class TransferDetector
         );
 
         return $suggestions;
+    }
+
+    /**
+     * @param  array<int, Account>  $accountsById
+     */
+    private function daysWindowForPair(
+        Transaction $outgoing,
+        Transaction $incoming,
+        array $accountsById,
+        int $defaultWindow,
+    ): int {
+        if ($this->isCreditCardSettlementPair($outgoing, $incoming, $accountsById)) {
+            return max($defaultWindow, self::CREDIT_CARD_SETTLEMENT_DAYS_WINDOW);
+        }
+
+        return $defaultWindow;
+    }
+
+    /**
+     * @param  array<int, Account>  $accountsById
+     */
+    private function scoreCreditCardSettlement(
+        Transaction $outgoing,
+        Transaction $incoming,
+        array $accountsById,
+    ): int {
+        return $this->isCreditCardSettlementPair($outgoing, $incoming, $accountsById) ? 80 : 0;
+    }
+
+    /**
+     * @param  array<int, Account>  $accountsById
+     */
+    private function isCreditCardSettlementPair(
+        Transaction $outgoing,
+        Transaction $incoming,
+        array $accountsById,
+    ): bool {
+        $outAccount = $accountsById[$outgoing->account_id] ?? null;
+        $inAccount = $accountsById[$incoming->account_id] ?? null;
+
+        if ($outAccount === null || $inAccount === null) {
+            return false;
+        }
+
+        $outType = $outAccount->type instanceof AccountType
+            ? $outAccount->type
+            : AccountType::from((string) $outAccount->type);
+        $inType = $inAccount->type instanceof AccountType
+            ? $inAccount->type
+            : AccountType::from((string) $inAccount->type);
+
+        if (
+            $inType === AccountType::CreditCard
+            && (int) $inAccount->settlement_account_id === $outgoing->account_id
+            && (float) $outgoing->amount < 0
+            && (float) $incoming->amount > 0
+        ) {
+            return true;
+        }
+
+        if (
+            $outType === AccountType::CreditCard
+            && (int) $outAccount->settlement_account_id === $incoming->account_id
+            && (float) $incoming->amount < 0
+            && (float) $outgoing->amount > 0
+        ) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @param  array<int, Account>  $accountsById
+     */
+    private function scoreConfiguredSettlementLabel(
+        Transaction $outgoing,
+        Transaction $incoming,
+        array $accountsById,
+    ): int {
+        if (! $this->isCreditCardSettlementPair($outgoing, $incoming, $accountsById)) {
+            return 0;
+        }
+
+        $cardAccount = $this->creditCardAccountFromPair($outgoing, $incoming, $accountsById);
+
+        if ($cardAccount === null) {
+            return 0;
+        }
+
+        $checkingTransaction = $outgoing->account_id === (int) $cardAccount->settlement_account_id
+            ? $outgoing
+            : $incoming;
+
+        if (SettlementLabelMatcher::matches($cardAccount->settlement_label_pattern, $checkingTransaction->label)) {
+            return 90;
+        }
+
+        return 0;
+    }
+
+    /**
+     * @param  array<int, Account>  $accountsById
+     */
+    private function creditCardAccountFromPair(
+        Transaction $outgoing,
+        Transaction $incoming,
+        array $accountsById,
+    ): ?Account {
+        foreach ([$outgoing, $incoming] as $transaction) {
+            $account = $accountsById[$transaction->account_id] ?? null;
+
+            if ($account === null) {
+                continue;
+            }
+
+            $type = $account->type instanceof AccountType
+                ? $account->type
+                : AccountType::from((string) $account->type);
+
+            if ($type === AccountType::CreditCard) {
+                return $account;
+            }
+        }
+
+        return null;
+    }
+
+    private function scoreSettlementLabel(string $label): int
+    {
+        return SettlementLabelMatcher::matchesGenericKeywords($label) ? 25 : 0;
     }
 
     private function amountKey(float $amount): string

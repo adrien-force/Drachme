@@ -6,6 +6,7 @@ namespace App\Providers;
 
 use App\Events\TransactionChanged;
 use App\Listeners\RecalculateAccountBalance;
+use App\Listeners\SyncCreditCardSettlements;
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\CategoryRule;
@@ -61,6 +62,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(RecurringPattern::class, RecurringPatternPolicy::class);
 
         Event::listen(TransactionChanged::class, RecalculateAccountBalance::class);
+        Event::listen(TransactionChanged::class, SyncCreditCardSettlements::class);
 
         View::composer('app', function ($view): void {
             $colors = ThemeColors::resolveForRequest(request());

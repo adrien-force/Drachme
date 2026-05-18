@@ -89,7 +89,7 @@ class RecurringPresenter
     {
         $this->categories->seedDefaultsForUser($user);
 
-        return $this->categories->flatSelectOptions($user);
+        return $this->categories->flatSelectableOptions($user);
     }
 
     /**

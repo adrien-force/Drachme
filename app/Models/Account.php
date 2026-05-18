@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\AccountType;
+use App\Enums\SettlementPeriodMode;
 use App\Models\Concerns\BelongsToUser;
 use Database\Factories\AccountFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -24,6 +26,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'institution',
     'logo_path',
     'type',
+    'settlement_account_id',
+    'billing_day',
+    'settlement_label_pattern',
+    'settlement_period_mode',
     'initial_balance',
     'current_balance',
     'currency',
@@ -42,6 +48,7 @@ class Account extends Model
     {
         return [
             'type' => AccountType::class,
+            'settlement_period_mode' => SettlementPeriodMode::class,
             'initial_balance' => 'decimal:2',
             'current_balance' => 'decimal:2',
             'opened_at' => 'date',
@@ -56,6 +63,14 @@ class Account extends Model
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_archived', false);
+    }
+
+    /**
+     * @return BelongsTo<Account, $this>
+     */
+    public function settlementAccount(): BelongsTo
+    {
+        return $this->belongsTo(Account::class, 'settlement_account_id');
     }
 
     /**

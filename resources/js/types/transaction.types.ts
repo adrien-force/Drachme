@@ -1,3 +1,4 @@
+import type { AccountType } from '@/types/account.types';
 import type { CategorySelectOption } from '@/types/category.types';
 import type {
     PaginatedMeta,
@@ -12,6 +13,7 @@ export type TransactionAccountOption = {
     id: number;
     name: string;
     logo_url: string | null;
+    type?: AccountType;
 };
 
 export type TransactionTypeOption = {
@@ -42,6 +44,9 @@ export type TransactionListItem = {
     category_color?: string | null;
     recurring_pattern_id?: number | null;
     recurring_display_label?: string | null;
+    account_type?: AccountType | null;
+    is_card_settlement?: boolean;
+    card_period_start?: string | null;
 };
 
 export type AccountTransactionItem = {
@@ -51,6 +56,7 @@ export type AccountTransactionItem = {
     amount: number;
     type: TransactionType;
     is_transfer_linked: boolean;
+    is_card_settlement?: boolean;
     category_id: number | null;
     category_name?: string | null;
     category_color?: string | null;

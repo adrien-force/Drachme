@@ -74,7 +74,7 @@ export function CashflowChart({ data, dateRange }: CashflowChartProps) {
             >
                 <BarChart
                     data={data}
-                    margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
+                    margin={{ top: 8, right: 8, left: 0, bottom: 24 }}
                     onClick={handleBarClick}
                     style={{ cursor: 'pointer' }}
                 >

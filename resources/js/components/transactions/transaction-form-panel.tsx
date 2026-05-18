@@ -9,6 +9,7 @@ import { EntityLogo } from '@/components/entity-logo';
 import { TransactionTypeBadge } from '@/components/transactions/transaction-type-badge';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -42,6 +43,8 @@ export type TransactionFormData = {
     notes: string;
     category_id: number | null;
     apply_category_rules: boolean;
+    is_card_settlement: boolean;
+    card_period_start: string | null;
 };
 
 type TransactionFormPanelProps = {
@@ -84,6 +87,18 @@ export function TransactionFormPanel({
     const { t } = useTranslation();
     const [ruleDialogOpen, setRuleDialogOpen] = useState(false);
     const [recurringDialogOpen, setRecurringDialogOpen] = useState(false);
+
+    const selectedAccount = useMemo(
+        () => accounts.find((account) => String(account.id) === form.data.account_id),
+        [accounts, form.data.account_id],
+    );
+
+    const accountType =
+        transaction?.account_type ?? selectedAccount?.type ?? null;
+    const isCreditCardAccount = accountType === 'credit_card';
+    const parsedAmount = Number.parseFloat(form.data.amount);
+    const showCardSettlementFields =
+        isCreditCardAccount && !Number.isNaN(parsedAmount) && parsedAmount > 0;
 
     const previewType = useMemo(() => {
         if (form.data.type !== TYPE_AUTO) {
@@ -263,6 +278,53 @@ export function TransactionFormPanel({
                         </div>
                     ) : null}
                 </div>
+
+                {showCardSettlementFields ? (
+                    <div className="border-primary/30 bg-primary/5 space-y-4 rounded-lg border p-4">
+                        <div className="space-y-1">
+                            <p className="text-sm font-medium">
+                                {t('transactions.card_settlement_title')}
+                            </p>
+                            <p className="text-muted-foreground text-xs leading-relaxed">
+                                {t('transactions.card_settlement_hint')}
+                            </p>
+                        </div>
+                        <label className="flex cursor-pointer items-start gap-3">
+                            <Checkbox
+                                checked={form.data.is_card_settlement}
+                                onCheckedChange={(checked) => {
+                                    const enabled = checked === true;
+                                    form.setData((current) => ({
+                                        ...current,
+                                        is_card_settlement: enabled,
+                                        card_period_start: enabled
+                                            ? current.card_period_start
+                                            : null,
+                                    }));
+                                }}
+                            />
+                            <span className="text-sm leading-snug">
+                                {t('transactions.card_settlement_checkbox')}
+                            </span>
+                        </label>
+                        {form.data.is_card_settlement ? (
+                            <div className="space-y-2">
+                                <Label>{t('transactions.card_period_start')}</Label>
+                                <DatePicker
+                                    value={form.data.card_period_start}
+                                    onChange={(value) =>
+                                        form.setData('card_period_start', value)
+                                    }
+                                />
+                                <p className="text-muted-foreground text-xs">
+                                    {t('transactions.card_period_start_hint')}
+                                </p>
+                                <InputError message={form.errors.card_period_start} />
+                            </div>
+                        ) : null}
+                        <InputError message={form.errors.is_card_settlement} />
+                    </div>
+                ) : null}
 
                 {isEditing &&
                 transaction &&

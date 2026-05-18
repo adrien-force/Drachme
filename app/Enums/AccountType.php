@@ -11,5 +11,6 @@ enum AccountType: string
     case Savings = 'savings';
     case Invest = 'invest';
     case Credit = 'credit';
+    case CreditCard = 'credit_card';
     case Cash = 'cash';
 }

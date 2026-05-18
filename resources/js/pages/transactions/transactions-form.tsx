@@ -24,6 +24,8 @@ export default function TransactionsForm({
         notes: '',
         category_id: null as number | null,
         apply_category_rules: true,
+        is_card_settlement: false,
+        card_period_start: null as string | null,
     });
 
     const submit = () => {

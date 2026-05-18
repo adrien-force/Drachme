@@ -10,7 +10,7 @@ import { buildTransactionsIndexQuery } from '@/lib/transactions-index-query';
 export function accountTransactionEditUrl(
     accountId: number,
     transactionId: number,
-    balanceHistory: Pick<AccountBalanceHistory, 'from' | 'to' | 'is_all_time'>,
+    balanceHistory: Pick<AccountBalanceHistory, 'from' | 'to' | 'is_all_time'> | null,
     filters: AccountTransactionFilters,
 ): string {
     const query = buildAccountShowQuery(balanceHistory, filters, transactionId);

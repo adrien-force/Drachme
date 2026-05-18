@@ -6,7 +6,7 @@ import type {
 type ChartQuery = Pick<AccountBalanceHistory, 'from' | 'to' | 'is_all_time'>;
 
 export function buildAccountShowQuery(
-    chart: ChartQuery,
+    chart: ChartQuery | null,
     filters: AccountTransactionFilters,
     editTransactionId?: number,
 ): Record<string, string | number> {
@@ -17,11 +17,13 @@ export function buildAccountShowQuery(
         page: filters.page,
     };
 
-    if (chart.is_all_time) {
-        query.chart_all_time = 1;
-    } else {
-        query.from = chart.from;
-        query.to = chart.to;
+    if (chart !== null) {
+        if (chart.is_all_time) {
+            query.chart_all_time = 1;
+        } else {
+            query.from = chart.from;
+            query.to = chart.to;
+        }
     }
 
     if (filters.search.trim() !== '') {

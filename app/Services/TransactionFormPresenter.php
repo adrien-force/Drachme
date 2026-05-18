@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\AccountType;
 use App\Enums\TransactionType;
 use App\Models\Account;
 use App\Models\Transaction;
@@ -33,11 +34,14 @@ class TransactionFormPresenter
         $accountOptions = Account::query()
             ->active()
             ->orderBy('name')
-            ->get(['id', 'name', 'logo_path'])
+            ->get(['id', 'name', 'logo_path', 'type'])
             ->map(fn (Account $account): array => [
                 'id' => $account->id,
                 'name' => $account->name,
                 'logo_url' => $this->accounts->logoUrl($account),
+                'type' => $account->type instanceof AccountType
+                    ? $account->type->value
+                    : (string) $account->type,
             ])
             ->values()
             ->all();
@@ -59,7 +63,7 @@ class TransactionFormPresenter
             'accounts' => $accountOptions,
             'presetAccountId' => $presetAccount?->id,
             'typeOptions' => $this->typeOptions(),
-            'categoryOptions' => $user !== null ? $this->categories->flatSelectOptions($user) : [],
+            'categoryOptions' => $user !== null ? $this->categories->flatSelectableOptions($user) : [],
             'suggestedCategory' => $suggestedCategory,
         ];
     }
@@ -148,6 +152,13 @@ class TransactionFormPresenter
             'category_color' => $transaction->category?->color,
             'recurring_pattern_id' => $recurringMatch?->id,
             'recurring_display_label' => $recurringMatch?->display_label,
+            'account_type' => $this->serializeAccountType($account?->type),
+            'is_card_settlement' => (bool) $transaction->is_card_settlement,
+            'card_period_start' => $transaction->card_period_start instanceof \DateTimeInterface
+                ? $transaction->card_period_start->format('Y-m-d')
+                : ($transaction->card_period_start !== null
+                    ? (string) $transaction->card_period_start
+                    : null),
         ];
     }
 
@@ -163,5 +174,18 @@ class TransactionFormPresenter
             ],
             TransactionType::cases(),
         ));
+    }
+
+    private function serializeAccountType(mixed $type): ?string
+    {
+        if ($type === null) {
+            return null;
+        }
+
+        if ($type instanceof AccountType) {
+            return $type->value;
+        }
+
+        return AccountType::from((string) $type)->value;
     }
 }
