@@ -8,6 +8,7 @@ import {
     Repeat,
     SlidersHorizontal,
     Tags,
+    Sparkles,
     TrendingUp,
     type LucideIcon,
 } from 'lucide-react';
@@ -48,6 +49,11 @@ export const appNavSections: AppNavSection[] = [
                 titleKey: 'nav.transactions',
                 href: '/transactions',
                 icon: ArrowLeftRight,
+            },
+            {
+                titleKey: 'nav.transaction_triage',
+                href: '/transactions/triage',
+                icon: Sparkles,
             },
             {
                 titleKey: 'nav.transfers',
@@ -102,3 +108,7 @@ export const appNavSections: AppNavSection[] = [
         ],
     },
 ];
+
+export const appNavHrefs: string[] = appNavSections.flatMap((section) =>
+    section.items.map((item) => item.href),
+);

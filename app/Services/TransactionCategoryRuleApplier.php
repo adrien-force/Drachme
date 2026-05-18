@@ -33,7 +33,7 @@ class TransactionCategoryRuleApplier
         $query->orderBy('id')->chunkById(200, function ($transactions) use ($user, &$matched, &$scanned): void {
             foreach ($transactions as $transaction) {
                 $scanned++;
-                $category = $this->matcher->match($user, $transaction->label);
+                $category = $this->matcher->match($user, $transaction->label, $transaction->amount);
 
                 if ($category === null) {
                     continue;
@@ -45,6 +45,47 @@ class TransactionCategoryRuleApplier
                 $matched++;
             }
         });
+
+        return [
+            'matched' => $matched,
+            'scanned' => $scanned,
+        ];
+    }
+
+    /**
+     * @param  list<int>  $transactionIds
+     *
+     * @return array{matched: int, scanned: int}
+     */
+    public function applyToTransactionIds(User $user, array $transactionIds): array
+    {
+        if ($transactionIds === []) {
+            return ['matched' => 0, 'scanned' => 0];
+        }
+
+        $matched = 0;
+        $scanned = 0;
+
+        Transaction::query()
+            ->where('user_id', $user->id)
+            ->whereIn('id', $transactionIds)
+            ->whereNull('category_id')
+            ->orderBy('id')
+            ->chunkById(200, function ($transactions) use ($user, &$matched, &$scanned): void {
+                foreach ($transactions as $transaction) {
+                    $scanned++;
+                    $category = $this->matcher->match($user, $transaction->label, $transaction->amount);
+
+                    if ($category === null) {
+                        continue;
+                    }
+
+                    $transaction->update(['category_id' => $category->id]);
+                    $transaction->refresh();
+                    $this->recurringPatterns->syncCategoryFromTransaction($user, $transaction);
+                    $matched++;
+                }
+            });
 
         return [
             'matched' => $matched,

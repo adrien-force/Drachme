@@ -12,6 +12,7 @@ use App\Http\Controllers\InvestmentsController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\ShellPlaceholderController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\TransactionTriageController;
 use App\Http\Controllers\RecurringController;
 use App\Http\Controllers\TransferController;
 use Illuminate\Support\Facades\Route;
@@ -51,6 +52,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('transactions', [TransactionController::class, 'store'])->name('transactions.store');
     Route::post('transactions/apply-category-rules', [TransactionController::class, 'applyCategoryRules'])
         ->name('transactions.apply-category-rules');
+    Route::post('transactions/bulk/category', [TransactionController::class, 'bulkUpdateCategory'])
+        ->name('transactions.bulk.category');
+    Route::post('transactions/bulk/apply-rules', [TransactionController::class, 'bulkApplyCategoryRules'])
+        ->name('transactions.bulk.apply-rules');
+    Route::delete('transactions/bulk', [TransactionController::class, 'bulkDestroy'])
+        ->name('transactions.bulk.destroy');
+    Route::get('transactions/triage', [TransactionTriageController::class, 'index'])->name('transactions.triage');
+    Route::post('transactions/triage/apply-rules', [TransactionTriageController::class, 'applyRules'])
+        ->name('transactions.triage.apply-rules');
+    Route::post('transactions/{transaction}/triage', [TransactionTriageController::class, 'process'])
+        ->name('transactions.triage.process');
     Route::get('transactions/{transaction}/edit', [TransactionController::class, 'edit'])->name('transactions.edit');
     Route::put('transactions/{transaction}', [TransactionController::class, 'update'])->name('transactions.update');
     Route::patch('transactions/{transaction}/category', [TransactionController::class, 'updateCategory'])

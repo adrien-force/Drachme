@@ -83,6 +83,11 @@ export type PaginatedTransactions = {
     meta: PaginatedMeta;
 };
 
+export type TransactionListSummary = {
+    count: number;
+    amount_total: number;
+};
+
 export type TransactionSankeyNode = {
     name: string;
     category: 'source' | 'outcome';
@@ -101,6 +106,7 @@ export type TransactionSankeyFlow = {
 
 export type TransactionsIndexPageProps = {
     transactions: PaginatedTransactions;
+    listSummary: TransactionListSummary;
     sankeyFlow: TransactionSankeyFlow;
     categoryOptions: CategorySelectOption[];
     accountOptions: TransactionAccountOption[];

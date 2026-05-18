@@ -63,6 +63,7 @@ class CategoryRuleController extends Controller
 
         /** @var array{pattern: string, category_id: int, priority?: int, is_active?: bool} $data */
         $data = $request->validated();
+        $data['flow'] = $request->flow();
 
         try {
             $this->rules->create($user, $data);
@@ -92,6 +93,7 @@ class CategoryRuleController extends Controller
                 $request->selectedTokens(),
                 (int) $request->input('category_id'),
                 $request->integer('apply_to_transaction_id') ?: null,
+                $request->flow(),
             );
         } catch (InvalidArgumentException $exception) {
             return back()->withErrors($this->mapServiceError($exception));
@@ -115,6 +117,10 @@ class CategoryRuleController extends Controller
 
         /** @var array{pattern?: string, category_id?: int, priority?: int, is_active?: bool} $data */
         $data = $request->validated();
+
+        if ($request->has('flow')) {
+            $data['flow'] = $request->flow();
+        }
 
         try {
             $this->rules->update($categoryRule, $data);
@@ -154,7 +160,9 @@ class CategoryRuleController extends Controller
         }
 
         $label = (string) request()->input('label', '');
-        $matched = $this->matcher->match($user, $label);
+        $amountInput = request()->input('amount');
+        $amount = is_numeric($amountInput) ? (float) $amountInput : null;
+        $matched = $this->matcher->match($user, $label, $amount);
 
         return response()->json([
             'tokens' => LabelTokenizer::tokenize($label),
@@ -176,6 +184,7 @@ class CategoryRuleController extends Controller
         return [
             'id' => $rule->id,
             'pattern' => $rule->pattern,
+            'flow' => $rule->flow?->value,
             'priority' => $rule->priority,
             'is_active' => $rule->is_active,
             'category_id' => $rule->category_id,

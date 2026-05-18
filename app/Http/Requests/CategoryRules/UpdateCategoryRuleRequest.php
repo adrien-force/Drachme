@@ -31,8 +31,22 @@ class UpdateCategoryRuleRequest extends FormRequest
                 'integer',
                 Rule::exists('categories', 'id')->where(fn ($query) => $query->where('user_id', $userId)),
             ],
+            'flow' => ['sometimes', 'nullable', Rule::in(['credit', 'debit'])],
             'priority' => ['sometimes', 'integer', 'min:0', 'max:65535'],
             'is_active' => ['sometimes', 'boolean'],
         ];
+    }
+
+    public function flow(): ?\App\Enums\CategoryRuleFlow
+    {
+        if (! $this->has('flow')) {
+            return null;
+        }
+
+        $value = $this->input('flow');
+
+        return is_string($value) && $value !== ''
+            ? \App\Enums\CategoryRuleFlow::from($value)
+            : null;
     }
 }

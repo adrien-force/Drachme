@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Plus } from 'lucide-react';
+import { Plus, Sparkles } from 'lucide-react';
 
 import { FadeIn } from '@/components/motion/fade-in';
 import { GlassPanel } from '@/components/glass-panel';
@@ -12,6 +12,7 @@ import type { TransactionsIndexPageProps } from '@/types/transaction.types';
 
 export default function TransactionsIndex({
     transactions,
+    listSummary,
     sankeyFlow,
     categoryOptions,
     accountOptions,
@@ -44,18 +45,29 @@ export default function TransactionsIndex({
                             {t('transactions.description')}
                         </p>
                     </div>
-                    <Button asChild>
-                        <Link href="/transactions/create">
-                            <Plus className="mr-2 size-4" />
-                            {t('transactions.create')}
-                        </Link>
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                        {uncategorizedCount > 0 ? (
+                            <Button asChild variant="default">
+                                <Link href="/transactions/triage">
+                                    <Sparkles className="mr-2 size-4" />
+                                    {t('transactions.triage.title')}
+                                </Link>
+                            </Button>
+                        ) : null}
+                        <Button asChild variant="outline">
+                            <Link href="/transactions/create">
+                                <Plus className="mr-2 size-4" />
+                                {t('transactions.create')}
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
 
                 <FadeIn>
                     <GlassPanel className="p-4 md:p-6">
                         <TransactionsIndexPanel
                             transactions={transactions}
+                            listSummary={listSummary}
                             sankeyFlow={sankeyFlow}
                             filters={filters}
                             categoryOptions={categoryOptions}

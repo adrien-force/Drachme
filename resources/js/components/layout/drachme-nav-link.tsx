@@ -10,9 +10,14 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useSidebar } from '@/components/ui/sidebar';
-import { useCurrentUrl } from '@/hooks/use-current-url';
+import { appNavHrefs } from '@/config/app-navigation';
+import {
+    normalizePathname,
+    resolveActiveNavHref,
+    useCurrentUrl,
+} from '@/hooks/use-current-url';
 import { useTranslation } from '@/hooks/use-translation';
-import { cn } from '@/lib/utils';
+import { cn, toUrl } from '@/lib/utils';
 
 export type DrachmeNavLinkProps = {
     titleKey: string;
@@ -28,10 +33,13 @@ export function DrachmeNavLink({
     badge,
 }: DrachmeNavLinkProps) {
     const { t } = useTranslation();
-    const { isCurrentUrl } = useCurrentUrl();
+    const { currentUrl } = useCurrentUrl();
     const { state, isMobile } = useSidebar();
     const title = t(titleKey);
-    const active = isCurrentUrl(href, undefined, true);
+    const activeHref = resolveActiveNavHref(currentUrl, appNavHrefs);
+    const active =
+        activeHref !== null &&
+        normalizePathname(toUrl(href)) === normalizePathname(activeHref);
     const iconOnly = state === 'collapsed' && !isMobile;
 
     const link = (

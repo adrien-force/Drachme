@@ -146,6 +146,33 @@ class TransactionListTest extends TestCase
         ]);
     }
 
+    public function test_list_summary_reflects_all_filtered_transactions_not_current_page(): void
+    {
+        $user = User::factory()->create();
+        $account = Account::factory()->for($user)->create();
+
+        Transaction::factory()->for($user)->for($account)->count(30)->create([
+            'amount' => -10,
+        ]);
+
+        $this
+            ->actingAs($user)
+            ->get(route('transactions.index', ['per_page' => 25, 'page' => 1]))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->has('transactions.data', 25)
+                ->where('listSummary.count', 30)
+                ->where('listSummary.amount_total', -300.0));
+
+        $this
+            ->actingAs($user)
+            ->get(route('transactions.index', ['search' => 'Carrefour']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('listSummary.count', 0)
+                ->where('listSummary.amount_total', 0.0));
+    }
+
     public function test_sankey_reflects_all_filtered_transactions_not_current_page(): void
     {
         $user = User::factory()->create();

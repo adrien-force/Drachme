@@ -40,6 +40,7 @@ class TransactionService
         $categoryId = $this->resolveCategoryId(
             $user,
             $data['label'],
+            $amount,
             $data['category_id'] ?? null,
             ($data['apply_category_rules'] ?? true) === true,
         );
@@ -89,6 +90,7 @@ class TransactionService
         $categoryId = $this->resolveCategoryId(
             $user,
             $data['label'],
+            $amount,
             $data['category_id'] ?? null,
             ($data['apply_category_rules'] ?? false) === true,
         );
@@ -212,6 +214,7 @@ class TransactionService
     private function resolveCategoryId(
         User $user,
         string $label,
+        string $amount,
         ?int $explicitCategoryId,
         bool $applyRules,
     ): ?int {
@@ -232,6 +235,6 @@ class TransactionService
             return null;
         }
 
-        return $this->categoryMatcher->match($user, $label)?->id;
+        return $this->categoryMatcher->match($user, $label, $amount)?->id;
     }
 }

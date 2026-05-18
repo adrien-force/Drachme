@@ -137,8 +137,17 @@ export function selectOptionAncestorRootIds(
     return selectOptionAncestorIds(tree, categoryId);
 }
 
+/** Case- and accent-insensitive fold for search (é, è, ê → e). */
+export function normalizeSearchText(value: string): string {
+    return value
+        .trim()
+        .toLocaleLowerCase()
+        .normalize('NFD')
+        .replace(/\p{M}/gu, '');
+}
+
 function normalizeCategorySearchQuery(query: string): string {
-    return query.trim().toLocaleLowerCase();
+    return normalizeSearchText(query);
 }
 
 /** Keeps nodes whose name matches or that have a matching descendant. */
@@ -154,7 +163,7 @@ export function filterSelectOptionTree(
     const visit = (nodes: CategorySelectTreeNode[]): CategorySelectTreeNode[] =>
         nodes.flatMap((node) => {
             const filteredChildren = visit(node.children);
-            const selfMatches = node.name.toLocaleLowerCase().includes(normalized);
+            const selfMatches = normalizeSearchText(node.name).includes(normalized);
 
             if (!selfMatches && filteredChildren.length === 0) {
                 return [];

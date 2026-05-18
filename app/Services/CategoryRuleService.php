@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\CategoryRuleFlow;
 use App\Models\Category;
 use App\Models\CategoryRule;
 use App\Models\Transaction;
@@ -21,6 +22,7 @@ class CategoryRuleService
      * @param array{
      *     pattern: string,
      *     category_id: int,
+     *     flow?: CategoryRuleFlow|null,
      *     priority?: int,
      *     is_active?: bool,
      * } $data
@@ -33,6 +35,7 @@ class CategoryRuleService
         return CategoryRule::query()->create([
             'user_id' => $user->id,
             'pattern' => $pattern,
+            'flow' => $data['flow'] ?? null,
             'category_id' => $category->id,
             'priority' => $data['priority'] ?? 0,
             'is_active' => $data['is_active'] ?? true,
@@ -48,6 +51,7 @@ class CategoryRuleService
         array $selectedTokens,
         int $categoryId,
         ?int $applyToTransactionId = null,
+        ?CategoryRuleFlow $flow = null,
     ): CategoryRule {
         $available = LabelTokenizer::tokenize($label);
         $valid = [];
@@ -61,9 +65,18 @@ class CategoryRuleService
             throw new InvalidArgumentException('category_rule_tokens_invalid');
         }
 
+        if ($flow === null && $applyToTransactionId !== null) {
+            $source = Transaction::query()
+                ->where('user_id', $user->id)
+                ->whereKey($applyToTransactionId)
+                ->first();
+            $flow = CategoryRuleFlow::fromAmount($source?->amount);
+        }
+
         $rule = $this->create($user, [
             'pattern' => LabelTokenizer::patternFromTokens($valid),
             'category_id' => $categoryId,
+            'flow' => $flow,
         ]);
 
         if ($applyToTransactionId !== null) {
@@ -77,6 +90,7 @@ class CategoryRuleService
      * @param array{
      *     pattern?: string,
      *     category_id?: int,
+     *     flow?: CategoryRuleFlow|null,
      *     priority?: int,
      *     is_active?: bool,
      * } $data
@@ -93,6 +107,10 @@ class CategoryRuleService
 
         if (array_key_exists('category_id', $data)) {
             $updates['category_id'] = $this->resolveCategory($user, (int) $data['category_id'])->id;
+        }
+
+        if (array_key_exists('flow', $data)) {
+            $updates['flow'] = $data['flow'];
         }
 
         if (array_key_exists('priority', $data)) {
@@ -124,7 +142,7 @@ class CategoryRuleService
             throw new InvalidArgumentException('category_rule_transaction_forbidden');
         }
 
-        $matched = $this->matcher->match($user, $transaction->label);
+        $matched = $this->matcher->match($user, $transaction->label, $transaction->amount);
         if ($matched?->id === $rule->category_id) {
             $transaction->update(['category_id' => $rule->category_id]);
         }

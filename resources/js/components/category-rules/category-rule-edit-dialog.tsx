@@ -1,6 +1,7 @@
 import { useForm } from '@inertiajs/react';
 import { useEffect } from 'react';
 
+import { CategoryRuleFlowSelect } from '@/components/category-rules/category-rule-flow-select';
 import { CategorySelect } from '@/components/categories/category-select';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -16,7 +17,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useTranslation } from '@/hooks/use-translation';
 import type { CategorySelectOption } from '@/types/category.types';
-import type { CategoryRuleRecord } from '@/types/category-rule.types';
+import type {
+    CategoryRuleFlow,
+    CategoryRuleRecord,
+} from '@/types/category-rule.types';
 
 type Props = {
     rule: CategoryRuleRecord | null;
@@ -36,6 +40,7 @@ export function CategoryRuleEditDialog({
     const form = useForm({
         pattern: '',
         category_id: null as number | null,
+        flow: null as CategoryRuleFlow,
         priority: 0,
         is_active: true,
     });
@@ -48,6 +53,7 @@ export function CategoryRuleEditDialog({
         form.setData({
             pattern: rule.pattern,
             category_id: rule.category_id,
+            flow: rule.flow,
             priority: rule.priority,
             is_active: rule.is_active,
         });
@@ -97,6 +103,18 @@ export function CategoryRuleEditDialog({
                             noneLabel={t('category_rules.choose_category')}
                         />
                         <InputError message={form.errors.category_id} />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="edit-rule-flow">
+                            {t('category_rules.flow')}
+                        </Label>
+                        <CategoryRuleFlowSelect
+                            id="edit-rule-flow"
+                            value={form.data.flow}
+                            onChange={(flow) => form.setData('flow', flow)}
+                        />
+                        <InputError message={form.errors.flow} />
                     </div>
 
                     <div className="space-y-2">

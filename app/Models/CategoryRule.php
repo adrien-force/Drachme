@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\CategoryRuleFlow;
 use App\Models\Concerns\BelongsToUser;
 use Database\Factories\CategoryRuleFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -14,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable([
     'user_id',
     'pattern',
+    'flow',
     'category_id',
     'priority',
     'is_active',
@@ -29,6 +31,7 @@ class CategoryRule extends Model
     protected function casts(): array
     {
         return [
+            'flow' => CategoryRuleFlow::class,
             'priority' => 'integer',
             'is_active' => 'boolean',
         ];

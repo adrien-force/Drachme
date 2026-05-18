@@ -329,7 +329,7 @@ class RecurringDetector
             return (int) array_key_first($categoryCounts);
         }
 
-        $matched = $this->categoryMatcher->match($user, $group[0]->label);
+        $matched = $this->categoryMatcher->match($user, $group[0]->label, $group[0]->amount);
 
         return $matched?->id;
     }

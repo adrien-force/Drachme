@@ -48,7 +48,7 @@ class TransactionFormPresenter
 
         $suggestedCategory = null;
         if ($user !== null && $transaction !== null && $transaction->category_id === null) {
-            $matched = $this->categoryMatcher->match($user, $transaction->label);
+            $matched = $this->categoryMatcher->match($user, $transaction->label, $transaction->amount);
             if ($matched !== null) {
                 $suggestedCategory = [
                     'id' => $matched->id,

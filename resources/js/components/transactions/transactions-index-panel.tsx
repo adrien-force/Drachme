@@ -7,16 +7,18 @@ import {
     ChevronRight,
     ListFilter,
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { CategoryFilterSelect } from '@/components/categories/category-select';
 import { EntityLogo } from '@/components/entity-logo';
 import { RecurringBadge } from '@/components/recurring/recurring-badge';
 import { ApplyCategoryRulesButton } from '@/components/transactions/apply-category-rules-button';
+import { TransactionsBulkActionBar } from '@/components/transactions/transactions-bulk-action-bar';
 import { TransactionsSankeyChart } from '@/components/transactions/transactions-sankey-chart';
 import { TransactionInlineCategorySelect } from '@/components/transactions/transaction-inline-category-select';
 import { TransactionTypeBadge } from '@/components/transactions/transaction-type-badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Collapsible,
     CollapsibleContent,
@@ -43,6 +45,7 @@ import type {
     PaginatedTransactions,
     TransactionAccountOption,
     TransactionListFilters,
+    TransactionListSummary,
     TransactionSankeyFlow,
     TransactionTypeOption,
 } from '@/types/transaction.types';
@@ -69,6 +72,7 @@ function SortIcon({ column, sort, order }: SortIconProps) {
 
 type TransactionsIndexPanelProps = {
     transactions: PaginatedTransactions;
+    listSummary: TransactionListSummary;
     sankeyFlow: TransactionSankeyFlow;
     filters: TransactionListFilters;
     categoryOptions: CategorySelectOption[];
@@ -80,6 +84,7 @@ type TransactionsIndexPanelProps = {
 
 export function TransactionsIndexPanel({
     transactions,
+    listSummary,
     sankeyFlow,
     filters,
     categoryOptions,
@@ -91,10 +96,37 @@ export function TransactionsIndexPanel({
     const { t } = useTranslation();
     const [filtersOpen, setFiltersOpen] = useState(false);
     const [search, setSearch] = useState(filters.search);
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
+
+    const pageIds = useMemo(
+        () => transactions.data.map((transaction) => transaction.id),
+        [transactions.data],
+    );
+
+    const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+
+    const uncategorizedSelectedCount = useMemo(
+        () =>
+            transactions.data.filter(
+                (transaction) =>
+                    selectedIdSet.has(transaction.id) &&
+                    transaction.category_id === null,
+            ).length,
+        [transactions.data, selectedIdSet],
+    );
+
+    const allPageSelected =
+        pageIds.length > 0 && pageIds.every((id) => selectedIdSet.has(id));
+    const somePageSelected =
+        !allPageSelected && pageIds.some((id) => selectedIdSet.has(id));
 
     useEffect(() => {
         setSearch(filters.search);
     }, [filters.search]);
+
+    useEffect(() => {
+        setSelectedIds([]);
+    }, [pageIds]);
 
     const navigate = useCallback(
         (next: Partial<TransactionListFilters>) => {
@@ -141,6 +173,32 @@ export function TransactionsIndexPanel({
 
     const { meta } = transactions;
 
+    const toggleSelectAllOnPage = () => {
+        if (allPageSelected) {
+            setSelectedIds((current) =>
+                current.filter((id) => !pageIds.includes(id)),
+            );
+
+            return;
+        }
+
+        setSelectedIds((current) => [
+            ...new Set([...current, ...pageIds]),
+        ]);
+    };
+
+    const toggleSelectOne = (transactionId: number) => {
+        setSelectedIds((current) =>
+            current.includes(transactionId)
+                ? current.filter((id) => id !== transactionId)
+                : [...current, transactionId],
+        );
+    };
+
+    const clearSelection = () => {
+        setSelectedIds([]);
+    };
+
     const resetFilters = () => {
         setSearch('');
         navigate({
@@ -158,7 +216,12 @@ export function TransactionsIndexPanel({
     };
 
     return (
-        <div className="flex flex-col gap-4">
+        <div
+            className={cn(
+                'flex flex-col gap-4',
+                selectedIds.length > 0 && 'pb-28',
+            )}
+        >
             <Collapsible
                 open={filtersOpen}
                 onOpenChange={setFiltersOpen}
@@ -432,7 +495,7 @@ export function TransactionsIndexPanel({
 
             <TransactionsSankeyChart flow={sankeyFlow} />
 
-            {transactions.data.length === 0 ? (
+            {meta.total === 0 ? (
                 <p className="text-muted-foreground text-sm">
                     {hasActiveFilters
                         ? t('accounts.transactions_list.no_results')
@@ -440,10 +503,40 @@ export function TransactionsIndexPanel({
                 </p>
             ) : (
                 <>
+                    <div className="flex flex-wrap items-baseline justify-between gap-2 rounded-xl border border-white/10 bg-foreground/[0.02] px-4 py-3">
+                        <p className="text-sm font-medium">
+                            {t('transactions.filtered_count', {
+                                count: listSummary.count,
+                            })}
+                        </p>
+                        <p className="font-mono text-sm font-semibold tabular-nums">
+                            {t('transactions.filtered_amount_total', {
+                                total: formatCurrency(listSummary.amount_total, {
+                                    precise: true,
+                                }),
+                            })}
+                        </p>
+                    </div>
+
                     <div className="overflow-x-auto rounded-xl border border-white/10">
                         <table className="w-full min-w-[960px] text-sm">
                             <thead>
                                 <tr className="text-muted-foreground border-border/60 border-b text-left text-xs uppercase tracking-wide">
+                                    <th className="w-10 px-2 py-3">
+                                        <Checkbox
+                                            checked={
+                                                allPageSelected
+                                                    ? true
+                                                    : somePageSelected
+                                                      ? 'indeterminate'
+                                                      : false
+                                            }
+                                            onCheckedChange={toggleSelectAllOnPage}
+                                            aria-label={t(
+                                                'transactions.bulk.select_all_page',
+                                            )}
+                                        />
+                                    </th>
                                     <th className="px-4 py-3">
                                         <button
                                             type="button"
@@ -533,11 +626,30 @@ export function TransactionsIndexPanel({
                                 </tr>
                             </thead>
                             <tbody>
-                                {transactions.data.map((transaction) => (
+                                {transactions.data.map((transaction) => {
+                                    const isSelected = selectedIdSet.has(
+                                        transaction.id,
+                                    );
+
+                                    return (
                                     <tr
                                         key={transaction.id}
-                                        className="border-border/40 hover:bg-muted/30 border-b last:border-0"
+                                        className={cn(
+                                            'border-border/40 hover:bg-muted/30 border-b last:border-0',
+                                            isSelected && 'bg-primary/5',
+                                        )}
                                     >
+                                        <td className="px-2 py-3">
+                                            <Checkbox
+                                                checked={isSelected}
+                                                onCheckedChange={() =>
+                                                    toggleSelectOne(
+                                                        transaction.id,
+                                                    )
+                                                }
+                                                aria-label={transaction.label}
+                                            />
+                                        </td>
                                         <td className="text-muted-foreground px-4 py-3 tabular-nums">
                                             {transaction.date}
                                         </td>
@@ -590,7 +702,8 @@ export function TransactionsIndexPanel({
                                             })}
                                         </td>
                                     </tr>
-                                ))}
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
@@ -644,6 +757,13 @@ export function TransactionsIndexPanel({
                     </div>
                 </>
             )}
+
+            <TransactionsBulkActionBar
+                selectedIds={selectedIds}
+                uncategorizedSelectedCount={uncategorizedSelectedCount}
+                categoryOptions={categoryOptions}
+                onClearSelection={clearSelection}
+            />
         </div>
     );
 }

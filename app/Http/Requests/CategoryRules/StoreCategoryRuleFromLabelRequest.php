@@ -36,7 +36,17 @@ class StoreCategoryRuleFromLabelRequest extends FormRequest
                 'integer',
                 Rule::exists('transactions', 'id')->where(fn ($query) => $query->where('user_id', $userId)),
             ],
+            'flow' => ['nullable', Rule::in(['credit', 'debit'])],
         ];
+    }
+
+    public function flow(): ?\App\Enums\CategoryRuleFlow
+    {
+        $value = $this->input('flow');
+
+        return is_string($value) && $value !== ''
+            ? \App\Enums\CategoryRuleFlow::from($value)
+            : null;
     }
 
     /**

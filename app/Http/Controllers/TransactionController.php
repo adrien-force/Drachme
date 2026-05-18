@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Transactions\ApplyCategoryRulesRequest;
+use App\Http\Requests\Transactions\BulkTransactionIdsRequest;
+use App\Http\Requests\Transactions\BulkUpdateTransactionCategoryRequest;
 use App\Http\Requests\Transactions\IndexTransactionsRequest;
 use App\Http\Requests\Transactions\StoreTransactionRequest;
 use App\Http\Requests\Transactions\UpdateTransactionCategoryRequest;
@@ -15,6 +17,7 @@ use App\Services\AccountService;
 use App\Services\CategoryService;
 use App\Http\Requests\Transactions\MarkTransactionRecurringRequest;
 use App\Services\RecurringPatternService;
+use App\Services\TransactionBulkService;
 use App\Services\TransactionCategoryRuleApplier;
 use App\Services\TransactionFormPresenter;
 use App\Services\TransactionListService;
@@ -39,6 +42,7 @@ class TransactionController extends Controller
         private readonly TransactionSankeyService $transactionSankey,
         private readonly CategoryService $categories,
         private readonly TransactionCategoryRuleApplier $categoryRuleApplier,
+        private readonly TransactionBulkService $transactionBulk,
         private readonly RecurringPatternService $recurringPatterns,
         private readonly AccountService $accounts,
     ) {}
@@ -56,6 +60,12 @@ class TransactionController extends Controller
         $paginator = $user !== null
             ? $this->transactionList->paginateForUser($user, $listFilters)
             : null;
+        $listSummary = $paginator !== null && $user !== null
+            ? [
+                'count' => $paginator->total(),
+                'amount_total' => $this->transactionList->sumAmountForUser($user, $listFilters),
+            ]
+            : ['count' => 0, 'amount_total' => 0.0];
 
         $transactionEdit = $this->resolveTransactionEditPayload($request);
 
@@ -75,6 +85,7 @@ class TransactionController extends Controller
             : [];
 
         return Inertia::render('transactions/transactions-index', [
+            'listSummary' => $listSummary,
             'transactions' => $paginator !== null
                 ? $this->formPresenter->serializePaginator($paginator)
                 : ['data' => [], 'meta' => [
@@ -115,6 +126,74 @@ class TransactionController extends Controller
             'message' => __('ui.transactions.rules_bulk_applied', [
                 'matched' => $result['matched'],
                 'scanned' => $result['scanned'],
+            ]),
+        ]);
+
+        return back();
+    }
+
+    public function bulkUpdateCategory(
+        BulkUpdateTransactionCategoryRequest $request,
+    ): RedirectResponse {
+        $user = $request->user();
+        if ($user === null) {
+            abort(403);
+        }
+
+        $updated = $this->transactionBulk->updateCategory(
+            $user,
+            $request->transactionIds(),
+            $request->categoryId(),
+        );
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('ui.transactions.bulk.category_updated', [
+                'count' => $updated,
+            ]),
+        ]);
+
+        return back();
+    }
+
+    public function bulkApplyCategoryRules(
+        BulkTransactionIdsRequest $request,
+    ): RedirectResponse {
+        $user = $request->user();
+        if ($user === null) {
+            abort(403);
+        }
+
+        $result = $this->transactionBulk->applyCategoryRules(
+            $user,
+            $request->transactionIds(),
+        );
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('ui.transactions.bulk.rules_applied', [
+                'matched' => $result['matched'],
+                'scanned' => $result['scanned'],
+            ]),
+        ]);
+
+        return back();
+    }
+
+    public function bulkDestroy(BulkTransactionIdsRequest $request): RedirectResponse
+    {
+        $user = $request->user();
+        if ($user === null) {
+            abort(403);
+        }
+
+        $result = $this->transactionBulk->delete($user, $request->transactionIds());
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('ui.transactions.bulk.deleted', [
+                'deleted' => $result['deleted'],
+                'skipped' => $result['skipped'],
             ]),
         ]);
 

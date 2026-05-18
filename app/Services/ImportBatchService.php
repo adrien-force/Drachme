@@ -493,7 +493,7 @@ class ImportBatchService
             'label' => $label,
             'amount' => $amount,
             'type' => $this->transactionType($amount),
-            'category_id' => $this->categoryMatcher->match($user, $label)?->id,
+            'category_id' => $this->categoryMatcher->match($user, $label, $amount)?->id,
             'import_batch_id' => $batch->id,
             'import_hash' => (string) ($row['import_hash'] ?? ''),
         ]);

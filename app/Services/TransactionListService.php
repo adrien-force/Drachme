@@ -38,11 +38,9 @@ class TransactionListService
      */
     public function paginateForUser(User $user, array $filterParams): LengthAwarePaginator
     {
-        $query = Transaction::query()
-            ->with(['user:id', 'account:id,name,logo_path', 'category:id,name,color'])
-            ->where('user_id', $user->id);
+        $query = $this->filteredQueryForUser($user, $filterParams)
+            ->with(['user:id', 'account:id,name,logo_path', 'category:id,name,color']);
 
-        $this->filters->apply($query, $user, $filterParams);
         $this->filters->applySorting($query, $filterParams);
 
         $perPage = $filterParams['per_page'] ?? 50;
@@ -51,6 +49,51 @@ class TransactionListService
         return $query
             ->paginate($perPage, ['*'], 'page', $page)
             ->withQueryString();
+    }
+
+    /**
+     * Sum of amounts for all rows matching the filters (ignores pagination and sort).
+     *
+     * @param  array{
+     *     search?: string|null,
+     *     date_from?: string|null,
+     *     date_to?: string|null,
+     *     type?: string|null,
+     *     flow?: string|null,
+     *     category_id?: int|string|null,
+     *     account_id?: int|string|null,
+     *     amount_min?: float|string|null,
+     *     amount_max?: float|string|null,
+     * }  $filterParams
+     */
+    public function sumAmountForUser(User $user, array $filterParams): float
+    {
+        $sum = $this->filteredQueryForUser($user, $filterParams)->sum('amount');
+
+        return (float) $sum;
+    }
+
+    /**
+     * @param  array{
+     *     search?: string|null,
+     *     date_from?: string|null,
+     *     date_to?: string|null,
+     *     type?: string|null,
+     *     flow?: string|null,
+     *     category_id?: int|string|null,
+     *     account_id?: int|string|null,
+     *     amount_min?: float|string|null,
+     *     amount_max?: float|string|null,
+     * }  $filterParams
+     *
+     * @return Builder<Transaction>
+     */
+    private function filteredQueryForUser(User $user, array $filterParams): Builder
+    {
+        $query = Transaction::query()->where('user_id', $user->id);
+        $this->filters->apply($query, $user, $filterParams);
+
+        return $query;
     }
 
     /**
