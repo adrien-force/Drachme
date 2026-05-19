@@ -54,10 +54,20 @@ class CategoryRuleService
         ?CategoryRuleFlow $flow = null,
     ): CategoryRule {
         $available = LabelTokenizer::tokenize($label);
+        $availableByLower = [];
+        foreach ($available as $token) {
+            $availableByLower[mb_strtolower($token)] = $token;
+        }
+
         $valid = [];
         foreach ($selectedTokens as $token) {
-            if (in_array($token, $available, true)) {
-                $valid[] = $token;
+            $lower = mb_strtolower(trim($token));
+            if ($lower === '') {
+                continue;
+            }
+
+            if (isset($availableByLower[$lower])) {
+                $valid[] = $availableByLower[$lower];
             }
         }
 
