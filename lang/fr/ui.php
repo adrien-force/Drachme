@@ -201,6 +201,12 @@ return [
             'next' => 'Suivant',
             'page_of' => 'Page :page / :last',
         ],
+        'invest_kind' => 'Nature du portefeuille',
+        'invest_kind_hint' => 'Actions et ETF, ou matières premières détenues en grammes.',
+        'invest_kinds' => [
+            'securities' => 'Actions / ETF',
+            'commodities' => 'Matières premières',
+        ],
         'types' => [
             'checking' => 'Compte courant (débit)',
             'savings' => 'Épargne',
@@ -208,6 +214,9 @@ return [
             'credit' => 'Crédit / prêt',
             'credit_card' => 'Carte de crédit',
             'cash' => 'Espèces',
+        ],
+        'validation' => [
+            'invest_kind_locked' => 'Supprimez toutes les positions avant de changer la nature du portefeuille.',
         ],
         'credit_card_help' => [
             'short' => '2 imports distincts (carte + courant), puis rapprochez le prélèvement mensuel.',
@@ -353,10 +362,20 @@ return [
         'market_symbol' => 'Symbole marché',
         'market_symbol_placeholder' => 'IBM, IWDA.AS…',
         'market_symbol_hint' => 'Optionnel : l\'ISIN est résolu via OpenFIGI (ex. WPEA.PA). Sinon ticker Yahoo (ex. IWDA.AS).',
+        'commodity_dialog_description' => 'Saisissez la matière, la quantité en grammes et le cours au gramme. Pour l\'or ou l\'argent cotés (ex. XAUEUR), ajoutez le symbole pour le graphique et l\'actualisation automatique.',
+        'commodity_market_symbol_hint' => 'Optionnel — ticker Yahoo de la matière cotée (ex. XAUEUR pour l\'or en euros).',
+        'commodity_market_symbol_placeholder' => 'XAUEUR, XAGEUR…',
+        'commodity_market_symbol_required' => 'Ajoutez un symbole marché (ex. XAUEUR) pour actualiser le cours, ou saisissez le cours manuellement.',
+        'commodity_label' => 'Matière',
+        'commodity_label_placeholder' => 'Or, argent…',
+        'quantity_grams' => 'Quantité (g)',
+        'price_per_gram' => 'Cours au gramme (PRU)',
+        'last_price_per_gram' => 'Dernier cours au gramme',
         'validation' => [
             'isin_format' => 'L\'ISIN doit contenir exactement 12 caractères alphanumériques.',
             'isin_unique' => 'Cet ISIN existe déjà sur ce compte.',
             'market_symbol_format' => 'Symbole invalide (lettres, chiffres, point ou tiret — ex. IBM, IWDA.AS).',
+            'commodity_label_unique' => 'Cette matière existe déjà sur ce compte.',
         ],
     ],
     'categories' => [

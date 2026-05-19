@@ -27,6 +27,10 @@ type FormMode =
     | { type: 'create' }
     | { type: 'edit'; position: PositionRecord };
 
+function positionHasMarketChart(position: PositionRecord): boolean {
+    return !position.is_commodity || position.has_market_quotes;
+}
+
 export default function PositionsIndex({
     account,
     positions,
@@ -35,6 +39,7 @@ export default function PositionsIndex({
     pageDescription,
 }: PositionsIndexPageProps) {
     const { t } = useTranslation();
+    const isCommodity = account.invest_kind === 'commodities';
     const [formMode, setFormMode] = useState<FormMode | null>(null);
     const [deleteTarget, setDeleteTarget] = useState<PositionRecord | null>(null);
 
@@ -75,16 +80,27 @@ export default function PositionsIndex({
     };
 
     const submitForm = () => {
-        const payload = {
-            isin: form.data.isin.trim().toUpperCase(),
-            market_symbol: form.data.market_symbol.trim() === ''
+        const marketSymbol =
+            form.data.market_symbol.trim() === ''
                 ? null
-                : form.data.market_symbol.trim().toUpperCase(),
-            label: form.data.label,
-            quantity: form.data.quantity,
-            average_price: form.data.average_price,
-            last_price: form.data.last_price === '' ? null : form.data.last_price,
-        };
+                : form.data.market_symbol.trim().toUpperCase();
+
+        const payload = isCommodity
+            ? {
+                  label: form.data.label,
+                  market_symbol: marketSymbol,
+                  quantity: form.data.quantity,
+                  average_price: form.data.average_price,
+                  last_price: form.data.last_price === '' ? null : form.data.last_price,
+              }
+            : {
+                  isin: form.data.isin.trim().toUpperCase(),
+                  market_symbol: marketSymbol,
+                  label: form.data.label,
+                  quantity: form.data.quantity,
+                  average_price: form.data.average_price,
+                  last_price: form.data.last_price === '' ? null : form.data.last_price,
+              };
 
         if (formMode?.type === 'edit') {
             form.transform(() => payload);
@@ -193,26 +209,40 @@ export default function PositionsIndex({
                                 >
                                     <div className="min-w-0 space-y-1">
                                         <p className="font-medium">{position.label}</p>
-                                        <p className="text-muted-foreground font-mono text-xs">
-                                            {position.isin}
-                                            {position.market_symbol ? (
-                                                <>
-                                                    {' · '}
+                                        {isCommodity ? (
+                                            position.market_symbol ? (
+                                                <p className="text-muted-foreground font-mono text-xs">
                                                     {position.market_symbol}
-                                                </>
-                                            ) : null}
-                                        </p>
+                                                </p>
+                                            ) : null
+                                        ) : (
+                                            <p className="text-muted-foreground font-mono text-xs">
+                                                {position.isin}
+                                                {position.market_symbol ? (
+                                                    <>
+                                                        {' · '}
+                                                        {position.market_symbol}
+                                                    </>
+                                                ) : null}
+                                            </p>
+                                        )}
                                         <p className="text-muted-foreground text-sm">
-                                            {t('positions.quantity')}:{' '}
+                                            {isCommodity
+                                                ? t('positions.quantity_grams')
+                                                : t('positions.quantity')}
+                                            :{' '}
                                             <span className="tabular-nums">
                                                 {position.quantity}
+                                                {isCommodity ? ' g' : ''}
                                             </span>
                                         </p>
                                     </div>
                                     <div className="flex flex-col items-start gap-2 sm:items-end">
                                         <div className="flex items-center gap-2">
                                             <span className="text-muted-foreground text-xs">
-                                                {t('positions.unit_price')}
+                                                {isCommodity
+                                                    ? t('positions.price_per_gram')
+                                                    : t('positions.unit_price')}
                                             </span>
                                             <span className="tabular-nums">
                                                 {formatCurrency(position.unit_price, {
@@ -231,19 +261,21 @@ export default function PositionsIndex({
                                             })}
                                         </p>
                                         <div className="flex gap-1">
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="icon"
-                                                asChild
-                                            >
-                                                <Link
-                                                    href={showPosition.url(position.id)}
-                                                    title={t('positions.open_detail')}
+                                            {positionHasMarketChart(position) ? (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    asChild
                                                 >
-                                                    <LineChart className="size-4" />
-                                                </Link>
-                                            </Button>
+                                                    <Link
+                                                        href={showPosition.url(position.id)}
+                                                        title={t('positions.open_detail')}
+                                                    >
+                                                        <LineChart className="size-4" />
+                                                    </Link>
+                                                </Button>
+                                            ) : null}
                                             <Button
                                                 type="button"
                                                 variant="ghost"
@@ -277,11 +309,17 @@ export default function PositionsIndex({
                                 ? t('positions.edit')
                                 : t('positions.add')}
                         </DialogTitle>
-                        <DialogDescription>{t('positions.isin_hint')}</DialogDescription>
+                        <DialogDescription>
+                            {isCommodity
+                                ? t('positions.commodity_dialog_description')
+                                : t('positions.isin_hint')}
+                        </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="position-isin">{t('positions.isin')}</Label>
+                        {!isCommodity ? (
+                            <>
+                                <div className="space-y-2">
+                                    <Label htmlFor="position-isin">{t('positions.isin')}</Label>
                             <Input
                                 id="position-isin"
                                 value={form.data.isin}
@@ -313,29 +351,64 @@ export default function PositionsIndex({
                                 {t('positions.market_symbol_hint')}
                             </p>
                             <InputError message={form.errors.market_symbol} />
-                        </div>
+                                </div>
+                            </>
+                        ) : null}
                         <div className="space-y-2">
-                            <Label htmlFor="position-label">{t('positions.label')}</Label>
+                            <Label htmlFor="position-label">
+                                {isCommodity
+                                    ? t('positions.commodity_label')
+                                    : t('positions.label')}
+                            </Label>
                             <Input
                                 id="position-label"
                                 value={form.data.label}
-                                placeholder={t('positions.label_placeholder')}
+                                placeholder={
+                                    isCommodity
+                                        ? t('positions.commodity_label_placeholder')
+                                        : t('positions.label_placeholder')
+                                }
                                 onChange={(event) =>
                                     form.setData('label', event.target.value)
                                 }
                             />
                             <InputError message={form.errors.label} />
                         </div>
+                        {isCommodity ? (
+                            <div className="space-y-2">
+                                <Label htmlFor="position-market-symbol-commodity">
+                                    {t('positions.market_symbol')}
+                                </Label>
+                                <Input
+                                    id="position-market-symbol-commodity"
+                                    value={form.data.market_symbol}
+                                    placeholder={t('positions.commodity_market_symbol_placeholder')}
+                                    className="font-mono uppercase"
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'market_symbol',
+                                            event.target.value.toUpperCase(),
+                                        )
+                                    }
+                                />
+                                <p className="text-muted-foreground text-xs">
+                                    {t('positions.commodity_market_symbol_hint')}
+                                </p>
+                                <InputError message={form.errors.market_symbol} />
+                            </div>
+                        ) : null}
                         <div className="grid gap-4 sm:grid-cols-2">
                             <div className="space-y-2">
                                 <Label htmlFor="position-quantity">
-                                    {t('positions.quantity')}
+                                    {isCommodity
+                                        ? t('positions.quantity_grams')
+                                        : t('positions.quantity')}
                                 </Label>
                                 <Input
                                     id="position-quantity"
                                     type="number"
                                     min="0"
-                                    step="any"
+                                    step={isCommodity ? '0.00001' : 'any'}
                                     value={form.data.quantity}
                                     onChange={(event) =>
                                         form.setData('quantity', event.target.value)
@@ -345,7 +418,9 @@ export default function PositionsIndex({
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="position-average-price">
-                                    {t('positions.average_price')}
+                                    {isCommodity
+                                        ? t('positions.price_per_gram')
+                                        : t('positions.average_price')}
                                 </Label>
                                 <Input
                                     id="position-average-price"
@@ -362,7 +437,9 @@ export default function PositionsIndex({
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="position-last-price">
-                                {t('positions.last_price')}
+                                {isCommodity
+                                    ? t('positions.last_price_per_gram')
+                                    : t('positions.last_price')}
                             </Label>
                             <Input
                                 id="position-last-price"

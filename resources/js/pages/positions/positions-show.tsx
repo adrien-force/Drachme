@@ -31,6 +31,15 @@ export default function PositionsShow({
     const [refreshingPrice, setRefreshingPrice] = useState(false);
     const [refreshingHistory, setRefreshingHistory] = useState(false);
 
+    const isCommodity = position.is_commodity;
+    const canRefreshMarket =
+        marketDataConfigured && (!isCommodity || position.has_market_quotes);
+    const refreshDisabledTitle = !marketDataConfigured
+        ? t('investments.market_data_not_configured')
+        : isCommodity && !position.has_market_quotes
+          ? t('positions.commodity_market_symbol_required')
+          : undefined;
+
     return (
         <>
             <Head title={`${position.label} — ${t('positions.show_title')}`} />
@@ -54,9 +63,11 @@ export default function PositionsShow({
                                     <h1 className="text-2xl font-semibold tracking-tight">
                                         {position.label}
                                     </h1>
-                                    <p className="text-muted-foreground mt-1 font-mono text-sm">
-                                        {position.isin}
-                                    </p>
+                                    {!isCommodity ? (
+                                        <p className="text-muted-foreground mt-1 font-mono text-sm">
+                                            {position.isin}
+                                        </p>
+                                    ) : null}
                                     <p className="text-muted-foreground mt-1 text-sm">
                                         {account.name}
                                         {position.market_symbol ? (
@@ -75,15 +86,20 @@ export default function PositionsShow({
                             <GlassPanel className="grid gap-2 p-4 text-sm sm:min-w-56">
                                 <div className="flex justify-between gap-4">
                                     <span className="text-muted-foreground">
-                                        {t('positions.quantity')}
+                                        {isCommodity
+                                            ? t('positions.quantity_grams')
+                                            : t('positions.quantity')}
                                     </span>
                                     <span className="font-medium tabular-nums">
                                         {position.quantity}
+                                        {isCommodity ? ' g' : ''}
                                     </span>
                                 </div>
                                 <div className="flex justify-between gap-4">
                                     <span className="text-muted-foreground">
-                                        {t('positions.average_price')}
+                                        {isCommodity
+                                            ? t('positions.price_per_gram')
+                                            : t('positions.average_price')}
                                     </span>
                                     <span className="tabular-nums">
                                         {formatCurrency(position.average_price, { precise: true })}
@@ -91,7 +107,9 @@ export default function PositionsShow({
                                 </div>
                                 <div className="flex justify-between gap-4">
                                     <span className="text-muted-foreground">
-                                        {t('positions.unit_price')}
+                                        {isCommodity
+                                            ? t('positions.price_per_gram')
+                                            : t('positions.unit_price')}
                                     </span>
                                     <span className="font-medium tabular-nums">
                                         {formatCurrency(position.unit_price, { precise: true })}
@@ -117,12 +135,8 @@ export default function PositionsShow({
                             <Button
                                 type="button"
                                 variant="outline"
-                                disabled={!marketDataConfigured || refreshingPrice}
-                                title={
-                                    marketDataConfigured
-                                        ? undefined
-                                        : t('investments.market_data_not_configured')
-                                }
+                                disabled={!canRefreshMarket || refreshingPrice}
+                                title={refreshDisabledTitle}
                                 onClick={() => {
                                     setRefreshingPrice(true);
                                     router.post(
@@ -143,12 +157,8 @@ export default function PositionsShow({
                             <Button
                                 type="button"
                                 variant="outline"
-                                disabled={!marketDataConfigured || refreshingHistory}
-                                title={
-                                    marketDataConfigured
-                                        ? undefined
-                                        : t('investments.market_data_not_configured')
-                                }
+                                disabled={!canRefreshMarket || refreshingHistory}
+                                title={refreshDisabledTitle}
                                 onClick={() => {
                                     setRefreshingHistory(true);
                                     router.post(

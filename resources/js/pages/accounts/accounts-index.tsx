@@ -198,8 +198,7 @@ export default function AccountsIndex({
                                                 <AccountTypeBadge type={account.type} />
                                             </td>
                                             <td className="px-4 py-3 text-right font-medium tabular-nums">
-                                                {account.type === 'credit_card' ||
-                                                account.type === 'invest' ? (
+                                                {account.type === 'credit_card' ? (
                                                     <div className="flex flex-col items-end gap-0.5">
                                                         <span>
                                                             {formatCurrency(
@@ -208,16 +207,13 @@ export default function AccountsIndex({
                                                             )}
                                                         </span>
                                                         <span className="text-muted-foreground text-xs font-normal">
-                                                            {account.type === 'credit_card'
-                                                                ? t('accounts.current_period_short')
-                                                                : t('investments.positions_value')}
+                                                            {t('accounts.current_period_short')}
                                                         </span>
                                                     </div>
                                                 ) : (
-                                                    formatCurrency(
-                                                        accountDisplayBalance(account),
-                                                        { precise: true },
-                                                    )
+                                                    formatCurrency(accountDisplayBalance(account), {
+                                                        precise: true,
+                                                    })
                                                 )}
                                             </td>
                                             <td className="text-muted-foreground px-4 py-3 tabular-nums">

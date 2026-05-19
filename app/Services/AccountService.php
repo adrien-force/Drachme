@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\AccountType;
+use App\Enums\InvestKind;
 use App\Enums\SettlementPeriodMode;
 use App\Models\Account;
 use App\Models\User;
@@ -44,6 +45,7 @@ class AccountService
             'name' => $data['name'],
             'institution' => $data['institution'] ?? null,
             'type' => $type,
+            'invest_kind' => $this->resolveInvestKind($type, $data),
             'settlement_account_id' => $this->resolveSettlementAccountId($type, $data),
             'billing_day' => $this->resolveBillingDay($type, $data),
             'settlement_label_pattern' => $this->resolveSettlementLabelPattern($type, $data),
@@ -90,6 +92,7 @@ class AccountService
             'name' => $data['name'],
             'institution' => $data['institution'] ?? null,
             'type' => $type,
+            'invest_kind' => $this->resolveInvestKind($type, $data),
             'settlement_account_id' => $this->resolveSettlementAccountId($type, $data),
             'billing_day' => $this->resolveBillingDay($type, $data),
             'settlement_label_pattern' => $this->resolveSettlementLabelPattern($type, $data),
@@ -144,6 +147,27 @@ class AccountService
     public function logoUrl(Account $account): ?string
     {
         return $this->logos->url($account->logo_path);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function resolveInvestKind(AccountType $type, array $data): ?InvestKind
+    {
+        if ($type !== AccountType::Invest) {
+            return null;
+        }
+
+        $raw = $data['invest_kind'] ?? InvestKind::Securities->value;
+
+        if ($raw instanceof InvestKind) {
+            return $raw;
+        }
+
+        return InvestKind::from((string) $raw);
     }
 
     /**

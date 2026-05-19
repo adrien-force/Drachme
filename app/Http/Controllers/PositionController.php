@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Enums\AccountType;
+use App\Enums\InvestKind;
 use App\Http\Requests\Positions\StorePositionRequest;
 use App\Http\Requests\Positions\UpdatePositionRequest;
 use App\Exceptions\MarketDataQuotaExceededException;
@@ -72,6 +73,15 @@ class PositionController extends Controller
         $this->authorize('view', $position);
         $this->abortUnlessInvestAccount($position);
 
+        if ($this->commodityRequiresManualPricing($position)) {
+            Inertia::flash('toast', [
+                'type' => 'warning',
+                'message' => __('ui.positions.commodity_market_symbol_required'),
+            ]);
+
+            return to_route('positions.show', $position);
+        }
+
         try {
             $result = $this->marketData->refreshPosition($position);
 
@@ -100,6 +110,15 @@ class PositionController extends Controller
     {
         $this->authorize('view', $position);
         $this->abortUnlessInvestAccount($position);
+
+        if ($this->commodityRequiresManualPricing($position)) {
+            Inertia::flash('toast', [
+                'type' => 'warning',
+                'message' => __('ui.positions.commodity_market_symbol_required'),
+            ]);
+
+            return to_route('positions.show', $position);
+        }
 
         try {
             $points = $this->marketData->refreshDailyHistoryForPosition($position);
@@ -226,10 +245,15 @@ class PositionController extends Controller
     {
         $type = $account->type;
 
+        $investKind = $account->invest_kind;
+
         return [
             'id' => $account->id,
             'name' => $account->name,
             'type' => $type instanceof AccountType ? $type->value : (string) $type,
+            'invest_kind' => $investKind instanceof InvestKind
+                ? $investKind->value
+                : ($investKind !== null ? (string) $investKind : null),
             'currency' => $account->currency,
         ];
     }
@@ -256,6 +280,17 @@ class PositionController extends Controller
             'unit_price' => $this->positions->unitPrice($position),
             'market_value' => $this->positions->marketValue($position),
             'uses_average_price' => $this->positions->usesAveragePrice($position),
+            'is_commodity' => $position->account?->isCommodityInvest() ?? false,
+            'has_market_quotes' => $position->hasListedMarketSymbol(),
         ];
+    }
+
+    private function commodityRequiresManualPricing(Position $position): bool
+    {
+        if ($position->account?->isCommodityInvest() !== true) {
+            return false;
+        }
+
+        return ! $position->hasListedMarketSymbol();
     }
 }

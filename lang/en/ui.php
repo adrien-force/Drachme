@@ -201,6 +201,12 @@ return [
             'next' => 'Next',
             'page_of' => 'Page :page / :last',
         ],
+        'invest_kind' => 'Portfolio type',
+        'invest_kind_hint' => 'Listed securities or precious metals held by weight (grams).',
+        'invest_kinds' => [
+            'securities' => 'Stocks / ETFs',
+            'commodities' => 'Commodities',
+        ],
         'types' => [
             'checking' => 'Checking (debit)',
             'savings' => 'Savings',
@@ -208,6 +214,9 @@ return [
             'credit' => 'Loan / credit',
             'credit_card' => 'Credit card',
             'cash' => 'Cash',
+        ],
+        'validation' => [
+            'invest_kind_locked' => 'Remove all positions before changing the portfolio type.',
         ],
         'credit_card_help' => [
             'short' => 'Two separate imports (card + checking), then match the monthly debit.',
@@ -353,10 +362,20 @@ return [
         'market_symbol' => 'Market symbol',
         'market_symbol_placeholder' => 'IBM, IWDA.AS…',
         'market_symbol_hint' => 'Optional: ISIN is resolved via OpenFIGI (e.g. WPEA.PA). Otherwise set a Yahoo ticker (e.g. IWDA.AS).',
+        'commodity_dialog_description' => 'Enter the metal, weight in grams, and price per gram. For listed metals (e.g. XAUEUR), add the ticker for charts and auto price refresh.',
+        'commodity_market_symbol_hint' => 'Optional — Yahoo ticker for the listed metal (e.g. XAUEUR for gold in EUR).',
+        'commodity_market_symbol_placeholder' => 'XAUEUR, XAGEUR…',
+        'commodity_market_symbol_required' => 'Add a market symbol (e.g. XAUEUR) to refresh the price, or enter it manually.',
+        'commodity_label' => 'Metal',
+        'commodity_label_placeholder' => 'Gold, silver…',
+        'quantity_grams' => 'Quantity (g)',
+        'price_per_gram' => 'Price per gram (avg)',
+        'last_price_per_gram' => 'Latest price per gram',
         'validation' => [
             'isin_format' => 'ISIN must be exactly 12 alphanumeric characters.',
             'isin_unique' => 'This ISIN already exists on this account.',
             'market_symbol_format' => 'Invalid symbol (letters, digits, dot or hyphen — e.g. IBM, IWDA.AS).',
+            'commodity_label_unique' => 'This metal already exists on this account.',
         ],
     ],
     'categories' => [

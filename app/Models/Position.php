@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToUser;
+use App\Support\MarketSymbol;
 use Database\Factories\PositionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -55,5 +56,10 @@ class Position extends Model
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
+    }
+
+    public function hasListedMarketSymbol(): bool
+    {
+        return MarketSymbol::normalize($this->market_symbol) !== null;
     }
 }

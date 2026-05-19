@@ -8,6 +8,7 @@ use App\Enums\AccountType;
 use App\Models\Account;
 use App\Models\Position;
 use App\Models\User;
+use App\Support\CommodityIsin;
 use App\Support\Isin;
 use App\Support\MarketSymbol;
 use InvalidArgumentException;
@@ -27,12 +28,13 @@ class PositionService
     public function create(User $user, Account $account, array $data): Position
     {
         $this->assertInvestAccount($account);
+        $data = $this->normalizePositionData($account, $data);
 
         return Position::query()->create([
             'user_id' => $user->id,
             'account_id' => $account->id,
-            'isin' => Isin::normalize($data['isin']),
-            'market_symbol' => $this->normalizeMarketSymbol($data),
+            'isin' => $data['isin'],
+            'market_symbol' => $data['market_symbol'],
             'label' => $data['label'],
             'quantity' => $data['quantity'],
             'average_price' => $data['average_price'],
@@ -55,7 +57,9 @@ class PositionService
      */
     public function update(Position $position, array $data): Position
     {
-        $this->assertInvestAccount($position->account);
+        $account = $position->account;
+        $this->assertInvestAccount($account);
+        $data = $this->normalizePositionData($account, $data);
 
         $lastPrice = $data['last_price'] ?? null;
         $lastPriceAt = $position->last_price_at;
@@ -65,8 +69,8 @@ class PositionService
         }
 
         $position->fill([
-            'isin' => Isin::normalize($data['isin']),
-            'market_symbol' => $this->normalizeMarketSymbol($data),
+            'isin' => $data['isin'],
+            'market_symbol' => $data['market_symbol'],
             'label' => $data['label'],
             'quantity' => $data['quantity'],
             'average_price' => $data['average_price'],
@@ -135,6 +139,40 @@ class PositionService
         if ($account === null || $account->type !== AccountType::Invest) {
             throw new InvalidArgumentException('positions.not_invest_account');
         }
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array{
+     *     isin: string,
+     *     label: string,
+     *     quantity: float|string,
+     *     average_price: float|string,
+     *     last_price?: float|string|null,
+     *     market_symbol: string|null,
+     * }
+     */
+    private function normalizePositionData(?Account $account, array $data): array
+    {
+        if ($account !== null && $account->isCommodityInvest()) {
+            return [
+                'isin' => CommodityIsin::fromLabel((string) $data['label']),
+                'label' => (string) $data['label'],
+                'quantity' => $data['quantity'],
+                'average_price' => $data['average_price'],
+                'last_price' => $data['last_price'] ?? null,
+                'market_symbol' => $this->normalizeMarketSymbol($data),
+            ];
+        }
+
+        return [
+            'isin' => Isin::normalize((string) $data['isin']),
+            'label' => (string) $data['label'],
+            'quantity' => $data['quantity'],
+            'average_price' => $data['average_price'],
+            'last_price' => $data['last_price'] ?? null,
+            'market_symbol' => $this->normalizeMarketSymbol($data),
+        ];
     }
 
     /**

@@ -21,10 +21,38 @@ class PortfolioValuationService
             return 0.0;
         }
 
-        return (float) Position::query()
-            ->where('account_id', $account->id)
+        return $this->totalsByAccountId([$account])[$account->id] ?? 0.0;
+    }
+
+    /**
+     * @param  iterable<Account>  $accounts
+     * @return array<int, float>
+     */
+    public function totalsByAccountId(iterable $accounts): array
+    {
+        $ids = [];
+        foreach ($accounts as $account) {
+            if ($account->type === AccountType::Invest) {
+                $ids[] = $account->id;
+            }
+        }
+
+        if ($ids === []) {
+            return [];
+        }
+
+        /** @var array<int, float> $totals */
+        $totals = array_fill_keys($ids, 0.0);
+
+        Position::query()
+            ->whereIn('account_id', $ids)
             ->get()
-            ->sum(fn (Position $position): float => $this->positions->marketValue($position));
+            ->each(function (Position $position) use (&$totals): void {
+                $accountId = (int) $position->account_id;
+                $totals[$accountId] += $this->positions->marketValue($position);
+            });
+
+        return $totals;
     }
 
     public function totalForUser(User $user): float

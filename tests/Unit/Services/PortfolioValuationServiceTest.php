@@ -42,6 +42,33 @@ class PortfolioValuationServiceTest extends TestCase
         $this->assertSame(0.0, $service->totalForAccount($checking));
     }
 
+    public function test_totals_by_account_id_returns_market_value_per_invest_account(): void
+    {
+        $user = User::factory()->create();
+
+        $first = Account::factory()->for($user)->create(['type' => AccountType::Invest]);
+        $second = Account::factory()->for($user)->create(['type' => AccountType::Invest]);
+
+        Position::factory()->for($user)->for($first)->create([
+            'quantity' => '2',
+            'average_price' => '50',
+            'last_price' => '60',
+        ]);
+
+        Position::factory()->for($user)->for($second)->create([
+            'quantity' => '1',
+            'average_price' => '100',
+            'last_price' => null,
+        ]);
+
+        $service = app(PortfolioValuationService::class);
+
+        $totals = $service->totalsByAccountId([$first, $second]);
+
+        $this->assertSame(120.0, $totals[$first->id]);
+        $this->assertSame(100.0, $totals[$second->id]);
+    }
+
     public function test_total_for_user_ignores_archived_invest_accounts(): void
     {
         $user = User::factory()->create();

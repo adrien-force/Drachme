@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\InvestKind;
 use App\Models\Position;
 
 class PositionShowPresenter
@@ -43,11 +44,16 @@ class PositionShowPresenter
                 'market_value' => $this->positions->marketValue($position),
                 'uses_average_price' => $this->positions->usesAveragePrice($position),
                 'market_symbol' => $position->market_symbol,
+                'is_commodity' => $account->isCommodityInvest(),
+                'has_market_quotes' => $position->hasListedMarketSymbol(),
             ],
             'account' => [
                 'id' => $account->id,
                 'name' => $account->name,
                 'currency' => $account->currency,
+                'invest_kind' => $account->invest_kind instanceof InvestKind
+                    ? $account->invest_kind->value
+                    : ($account->invest_kind !== null ? (string) $account->invest_kind : null),
             ],
             'inferredMovements' => $this->snapshotMovements->inferredMovementsForPosition($position),
             'portfolioValueSeries' => $this->snapshotMovements->snapshotPortfolioValueSeriesForPosition($position),

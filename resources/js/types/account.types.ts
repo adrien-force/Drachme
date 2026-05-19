@@ -19,15 +19,19 @@ export type AccountType =
     | 'credit_card'
     | 'cash';
 
+export type InvestKind = 'securities' | 'commodities';
+
 export type AccountRecord = {
     id: number;
     name: string;
     institution: string | null;
     logo_url: string | null;
     type: AccountType;
+    /** securities or commodities when type is invest */
+    invest_kind: InvestKind | null;
     initial_balance: number;
     current_balance: number;
-    /** Market value of open positions (invest accounts only). */
+    /** Sum of position market values when type is invest. */
     positions_value: number | null;
     /** Positive debt on credit card accounts (detail only, excluded from net worth). */
     amount_owed: number | null;
@@ -47,6 +51,11 @@ export type AccountRecord = {
 
 export type AccountTypeOption = {
     value: AccountType;
+    label: string;
+};
+
+export type InvestKindOption = {
+    value: InvestKind;
     label: string;
 };
 
@@ -189,6 +198,7 @@ export type SettlementPeriodModeOption = {
 export type AccountsFormPageProps = {
     account: AccountRecord | null;
     accountTypes: AccountTypeOption[];
+    investKindOptions: InvestKindOption[];
     settlementAccountOptions: SettlementAccountOption[];
     settlementPeriodModeOptions: SettlementPeriodModeOption[];
 };

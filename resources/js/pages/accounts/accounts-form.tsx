@@ -31,12 +31,14 @@ import { formatCurrency } from '@/lib/format-currency';
 import type {
     AccountType,
     AccountsFormPageProps,
+    InvestKind,
     SettlementPeriodMode,
 } from '@/types/account.types';
 
 export default function AccountsForm({
     account,
     accountTypes,
+    investKindOptions,
     settlementAccountOptions,
     settlementPeriodModeOptions,
 }: AccountsFormPageProps) {
@@ -44,6 +46,9 @@ export default function AccountsForm({
     const isEditing = account !== null;
     const formRef = useRef<HTMLFormElement>(null);
     const [type, setType] = useState<AccountType>(account?.type ?? 'checking');
+    const [investKind, setInvestKind] = useState<InvestKind>(
+        account?.invest_kind ?? 'securities',
+    );
     const [settlementAccountId, setSettlementAccountId] = useState<string>(
         account?.settlement_account_id != null
             ? String(account.settlement_account_id)
@@ -113,6 +118,10 @@ export default function AccountsForm({
 
         payload.append('name', accountName);
         payload.append('type', type);
+
+        if (type === 'invest') {
+            payload.append('invest_kind', investKind);
+        }
 
         if (type === 'credit_card') {
             if (settlementAccountId !== '') {
@@ -261,6 +270,36 @@ export default function AccountsForm({
                                 </Select>
                                 <InputError message={errors.type} />
                             </div>
+
+                            {type === 'invest' ? (
+                                <div className="grid gap-2">
+                                    <Label htmlFor="invest_kind">{t('accounts.invest_kind')}</Label>
+                                    <Select
+                                        value={investKind}
+                                        onValueChange={(value) =>
+                                            setInvestKind(value as InvestKind)
+                                        }
+                                    >
+                                        <SelectTrigger id="invest_kind" className="w-full">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {investKindOptions.map((option) => (
+                                                <SelectItem
+                                                    key={option.value}
+                                                    value={option.value}
+                                                >
+                                                    {option.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <p className="text-muted-foreground text-xs">
+                                        {t('accounts.invest_kind_hint')}
+                                    </p>
+                                    <InputError message={errors.invest_kind} />
+                                </div>
+                            ) : null}
 
                             {type === 'credit_card' ? (
                                 <>

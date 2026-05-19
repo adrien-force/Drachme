@@ -1,4 +1,4 @@
-import type { AccountType } from '@/types/account.types';
+import type { AccountType, InvestKind } from '@/types/account.types';
 
 export type PositionRecord = {
     id: number;
@@ -13,12 +13,15 @@ export type PositionRecord = {
     unit_price: number;
     market_value: number;
     uses_average_price: boolean;
+    is_commodity: boolean;
+    has_market_quotes: boolean;
 };
 
 export type PositionAccountSummary = {
     id: number;
     name: string;
     type: AccountType;
+    invest_kind: InvestKind | null;
     currency: string;
 };
 
@@ -93,7 +96,7 @@ export type PositionPortfolioValuePoint = {
 
 export type PositionsShowPageProps = {
     position: PositionRecord;
-    account: Pick<PositionAccountSummary, 'id' | 'name' | 'currency'>;
+    account: Pick<PositionAccountSummary, 'id' | 'name' | 'currency' | 'invest_kind'>;
     inferredMovements: PositionInferredMovement[];
     portfolioValueSeries: PositionPortfolioValuePoint[];
     marketPriceSeries: PositionSnapshotPricePoint[];

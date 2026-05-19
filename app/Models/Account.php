@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\AccountType;
+use App\Enums\InvestKind;
 use App\Enums\SettlementPeriodMode;
 use App\Models\Concerns\BelongsToUser;
 use Database\Factories\AccountFactory;
@@ -26,6 +27,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'institution',
     'logo_path',
     'type',
+    'invest_kind',
     'settlement_account_id',
     'billing_day',
     'settlement_label_pattern',
@@ -48,6 +50,7 @@ class Account extends Model
     {
         return [
             'type' => AccountType::class,
+            'invest_kind' => InvestKind::class,
             'settlement_period_mode' => SettlementPeriodMode::class,
             'initial_balance' => 'decimal:2',
             'current_balance' => 'decimal:2',
@@ -87,5 +90,20 @@ class Account extends Model
     public function positions(): HasMany
     {
         return $this->hasMany(Position::class);
+    }
+
+    public function isCommodityInvest(): bool
+    {
+        if ($this->type !== AccountType::Invest) {
+            return false;
+        }
+
+        $kind = $this->invest_kind;
+
+        if ($kind instanceof InvestKind) {
+            return $kind === InvestKind::Commodities;
+        }
+
+        return $kind === InvestKind::Commodities->value;
     }
 }
