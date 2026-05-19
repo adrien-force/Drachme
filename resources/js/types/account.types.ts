@@ -27,6 +27,8 @@ export type AccountRecord = {
     type: AccountType;
     initial_balance: number;
     current_balance: number;
+    /** Market value of open positions (invest accounts only). */
+    positions_value: number | null;
     /** Positive debt on credit card accounts (detail only, excluded from net worth). */
     amount_owed: number | null;
     current_period_spend: number | null;

@@ -7,6 +7,7 @@ namespace Tests\Feature\Accounts;
 use App\Enums\AccountType;
 use App\Enums\TransactionType;
 use App\Models\Account;
+use App\Models\Position;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -144,6 +145,37 @@ class AccountCrudTest extends TestCase
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->where('accounts.0.last_activity_at', '2024-06-15'));
+    }
+
+    public function test_invest_account_exposes_positions_value_on_index_and_show(): void
+    {
+        $user = User::factory()->create();
+        $invest = Account::factory()->for($user)->create([
+            'type' => AccountType::Invest,
+            'name' => 'PEA',
+            'current_balance' => '500.00',
+        ]);
+        Position::factory()->for($user)->for($invest)->create([
+            'quantity' => '2',
+            'average_price' => '50',
+            'last_price' => '60',
+        ]);
+
+        $this
+            ->actingAs($user)
+            ->get(route('accounts.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('accounts.0.positions_value', 120)
+                ->where('accounts.0.current_balance', 500));
+
+        $this
+            ->actingAs($user)
+            ->get(route('accounts.show', $invest))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('account.positions_value', 120)
+                ->where('balanceHistory', null));
     }
 
     public function test_user_can_view_account_show_page(): void

@@ -18,6 +18,7 @@ use App\DataTransferObjects\CreditCardSettlementSyncResult;
 use App\Services\CreditCardSettlementSyncService;
 use App\Enums\SettlementPeriodMode;
 use App\Services\BalanceEngine;
+use App\Services\PortfolioValuationService;
 use App\Services\TransactionListService;
 use App\Services\CategoryService;
 use App\Services\TransactionCategoryRuleApplier;
@@ -43,6 +44,7 @@ class AccountController extends Controller
         private readonly BalanceEngine $balanceEngine,
         private readonly CreditCardSettlementService $creditCardSettlements,
         private readonly CreditCardSettlementSyncService $creditCardSettlementSync,
+        private readonly PortfolioValuationService $portfolioValuation,
     ) {}
 
     public function index(Request $request): Response
@@ -91,6 +93,7 @@ class AccountController extends Controller
             ? $account->type
             : AccountType::from((string) $account->type);
         $isCreditCard = $accountType === AccountType::CreditCard;
+        $isInvest = $accountType === AccountType::Invest;
 
         return Inertia::render('accounts/accounts-show', [
             'account' => $this->serializeAccount($account),
@@ -112,7 +115,7 @@ class AccountController extends Controller
             'transactionTypeOptions' => $this->transactionTypeOptions(),
             'categoryOptions' => $user !== null ? $this->categories->flatSelectableOptions($user) : [],
             'perPageOptions' => ShowAccountRequest::perPageOptions(),
-            'balanceHistory' => $isCreditCard
+            'balanceHistory' => $isCreditCard || $isInvest
                 ? null
                 : $this->balanceHistory->build(
                     $account,
@@ -344,6 +347,9 @@ class AccountController extends Controller
                     'id' => $account->settlementAccount->id,
                     'name' => $account->settlementAccount->name,
                 ]
+                : null,
+            'positions_value' => $type === AccountType::Invest
+                ? $this->portfolioValuation->totalForAccount($account)
                 : null,
         ];
     }
