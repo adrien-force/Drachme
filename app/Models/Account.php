@@ -30,6 +30,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'invest_kind',
     'settlement_account_id',
     'billing_day',
+    'payment_day',
     'settlement_label_pattern',
     'settlement_period_mode',
     'initial_balance',

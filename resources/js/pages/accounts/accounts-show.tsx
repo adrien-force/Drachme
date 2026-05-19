@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import { CreditCardSettlementsPanel } from '@/components/accounts/credit-card-settlements-panel';
 import { CreditCardSetupHelp } from '@/components/accounts/credit-card-setup-help';
+import { LoanAccountHelp } from '@/components/accounts/loan-account-help';
 import { AccountBalanceChart } from '@/components/accounts/account-balance-chart';
 import { AccountBalanceDateRange } from '@/components/accounts/account-balance-date-range';
 import { AccountTransactionsPanel } from '@/components/accounts/account-transactions-panel';
@@ -15,7 +16,6 @@ import { TransactionEditModal } from '@/components/transactions/transaction-edit
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
 import { buildAccountShowQuery } from '@/lib/account-show-query';
-import { accountDisplayBalance } from '@/lib/account-display-balance';
 import { formatCurrency } from '@/lib/format-currency';
 import type { AccountsShowPageProps } from '@/types/account.types';
 
@@ -33,7 +33,7 @@ export default function AccountsShow({
 }: AccountsShowPageProps) {
     const { t } = useTranslation();
     const isCreditCard = account.type === 'credit_card';
-    const isInvest = account.type === 'invest';
+    const isLoan = account.type === 'credit';
     const [syncingSettlements, setSyncingSettlements] = useState(false);
 
     const syncSettlements = () => {
@@ -161,6 +161,12 @@ export default function AccountsShow({
                     </FadeIn>
                 ) : null}
 
+                {isLoan ? (
+                    <FadeIn>
+                        <LoanAccountHelp />
+                    </FadeIn>
+                ) : null}
+
                 {isCreditCard ? (
                     <FadeIn>
                         <GlassPanel className="p-6">
@@ -186,31 +192,30 @@ export default function AccountsShow({
                     />
                 ) : null}
 
-                {isInvest ? (
-                    <FadeIn>
-                        <GlassPanel className="p-6">
-                            <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
-                                {t('investments.positions_value')}
-                            </p>
-                            <p className="mt-2 text-3xl font-semibold tabular-nums">
-                                {formatCurrency(accountDisplayBalance(account), {
-                                    precise: true,
-                                })}
-                            </p>
-                        </GlassPanel>
-                    </FadeIn>
-                ) : null}
-
-                {!isCreditCard && !isInvest && balanceHistory !== null ? (
+                {!isCreditCard && balanceHistory !== null ? (
                     <>
                         <FadeIn>
                             <GlassPanel className="p-6">
                                 <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
-                                    {t('accounts.current_balance')}
+                                    {isLoan
+                                        ? t('accounts.loan_outstanding_balance')
+                                        : t('accounts.current_balance')}
                                 </p>
                                 <p className="mt-2 text-3xl font-semibold tabular-nums">
                                     {formatCurrency(account.current_balance, { precise: true })}
                                 </p>
+                                {isLoan && account.payment_day !== null ? (
+                                    <p className="text-muted-foreground mt-2 text-sm">
+                                        {t('accounts.payment_day_next', {
+                                            day: account.payment_day,
+                                        })}
+                                    </p>
+                                ) : null}
+                                {isLoan ? (
+                                    <p className="text-muted-foreground mt-1 text-xs">
+                                        {t('accounts.loan_balance_hint')}
+                                    </p>
+                                ) : null}
                             </GlassPanel>
                         </FadeIn>
 
@@ -222,7 +227,9 @@ export default function AccountsShow({
                                             {t('accounts.balance_chart.title')}
                                         </h2>
                                         <p className="text-muted-foreground text-sm">
-                                            {t('accounts.balance_chart.description')}
+                                            {isLoan
+                                                ? t('accounts.loan_balance_chart.description')
+                                                : t('accounts.balance_chart.description')}
                                         </p>
                                     </div>
                                     <AccountBalanceDateRange

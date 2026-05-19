@@ -358,6 +358,7 @@ class AccountController extends Controller
             'last_activity_at' => $this->formatDateField($account->transactions_max_date),
             'settlement_account_id' => $account->settlement_account_id,
             'billing_day' => $account->billing_day,
+            'payment_day' => $account->payment_day,
             'settlement_label_pattern' => $account->settlement_label_pattern,
             'settlement_period_mode' => $account->settlement_period_mode instanceof SettlementPeriodMode
                 ? $account->settlement_period_mode->value

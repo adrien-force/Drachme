@@ -6,7 +6,7 @@ namespace App\Http\Requests\Accounts;
 
 use App\Enums\AccountType;
 use App\Http\Requests\Accounts\Concerns\ValidatesCreditCardAccount;
-use App\Http\Requests\Accounts\Concerns\ValidatesInvestKind;
+use App\Http\Requests\Accounts\Concerns\ValidatesLoanAccount;
 use App\Http\Requests\Concerns\ValidatesEntityLogo;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Contracts\Validation\Validator;
@@ -16,8 +16,8 @@ use Illuminate\Validation\Rule;
 class StoreAccountRequest extends FormRequest
 {
     use ValidatesCreditCardAccount;
+    use ValidatesLoanAccount;
     use ValidatesEntityLogo;
-    use ValidatesInvestKind;
     public function authorize(): bool
     {
         return $this->user() !== null;
@@ -35,7 +35,7 @@ class StoreAccountRequest extends FormRequest
             'initial_balance' => ['required', 'numeric'],
             'opened_at' => ['nullable', 'date'],
             ...$this->creditCardFieldRules(),
-            ...$this->investKindFieldRules(),
+            ...$this->loanFieldRules(),
             ...$this->entityLogoRules(),
         ];
     }
@@ -43,6 +43,6 @@ class StoreAccountRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $this->withCreditCardValidator($validator);
-        $this->withInvestKindValidator($validator);
+        $this->withLoanValidator($validator);
     }
 }

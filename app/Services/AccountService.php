@@ -30,6 +30,7 @@ class AccountService
      *     opened_at?: string|null,
      *     settlement_account_id?: int|string|null,
      *     billing_day?: int|string|null,
+     *     payment_day?: int|string|null,
      *     settlement_label_pattern?: string|null,
      * }  $data
      */
@@ -48,6 +49,7 @@ class AccountService
             'invest_kind' => $this->resolveInvestKind($type, $data),
             'settlement_account_id' => $this->resolveSettlementAccountId($type, $data),
             'billing_day' => $this->resolveBillingDay($type, $data),
+            'payment_day' => $this->resolvePaymentDay($type, $data),
             'settlement_label_pattern' => $this->resolveSettlementLabelPattern($type, $data),
             'settlement_period_mode' => $this->resolveSettlementPeriodMode($type, $data),
             'initial_balance' => $initialBalance,
@@ -75,6 +77,7 @@ class AccountService
      *     actual_balance?: float|string|null,
      *     settlement_account_id?: int|string|null,
      *     billing_day?: int|string|null,
+     *     payment_day?: int|string|null,
      *     settlement_label_pattern?: string|null,
      * }  $data
      */
@@ -95,6 +98,7 @@ class AccountService
             'invest_kind' => $this->resolveInvestKind($type, $data),
             'settlement_account_id' => $this->resolveSettlementAccountId($type, $data),
             'billing_day' => $this->resolveBillingDay($type, $data),
+            'payment_day' => $this->resolvePaymentDay($type, $data),
             'settlement_label_pattern' => $this->resolveSettlementLabelPattern($type, $data),
             'settlement_period_mode' => $this->resolveSettlementPeriodMode($type, $data),
             'opened_at' => $data['opened_at'] ?? null,
@@ -198,6 +202,24 @@ class AccountService
         }
 
         $raw = $data['billing_day'] ?? null;
+
+        if ($raw === null || $raw === '') {
+            return null;
+        }
+
+        return (int) $raw;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function resolvePaymentDay(AccountType $type, array $data): ?int
+    {
+        if ($type !== AccountType::Credit) {
+            return null;
+        }
+
+        $raw = $data['payment_day'] ?? null;
 
         if ($raw === null || $raw === '') {
             return null;

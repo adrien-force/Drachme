@@ -44,6 +44,8 @@ export type AccountRecord = {
     last_activity_at: string | null;
     settlement_account_id: number | null;
     billing_day: number | null;
+    /** Day of month for loan payment (1–31), when type is credit. */
+    payment_day: number | null;
     settlement_label_pattern: string | null;
     settlement_period_mode: SettlementPeriodMode;
     settlement_account: { id: number; name: string } | null;

@@ -3,6 +3,7 @@ import { Archive, Trash2 } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 
 import { CreditCardSetupHelp } from '@/components/accounts/credit-card-setup-help';
+import { LoanAccountHelp } from '@/components/accounts/loan-account-help';
 import { FadeIn } from '@/components/motion/fade-in';
 import { GlassPanel } from '@/components/glass-panel';
 import { LogoUploadField } from '@/components/logo-upload-field';
@@ -31,14 +32,12 @@ import { formatCurrency } from '@/lib/format-currency';
 import type {
     AccountType,
     AccountsFormPageProps,
-    InvestKind,
     SettlementPeriodMode,
 } from '@/types/account.types';
 
 export default function AccountsForm({
     account,
     accountTypes,
-    investKindOptions,
     settlementAccountOptions,
     settlementPeriodModeOptions,
 }: AccountsFormPageProps) {
@@ -46,9 +45,6 @@ export default function AccountsForm({
     const isEditing = account !== null;
     const formRef = useRef<HTMLFormElement>(null);
     const [type, setType] = useState<AccountType>(account?.type ?? 'checking');
-    const [investKind, setInvestKind] = useState<InvestKind>(
-        account?.invest_kind ?? 'securities',
-    );
     const [settlementAccountId, setSettlementAccountId] = useState<string>(
         account?.settlement_account_id != null
             ? String(account.settlement_account_id)
@@ -56,6 +52,9 @@ export default function AccountsForm({
     );
     const [billingDay, setBillingDay] = useState<string>(
         account?.billing_day != null ? String(account.billing_day) : '',
+    );
+    const [paymentDay, setPaymentDay] = useState<string>(
+        account?.payment_day != null ? String(account.payment_day) : '',
     );
     const [settlementLabelPattern, setSettlementLabelPattern] = useState<string>(
         account?.settlement_label_pattern ?? (account === null ? 'DEBIT DIFFERE' : ''),
@@ -119,10 +118,6 @@ export default function AccountsForm({
         payload.append('name', accountName);
         payload.append('type', type);
 
-        if (type === 'invest') {
-            payload.append('invest_kind', investKind);
-        }
-
         if (type === 'credit_card') {
             if (settlementAccountId !== '') {
                 payload.append('settlement_account_id', settlementAccountId);
@@ -135,6 +130,10 @@ export default function AccountsForm({
                 payload.append('settlement_label_pattern', trimmedPattern);
             }
             payload.append('settlement_period_mode', settlementPeriodMode);
+        }
+
+        if (type === 'credit' && paymentDay !== '') {
+            payload.append('payment_day', paymentDay);
         }
 
         const institution = formData.get('institution');
@@ -271,34 +270,32 @@ export default function AccountsForm({
                                 <InputError message={errors.type} />
                             </div>
 
-                            {type === 'invest' ? (
-                                <div className="grid gap-2">
-                                    <Label htmlFor="invest_kind">{t('accounts.invest_kind')}</Label>
-                                    <Select
-                                        value={investKind}
-                                        onValueChange={(value) =>
-                                            setInvestKind(value as InvestKind)
-                                        }
-                                    >
-                                        <SelectTrigger id="invest_kind" className="w-full">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {investKindOptions.map((option) => (
-                                                <SelectItem
-                                                    key={option.value}
-                                                    value={option.value}
-                                                >
-                                                    {option.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <p className="text-muted-foreground text-xs">
-                                        {t('accounts.invest_kind_hint')}
-                                    </p>
-                                    <InputError message={errors.invest_kind} />
-                                </div>
+                            {type === 'credit' ? (
+                                <>
+                                    <LoanAccountHelp />
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="payment_day">
+                                            {t('accounts.payment_day')}
+                                        </Label>
+                                        <Input
+                                            id="payment_day"
+                                            type="number"
+                                            min={1}
+                                            max={31}
+                                            value={paymentDay}
+                                            onChange={(event) =>
+                                                setPaymentDay(event.target.value)
+                                            }
+                                            placeholder={t(
+                                                'accounts.payment_day_placeholder',
+                                            )}
+                                        />
+                                        <p className="text-muted-foreground text-xs">
+                                            {t('accounts.payment_day_hint')}
+                                        </p>
+                                        <InputError message={errors.payment_day} />
+                                    </div>
+                                </>
                             ) : null}
 
                             {type === 'credit_card' ? (
@@ -418,7 +415,9 @@ export default function AccountsForm({
                             {!isEditing ? (
                                 <div className="grid gap-2">
                                     <Label htmlFor="initial_balance">
-                                        {t('accounts.initial_balance')}
+                                        {type === 'credit'
+                                            ? t('accounts.loan_initial_balance')
+                                            : t('accounts.initial_balance')}
                                     </Label>
                                     <Input
                                         id="initial_balance"
@@ -470,7 +469,9 @@ export default function AccountsForm({
 
                                     <div className="grid gap-2">
                                         <Label htmlFor="actual_balance">
-                                            {t('accounts.actual_balance')}
+                                            {account.type === 'credit'
+                                                ? t('accounts.loan_outstanding_balance')
+                                                : t('accounts.actual_balance')}
                                         </Label>
                                         <Input
                                             id="actual_balance"

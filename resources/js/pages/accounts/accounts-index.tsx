@@ -210,6 +210,18 @@ export default function AccountsIndex({
                                                             {t('accounts.current_period_short')}
                                                         </span>
                                                     </div>
+                                                ) : account.type === 'credit' ? (
+                                                    <div className="flex flex-col items-end gap-0.5">
+                                                        <span>
+                                                            {formatCurrency(
+                                                                accountDisplayBalance(account),
+                                                                { precise: true },
+                                                            )}
+                                                        </span>
+                                                        <span className="text-muted-foreground text-xs font-normal">
+                                                            {t('accounts.loan_outstanding_short')}
+                                                        </span>
+                                                    </div>
                                                 ) : (
                                                     formatCurrency(accountDisplayBalance(account), {
                                                         precise: true,
