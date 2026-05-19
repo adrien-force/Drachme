@@ -56,6 +56,17 @@ export default function AccountsForm({
     const [paymentDay, setPaymentDay] = useState<string>(
         account?.payment_day != null ? String(account.payment_day) : '',
     );
+    const [loanOriginalPrincipal, setLoanOriginalPrincipal] = useState<string>(
+        account?.loan_original_principal != null
+            ? String(account.loan_original_principal)
+            : '',
+    );
+    const [loanInterestRate, setLoanInterestRate] = useState<string>(
+        account?.loan_interest_rate != null ? String(account.loan_interest_rate) : '',
+    );
+    const [loanEndDate, setLoanEndDate] = useState<string | null>(
+        account?.loan_end_date ?? null,
+    );
     const [settlementLabelPattern, setSettlementLabelPattern] = useState<string>(
         account?.settlement_label_pattern ?? (account === null ? 'DEBIT DIFFERE' : ''),
     );
@@ -73,6 +84,15 @@ export default function AccountsForm({
     const [archiveOpen, setArchiveOpen] = useState(false);
     const [deleteOpen, setDeleteOpen] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
+
+    const loanEndDatePickerBounds = useMemo(() => {
+        const today = new Date();
+
+        return {
+            startMonth: today,
+            endMonth: new Date(today.getFullYear() + 40, 11, 31),
+        };
+    }, []);
 
     const balanceReconcile = useMemo(() => {
         if (account === null) {
@@ -132,8 +152,19 @@ export default function AccountsForm({
             payload.append('settlement_period_mode', settlementPeriodMode);
         }
 
-        if (type === 'credit' && paymentDay !== '') {
-            payload.append('payment_day', paymentDay);
+        if (type === 'loan') {
+            if (paymentDay !== '') {
+                payload.append('payment_day', paymentDay);
+            }
+            if (loanOriginalPrincipal !== '') {
+                payload.append('loan_original_principal', loanOriginalPrincipal);
+            }
+            if (loanInterestRate !== '') {
+                payload.append('loan_interest_rate', loanInterestRate);
+            }
+            if (loanEndDate !== null && loanEndDate !== '') {
+                payload.append('loan_end_date', loanEndDate);
+            }
         }
 
         const institution = formData.get('institution');
@@ -270,30 +301,94 @@ export default function AccountsForm({
                                 <InputError message={errors.type} />
                             </div>
 
-                            {type === 'credit' ? (
+                            {type === 'loan' ? (
                                 <>
                                     <LoanAccountHelp />
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="payment_day">
-                                            {t('accounts.payment_day')}
-                                        </Label>
-                                        <Input
-                                            id="payment_day"
-                                            type="number"
-                                            min={1}
-                                            max={31}
-                                            value={paymentDay}
-                                            onChange={(event) =>
-                                                setPaymentDay(event.target.value)
-                                            }
-                                            placeholder={t(
-                                                'accounts.payment_day_placeholder',
-                                            )}
-                                        />
-                                        <p className="text-muted-foreground text-xs">
-                                            {t('accounts.payment_day_hint')}
-                                        </p>
-                                        <InputError message={errors.payment_day} />
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <div className="grid gap-2 sm:col-span-2">
+                                            <Label htmlFor="loan_original_principal">
+                                                {t('accounts.loan_original_principal')}
+                                            </Label>
+                                            <Input
+                                                id="loan_original_principal"
+                                                type="number"
+                                                min={0}
+                                                step="0.01"
+                                                value={loanOriginalPrincipal}
+                                                onChange={(event) =>
+                                                    setLoanOriginalPrincipal(event.target.value)
+                                                }
+                                                placeholder={t(
+                                                    'accounts.loan_original_principal_placeholder',
+                                                )}
+                                            />
+                                            <p className="text-muted-foreground text-xs">
+                                                {t('accounts.loan_original_principal_hint')}
+                                            </p>
+                                            <InputError message={errors.loan_original_principal} />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="loan_interest_rate">
+                                                {t('accounts.loan_interest_rate')}
+                                            </Label>
+                                            <Input
+                                                id="loan_interest_rate"
+                                                type="number"
+                                                min={0}
+                                                max={100}
+                                                step="0.01"
+                                                value={loanInterestRate}
+                                                onChange={(event) =>
+                                                    setLoanInterestRate(event.target.value)
+                                                }
+                                                placeholder={t(
+                                                    'accounts.loan_interest_rate_placeholder',
+                                                )}
+                                            />
+                                            <InputError message={errors.loan_interest_rate} />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="payment_day">
+                                                {t('accounts.payment_day')}
+                                            </Label>
+                                            <Input
+                                                id="payment_day"
+                                                type="number"
+                                                min={1}
+                                                max={31}
+                                                value={paymentDay}
+                                                onChange={(event) =>
+                                                    setPaymentDay(event.target.value)
+                                                }
+                                                placeholder={t(
+                                                    'accounts.payment_day_placeholder',
+                                                )}
+                                            />
+                                            <InputError message={errors.payment_day} />
+                                        </div>
+                                        <div className="grid gap-2 sm:col-span-2">
+                                            <Label>{t('accounts.loan_start_date')}</Label>
+                                            <DatePicker
+                                                value={openedAt}
+                                                onChange={setOpenedAt}
+                                                endMonth={loanEndDatePickerBounds.endMonth}
+                                            />
+                                            <InputError message={errors.opened_at} />
+                                        </div>
+                                        <div className="grid gap-2 sm:col-span-2">
+                                            <Label>{t('accounts.loan_end_date')}</Label>
+                                            <DatePicker
+                                                value={loanEndDate}
+                                                onChange={setLoanEndDate}
+                                                startMonth={loanEndDatePickerBounds.startMonth}
+                                                endMonth={loanEndDatePickerBounds.endMonth}
+                                                clearable
+                                            />
+                                            <p className="text-muted-foreground text-xs">
+                                                {t('accounts.loan_end_date_hint')}
+                                            </p>
+                                            <InputError message={errors.loan_end_date} />
+                                        </div>
                                     </div>
                                 </>
                             ) : null}
@@ -412,12 +507,10 @@ export default function AccountsForm({
                                 </>
                             ) : null}
 
-                            {!isEditing ? (
+                            {!isEditing && type !== 'loan' ? (
                                 <div className="grid gap-2">
                                     <Label htmlFor="initial_balance">
-                                        {type === 'credit'
-                                            ? t('accounts.loan_initial_balance')
-                                            : t('accounts.initial_balance')}
+                                        {t('accounts.initial_balance')}
                                     </Label>
                                     <Input
                                         id="initial_balance"
@@ -431,7 +524,7 @@ export default function AccountsForm({
                                 </div>
                             ) : null}
 
-                            {isEditing && account && balanceReconcile ? (
+                            {isEditing && account && balanceReconcile && account.type !== 'loan' ? (
                                 <div className="space-y-4 rounded-lg border border-white/10 bg-white/5 p-4">
                                     <div>
                                         <p className="text-sm font-medium">
@@ -469,7 +562,7 @@ export default function AccountsForm({
 
                                     <div className="grid gap-2">
                                         <Label htmlFor="actual_balance">
-                                            {account.type === 'credit'
+                                            {account.type === 'loan'
                                                 ? t('accounts.loan_outstanding_balance')
                                                 : t('accounts.actual_balance')}
                                         </Label>
@@ -519,16 +612,18 @@ export default function AccountsForm({
                                 </div>
                             ) : null}
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="opened_at">{t('accounts.opened_at')}</Label>
-                                <DatePicker
-                                    id="opened_at"
-                                    value={openedAt}
-                                    clearable
-                                    onChange={setOpenedAt}
-                                />
-                                <InputError message={errors.opened_at} />
-                            </div>
+                            {type !== 'loan' ? (
+                                <div className="grid gap-2">
+                                    <Label htmlFor="opened_at">{t('accounts.opened_at')}</Label>
+                                    <DatePicker
+                                        id="opened_at"
+                                        value={openedAt}
+                                        clearable
+                                        onChange={setOpenedAt}
+                                    />
+                                    <InputError message={errors.opened_at} />
+                                </div>
+                            ) : null}
 
                             <InputError message={errors.logo} />
 

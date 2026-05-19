@@ -4,11 +4,16 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\AccountType;
 use App\Models\Account;
 use App\Models\Transaction;
 
 class BalanceEngine
 {
+    public function __construct(
+        private readonly LoanAccountService $loanAccounts,
+    ) {}
+
     public function transactionSum(Account $account): string
     {
         $sum = Transaction::query()
@@ -20,6 +25,16 @@ class BalanceEngine
 
     public function recalculateAccount(Account $account): void
     {
+        $type = $account->type instanceof AccountType
+            ? $account->type
+            : AccountType::from((string) $account->type);
+
+        if ($type === AccountType::Loan) {
+            $this->loanAccounts->syncBalances($account);
+
+            return;
+        }
+
         $balance = $this->computedBalance($account);
 
         if ($account->current_balance === $balance) {

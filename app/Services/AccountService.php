@@ -19,6 +19,7 @@ class AccountService
         private readonly LogoUploadService $logos,
         private readonly BalanceEngine $balanceEngine,
         private readonly NetWorthSnapshotService $netWorthSnapshots,
+        private readonly LoanAccountService $loanAccounts,
     ) {}
 
     /**
@@ -36,10 +37,12 @@ class AccountService
      */
     public function create(User $user, array $data, ?UploadedFile $logo = null): Account
     {
-        $initialBalance = (float) $data['initial_balance'];
         $type = $data['type'] instanceof AccountType
             ? $data['type']
             : AccountType::from((string) $data['type']);
+        $initialBalance = $type === AccountType::Loan
+            ? (float) ($data['loan_original_principal'] ?? 0)
+            : (float) $data['initial_balance'];
 
         $account = Account::query()->create([
             'user_id' => $user->id,
@@ -50,6 +53,9 @@ class AccountService
             'settlement_account_id' => $this->resolveSettlementAccountId($type, $data),
             'billing_day' => $this->resolveBillingDay($type, $data),
             'payment_day' => $this->resolvePaymentDay($type, $data),
+            'loan_original_principal' => $this->resolveLoanOriginalPrincipal($type, $data, $initialBalance),
+            'loan_interest_rate' => $this->resolveLoanInterestRate($type, $data),
+            'loan_end_date' => $this->resolveLoanEndDate($type, $data),
             'settlement_label_pattern' => $this->resolveSettlementLabelPattern($type, $data),
             'settlement_period_mode' => $this->resolveSettlementPeriodMode($type, $data),
             'initial_balance' => $initialBalance,
@@ -63,6 +69,10 @@ class AccountService
             $account->update([
                 'logo_path' => $this->logos->store($logo, "logos/accounts/{$user->id}"),
             ]);
+        }
+
+        if ($type === AccountType::Loan) {
+            return $this->loanAccounts->syncBalances($account->fresh() ?? $account);
         }
 
         return $account->fresh() ?? $account;
@@ -99,6 +109,13 @@ class AccountService
             'settlement_account_id' => $this->resolveSettlementAccountId($type, $data),
             'billing_day' => $this->resolveBillingDay($type, $data),
             'payment_day' => $this->resolvePaymentDay($type, $data),
+            'loan_original_principal' => $this->resolveLoanOriginalPrincipal(
+                $type,
+                $data,
+                (float) $account->initial_balance,
+            ),
+            'loan_interest_rate' => $this->resolveLoanInterestRate($type, $data),
+            'loan_end_date' => $this->resolveLoanEndDate($type, $data),
             'settlement_label_pattern' => $this->resolveSettlementLabelPattern($type, $data),
             'settlement_period_mode' => $this->resolveSettlementPeriodMode($type, $data),
             'opened_at' => $data['opened_at'] ?? null,
@@ -111,6 +128,18 @@ class AccountService
         ]);
 
         $account->save();
+
+        if ($type === AccountType::Loan) {
+            $account = $this->loanAccounts->syncBalances($account);
+            $account->loadMissing('user');
+            $owner = $account->user;
+
+            if ($owner !== null) {
+                $this->netWorthSnapshots->recordForUser($owner);
+            }
+
+            return $account;
+        }
 
         if (array_key_exists('actual_balance', $data) && $data['actual_balance'] !== null && $data['actual_balance'] !== '') {
             $this->balanceEngine->reconcileActualBalance($account, (float) $data['actual_balance']);
@@ -215,7 +244,7 @@ class AccountService
      */
     private function resolvePaymentDay(AccountType $type, array $data): ?int
     {
-        if ($type !== AccountType::Credit) {
+        if ($type !== AccountType::Loan) {
             return null;
         }
 
@@ -226,6 +255,63 @@ class AccountService
         }
 
         return (int) $raw;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function resolveLoanOriginalPrincipal(
+        AccountType $type,
+        array $data,
+        float $initialBalance,
+    ): ?string {
+        if ($type !== AccountType::Loan) {
+            return null;
+        }
+
+        $raw = $data['loan_original_principal'] ?? null;
+
+        if ($raw === null || $raw === '') {
+            return number_format($initialBalance, 2, '.', '');
+        }
+
+        return number_format((float) $raw, 2, '.', '');
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function resolveLoanInterestRate(AccountType $type, array $data): ?string
+    {
+        if ($type !== AccountType::Loan) {
+            return null;
+        }
+
+        $raw = $data['loan_interest_rate'] ?? null;
+
+        if ($raw === null || $raw === '') {
+            return null;
+        }
+
+        return number_format((float) $raw, 4, '.', '');
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function resolveLoanEndDate(AccountType $type, array $data): ?string
+    {
+        if ($type !== AccountType::Loan) {
+            return null;
+        }
+
+        $raw = $data['loan_end_date'] ?? null;
+
+        if ($raw === null || $raw === '') {
+            return null;
+        }
+
+        return (string) $raw;
     }
 
     /**

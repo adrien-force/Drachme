@@ -38,7 +38,7 @@ class DashboardAllocationTest extends TestCase
         ]);
 
         Account::factory()->for($user)->create([
-            'type' => AccountType::Credit,
+            'type' => AccountType::Loan,
             'initial_balance' => '2000.00',
             'current_balance' => '2000.00',
         ]);

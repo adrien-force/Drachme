@@ -14,7 +14,7 @@ class LoanAccountTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_user_can_create_loan_account_with_payment_day(): void
+    public function test_user_can_create_loan_account_with_amortization(): void
     {
         $user = User::factory()->create();
 
@@ -22,53 +22,62 @@ class LoanAccountTest extends TestCase
             ->actingAs($user)
             ->post(route('accounts.store'), [
                 'name' => 'Prêt immo',
-                'type' => AccountType::Credit->value,
-                'initial_balance' => '150000',
+                'type' => AccountType::Loan->value,
+                'loan_original_principal' => '200000',
+                'loan_interest_rate' => '3.25',
+                'opened_at' => '2020-01-01',
+                'loan_end_date' => '2045-01-01',
                 'payment_day' => '5',
             ])
             ->assertRedirect();
 
-        $this->assertDatabaseHas('accounts', [
-            'user_id' => $user->id,
-            'name' => 'Prêt immo',
-            'type' => AccountType::Credit->value,
-            'initial_balance' => '150000.00',
-            'current_balance' => '150000.00',
-            'payment_day' => 5,
-        ]);
+        $account = Account::query()->where('user_id', $user->id)->first();
+        $this->assertNotNull($account);
+        $this->assertSame(AccountType::Loan, $account->type);
+        $this->assertNotNull($account->loan_monthly_payment);
+        $this->assertGreaterThan(0, (float) $account->loan_monthly_payment);
+        $this->assertLessThan(200_000.0, (float) $account->current_balance);
     }
 
-    public function test_payment_day_rejected_for_checking_account(): void
+    public function test_loan_requires_principal_rate_and_dates(): void
     {
         $user = User::factory()->create();
 
         $this
             ->actingAs($user)
             ->post(route('accounts.store'), [
-                'name' => 'Courant',
-                'type' => AccountType::Checking->value,
-                'initial_balance' => '1000',
-                'payment_day' => '10',
+                'name' => 'Prêt incomplet',
+                'type' => AccountType::Loan->value,
             ])
-            ->assertSessionHasErrors('payment_day');
+            ->assertSessionHasErrors([
+                'loan_original_principal',
+                'loan_interest_rate',
+                'opened_at',
+                'loan_end_date',
+            ]);
     }
 
-    public function test_accounts_index_includes_payment_day_for_loan(): void
+    public function test_account_show_includes_loan_amortization_chart(): void
     {
         $user = User::factory()->create();
-        Account::factory()->for($user)->create([
-            'type' => AccountType::Credit,
-            'current_balance' => '80000',
-            'payment_day' => 12,
+        $loan = Account::factory()->for($user)->create([
+            'type' => AccountType::Loan,
+            'opened_at' => '2020-01-01',
+            'initial_balance' => '100000',
+            'current_balance' => '100000',
+            'loan_original_principal' => '100000',
+            'loan_interest_rate' => '4',
+            'loan_end_date' => now()->addYears(15)->format('Y-m-d'),
         ]);
 
         $this
             ->actingAs($user)
-            ->get(route('accounts.index'))
+            ->get(route('accounts.show', $loan))
             ->assertOk()
             ->assertInertia(fn ($page) => $page
-                ->where('accounts.0.type', AccountType::Credit->value)
-                ->where('accounts.0.current_balance', 80000)
-                ->where('accounts.0.payment_day', 12));
+                ->where('account.type', AccountType::Loan->value)
+                ->has('loanAmortization.plan.chart_points')
+                ->where('loanAmortization.metrics.can_calculate', true)
+                ->where('account.loan_metrics.monthly_payment', fn ($value) => $value > 0));
     }
 }

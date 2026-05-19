@@ -23,7 +23,8 @@ class AccountNetWorthTest extends TestCase
     public static function liabilityProvider(): array
     {
         return [
-            'loan positive balance' => [AccountType::Credit, 10_000.0, 10_000.0],
+            'loan positive balance' => [AccountType::Loan, 10_000.0, 10_000.0],
+            'consumer credit positive balance' => [AccountType::Credit, 5_000.0, 5_000.0],
             'credit card negative balance' => [AccountType::CreditCard, -350.0, 350.0],
             'checking overdraft' => [AccountType::Checking, -100.0, 100.0],
         ];

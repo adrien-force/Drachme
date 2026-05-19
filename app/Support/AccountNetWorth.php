@@ -29,7 +29,7 @@ final class AccountNetWorth
      */
     public static function balanceBucket(AccountType $type, float $balance): string
     {
-        if ($type === AccountType::Credit) {
+        if ($type === AccountType::Credit || $type === AccountType::Loan) {
             return 'liability';
         }
 
@@ -42,7 +42,7 @@ final class AccountNetWorth
 
     public static function liabilityAmount(AccountType $type, float $balance): float
     {
-        if ($type === AccountType::Credit) {
+        if ($type === AccountType::Credit || $type === AccountType::Loan) {
             return max(0.0, $balance);
         }
 

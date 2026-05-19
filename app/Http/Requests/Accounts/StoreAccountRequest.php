@@ -32,8 +32,11 @@ class StoreAccountRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'institution' => ['nullable', 'string', 'max:255'],
             'type' => ['required', Rule::enum(AccountType::class)],
-            'initial_balance' => ['required', 'numeric'],
-            'opened_at' => ['nullable', 'date'],
+            'initial_balance' => [
+                Rule::requiredIf(fn (): bool => $this->input('type') !== AccountType::Loan->value),
+                'nullable',
+                'numeric',
+            ],
             ...$this->creditCardFieldRules(),
             ...$this->loanFieldRules(),
             ...$this->entityLogoRules(),

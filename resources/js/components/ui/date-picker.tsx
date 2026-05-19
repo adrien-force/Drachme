@@ -22,6 +22,10 @@ export type DatePickerProps = {
     disabled?: boolean;
     className?: string;
     clearable?: boolean;
+    /** Earliest month in year/month dropdowns (defaults in Calendar: 100 years ago). */
+    startMonth?: Date;
+    /** Latest month in year/month dropdowns (defaults in Calendar: end of next year). */
+    endMonth?: Date;
 };
 
 function parseDateValue(value: string): Date | undefined {
@@ -43,6 +47,8 @@ export function DatePicker({
     disabled = false,
     className,
     clearable = false,
+    startMonth,
+    endMonth,
 }: DatePickerProps) {
     const { t, locale } = useTranslation();
     const [open, setOpen] = useState(false);
@@ -93,6 +99,8 @@ export function DatePicker({
                         defaultMonth={selected ?? new Date()}
                         selected={selected}
                         onSelect={pick}
+                        startMonth={startMonth}
+                        endMonth={endMonth}
                     />
                 </PopoverContent>
             </Popover>

@@ -6,6 +6,47 @@ import type {
     TransactionTypeOption,
 } from '@/types/transaction.types';
 
+export type LoanAccountMetrics = {
+    original_principal: number;
+    outstanding_principal: number;
+    principal_repaid: number;
+    total_repaid: number;
+    interest_paid_estimate: number;
+    monthly_payment: number | null;
+    months_remaining: number | null;
+    estimated_remaining_interest: number | null;
+    estimated_total_cost: number | null;
+    term_months: number | null;
+};
+
+export type LoanAmortizationPlan = {
+    principal: number;
+    annual_rate: number;
+    start_date: string;
+    end_date: string;
+    term_months: number;
+    monthly_payment: number;
+    total_interest: number;
+    total_cost: number;
+    installments: {
+        date: string;
+        payment: number;
+        interest: number;
+        principal: number;
+        balance: number;
+    }[];
+    chart_points: AccountBalancePoint[];
+};
+
+export type LoanAmortizationPresentation = {
+    plan: LoanAmortizationPlan | null;
+    metrics: {
+        can_calculate: boolean;
+        monthly_payment?: number;
+        [key: string]: unknown;
+    };
+};
+
 export type SettlementPeriodMode =
     | 'since_last_settlement'
     | 'calendar_month'
@@ -16,6 +57,7 @@ export type AccountType =
     | 'savings'
     | 'invest'
     | 'credit'
+    | 'loan'
     | 'credit_card'
     | 'cash';
 
@@ -44,8 +86,13 @@ export type AccountRecord = {
     last_activity_at: string | null;
     settlement_account_id: number | null;
     billing_day: number | null;
-    /** Day of month for loan payment (1–31), when type is credit. */
+    /** Day of month for loan payment (1–31), when type is loan. */
     payment_day: number | null;
+    loan_original_principal: number | null;
+    loan_interest_rate: number | null;
+    loan_end_date: string | null;
+    loan_metrics: LoanAccountMetrics | null;
+    loan_monthly_payment: number | null;
     settlement_label_pattern: string | null;
     settlement_period_mode: SettlementPeriodMode;
     settlement_account: { id: number; name: string } | null;
@@ -182,6 +229,7 @@ export type AccountsShowPageProps = {
     categoryOptions: CategorySelectOption[];
     perPageOptions: number[];
     balanceHistory: AccountBalanceHistory | null;
+    loanAmortization: LoanAmortizationPresentation | null;
     creditCardSettlements: CreditCardSettlementsData | null;
     transactionEdit: TransactionsFormPageProps | null;
     uncategorizedCount: number;

@@ -31,6 +31,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'settlement_account_id',
     'billing_day',
     'payment_day',
+    'loan_original_principal',
+    'loan_interest_rate',
+    'loan_end_date',
+    'loan_monthly_payment',
     'settlement_label_pattern',
     'settlement_period_mode',
     'initial_balance',
@@ -56,6 +60,10 @@ class Account extends Model
             'initial_balance' => 'decimal:2',
             'current_balance' => 'decimal:2',
             'opened_at' => 'date',
+            'loan_original_principal' => 'decimal:2',
+            'loan_interest_rate' => 'decimal:4',
+            'loan_end_date' => 'date',
+            'loan_monthly_payment' => 'decimal:2',
             'is_archived' => 'boolean',
         ];
     }
