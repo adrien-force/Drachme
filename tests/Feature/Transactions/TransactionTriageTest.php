@@ -94,6 +94,27 @@ class TransactionTriageTest extends TestCase
         );
     }
 
+    public function test_triage_page_when_nothing_left_to_categorize(): void
+    {
+        $user = User::factory()->create();
+        $account = Account::factory()->for($user)->create();
+        $category = Category::factory()->for($user)->create();
+
+        Transaction::factory()->for($user)->for($account)->create([
+            'label' => 'SALAIRE',
+            'category_id' => $category->id,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('transactions.triage'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('transactions/transactions-triage')
+                ->where('transaction', null)
+                ->where('totalUncategorized', 0)
+                ->where('remaining', 0));
+    }
+
     public function test_skip_advances_to_next_transaction(): void
     {
         $user = User::factory()->create();

@@ -27,6 +27,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import { formatCurrency } from '@/lib/format-currency';
 import { RECURRING_FREQUENCIES, recurringFrequencyLabel } from '@/lib/recurring-frequency';
 import { cn } from '@/lib/utils';
+import type { CategoryRuleFlow } from '@/types/category-rule.types';
 import type { RecurringFrequency } from '@/types/recurring.types';
 import type { TransactionsTriagePageProps } from '@/types/transaction-triage.types';
 
@@ -65,9 +66,7 @@ export function TransactionTriagePanel({
         setSelectedTokens(transaction?.label_tokens ?? []);
         setCreateRule(false);
         setRuleFlow(
-            transaction !== undefined
-                ? flowFromAmount(transaction.amount)
-                : null,
+            transaction != null ? flowFromAmount(transaction.amount) : null,
         );
         setRecurringFrequency(NO_RECURRING);
     }, [
@@ -99,7 +98,7 @@ export function TransactionTriagePanel({
     };
 
     const submit = (action: 'categorize' | 'skip') => {
-        if (transaction === null || processing) {
+        if (transaction == null || processing) {
             return;
         }
 
@@ -134,9 +133,8 @@ export function TransactionTriagePanel({
         router.get('/transactions/triage', {}, { preserveScroll: true });
     };
 
-    if (transaction === null) {
+    if (transaction == null) {
         return (
-            <FadeIn>
                 <GlassPanel className="mx-auto max-w-lg space-y-6 p-8 text-center">
                     <p className="text-lg font-semibold">{t('transactions.triage.all_done')}</p>
                     <p className="text-muted-foreground text-sm">
@@ -156,7 +154,6 @@ export function TransactionTriagePanel({
                         </Button>
                     </div>
                 </GlassPanel>
-            </FadeIn>
         );
     }
 
