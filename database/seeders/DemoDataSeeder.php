@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Enums\AccountType;
+use App\Enums\ImportColumnField;
+use App\Enums\ImportProviderType;
 use App\Enums\InvestKind;
 use App\Enums\TransactionType;
 use App\Models\Account;
 use App\Models\Category;
+use App\Models\ImportBatch;
+use App\Models\ImportProvider;
 use App\Models\NetWorthSnapshot;
 use App\Models\PortfolioSnapshot;
 use App\Models\Position;
@@ -16,6 +20,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Services\BalanceEngine;
 use App\Services\CategoryService;
+use App\Services\ImportProviderService;
 use App\Services\NetWorthSnapshotService;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -37,10 +42,15 @@ class DemoDataSeeder extends Seeder
 
     private const MARKER_ACCOUNT = 'Main Checking';
 
+    public const DEMO_PROVIDER_NAME = 'Chase CSV';
+
+    public const DEMO_CSV_SAMPLE = 'database/data/demo/chase-checking-export.csv';
+
     public function __construct(
         private readonly CategoryService $categories,
         private readonly BalanceEngine $balanceEngine,
         private readonly NetWorthSnapshotService $netWorthSnapshots,
+        private readonly ImportProviderService $importProviders,
     ) {}
 
     public function run(bool $fresh = false): void
@@ -87,6 +97,7 @@ class DemoDataSeeder extends Seeder
         ]);
 
         $this->seedTransactions($user, $checking, $savings);
+        $this->seedImportProvider($user, $checking);
         $this->seedPosition($user, $brokerage);
         $this->seedPortfolioSnapshots($user, $brokerage);
 
@@ -97,6 +108,7 @@ class DemoDataSeeder extends Seeder
         $this->netWorthSnapshots->recordForUser($user);
 
         $this->command?->info('Demo user ready: '.self::DEMO_EMAIL.' / '.self::DEMO_PASSWORD);
+        $this->command?->info('Sample import CSV: '.self::DEMO_CSV_SAMPLE);
     }
 
     private function createDemoUser(): User
@@ -127,6 +139,8 @@ class DemoDataSeeder extends Seeder
     {
         DB::transaction(function () use ($user): void {
             Transaction::query()->where('user_id', $user->id)->delete();
+            ImportBatch::query()->where('user_id', $user->id)->delete();
+            ImportProvider::query()->where('user_id', $user->id)->delete();
             Position::query()->where('user_id', $user->id)->delete();
             Account::query()->where('user_id', $user->id)->delete();
             NetWorthSnapshot::query()->where('user_id', $user->id)->delete();
@@ -217,6 +231,31 @@ class DemoDataSeeder extends Seeder
             'amount' => '750.00',
             'type' => TransactionType::Income,
             'category_id' => $categoryIds['bonuses'] ?? null,
+        ]);
+    }
+
+    private function seedImportProvider(User $user, Account $checking): void
+    {
+        $this->importProviders->create($user, [
+            'name' => self::DEMO_PROVIDER_NAME,
+            'default_account_id' => $checking->id,
+            'account_ids' => [$checking->id],
+            'import_type' => ImportProviderType::Transactions,
+            'column_mapping' => [
+                'columns' => [
+                    ['index' => 0, 'field' => ImportColumnField::Date->value],
+                    ['index' => 1, 'field' => ImportColumnField::Label->value],
+                    ['index' => 2, 'field' => ImportColumnField::Debit->value],
+                    ['index' => 3, 'field' => ImportColumnField::Credit->value],
+                ],
+            ],
+            'csv_options' => [
+                'delimiter' => ';',
+                'enclosure' => '"',
+                'encoding' => 'UTF-8',
+                'skip_rows' => 1,
+                'date_format' => 'd/m/Y',
+            ],
         ]);
     }
 

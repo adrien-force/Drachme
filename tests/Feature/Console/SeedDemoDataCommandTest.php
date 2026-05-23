@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Console;
 
 use App\Models\Account;
+use App\Models\ImportProvider;
 use App\Models\PortfolioSnapshot;
 use App\Models\Transaction;
 use App\Models\User;
@@ -92,6 +93,26 @@ class SeedDemoDataCommandTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->has('suggestions')
                 ->where('suggestions.0.outgoing.label', 'Internal transfer to savings'));
+    }
+
+    public function test_seed_demo_includes_chase_import_provider(): void
+    {
+        $this->artisan('drachme:seed-demo --fresh')->assertSuccessful();
+
+        $demo = User::query()->where('email', DemoDataSeeder::DEMO_EMAIL)->firstOrFail();
+        $checking = Account::query()
+            ->where('user_id', $demo->id)
+            ->where('name', 'Main Checking')
+            ->firstOrFail();
+
+        $provider = ImportProvider::query()
+            ->where('user_id', $demo->id)
+            ->where('name', DemoDataSeeder::DEMO_PROVIDER_NAME)
+            ->first();
+
+        $this->assertNotNull($provider);
+        $this->assertSame($checking->id, $provider->default_account_id);
+        $this->assertFileExists(base_path(DemoDataSeeder::DEMO_CSV_SAMPLE));
     }
 
     public function test_seed_demo_includes_transactions_through_today(): void

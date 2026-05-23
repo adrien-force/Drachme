@@ -17,7 +17,7 @@ For now, Drachme is meant to stay a **hobby project**:
 
 - It runs as a **small local Docker stack** on your machine (not a hosted SaaS).
 - I do **not** plan to ship a native desktop or mobile app at this time.
-- Feature scope follows what I actually need; there is no roadmap to match commercial products.
+- Feature scope follows what I actually need; there is no pressure to match commercial products. See [Planned improvements](#planned-improvements) for ideas I may explore later.
 
 If that fits your use case, you are welcome to try it, fork it, or contribute. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -27,41 +27,61 @@ If that fits your use case, you are welcome to try it, fork it, or contribute. S
 
 | Dashboard | Accounts |
 | --- | --- |
-| ![Dashboard](.github/images/dashboard.png) | ![Accounts](.github/images/accounts.png) |
+| ![Dashboard](.github/images/drachme_dashboard.png) | ![Accounts](.github/images/drachme_account.png) |
 
-| Transactions | Import wizard |
+| Transactions | Categorize |
 | --- | --- |
-| ![Transactions](.github/images/transactions.png) | ![Import](.github/images/import.png) |
+| ![Transactions](.github/images/drachme_transactions.png) | ![Categorize](.github/images/drachme_categorize.png) |
 
-| Investments | Settings |
+| Import | Investments |
 | --- | --- |
-| ![Investments](.github/images/investments.png) | ![Settings](.github/images/settings.png) |
+| ![Import](.github/images/drachme_import.png) | ![Investments](.github/images/drachme_investemment.png) |
 
 ## Features
 
-### Accounts and balances 💳
+### Accounts and balances
 
 - Account types: checking, savings, investment, credit, loan, credit card, and cash
 - Per-user isolation (multi-tenant): each login has its own data space
 - Credit card settlement sync with checking accounts
 - Loan accounts with payment day, amortization plan, and debt metrics
 
-### Transactions and categories 📊
+### Transactions and categories
 
-- Global transaction list with filters and inline category editing
+- Global transaction list with filters, Sankey cashflow view, and inline category editing
 - Manual transaction CRUD
 - Category tree and automatic rules (label matching)
-- Transaction triage flow with bulk category actions
-- Internal transfer detection and linking
-- Recurring pattern detection with confirm/dismiss workflow
 - Optional field-level encryption for transaction labels and notes (CipherSweet)
 
-### Imports 📥
+### Automation and smart workflows
+
+Drachme includes several helpers to reduce manual bookkeeping after imports:
+
+#### Easy categorization
+
+- **Triage queue**: focus on uncategorized transactions one by one, with keyboard-friendly actions
+- **Category rules**: match labels automatically (create rules from a transaction label in one click)
+- **Bulk apply rules**: run all rules against uncategorized rows from the transaction list
+- **Inline edits**: change a category directly in the list; optionally create a rule for similar labels
+
+#### Internal transfer detection
+
+- Scans uncategorized movements for **matching amounts** on different accounts within a short date window
+- Suggests likely **internal transfer pairs** (e.g. checking → savings)
+- Accept to link them as a transfer, or dismiss false positives
+
+#### Recurring pattern detection
+
+- Detects **monthly and bi-weekly** patterns from transaction history (same label, stable amount)
+- Suggests subscriptions, rent, salary, and similar recurring items
+- Confirm with category and frequency, or dismiss; confirmed patterns appear in the recurring overview
+
+### Imports
 
 - Configurable CSV import providers per user
 - Column mapping wizard with preview and duplicate handling
 
-### Investments 📈
+### Investments
 
 - Portfolio positions with ISIN support
 - Manual price and history refresh
@@ -73,13 +93,25 @@ If that fits your use case, you are welcome to try it, fork it, or contribute. S
 
 - Net worth KPIs and history with date range
 - Cashflow chart aligned with transaction list filters
-- Account allocation and drill-down
+- Portfolio evolution and account allocation drill-down
 
 ### UX
 
 - Dark theme by default, customizable primary color
 - English and French UI
 - Built with [shadcn/ui](https://ui.shadcn.com/), Inertia.js, and Tailwind CSS 4
+
+## Planned improvements
+
+This is a hobby project, so priorities change with real usage. Ideas on the radar:
+
+| Area | Direction |
+| --- | --- |
+| **AI assistant** | Connect an AI agent (local or API) so you can ask questions about your spending, e.g. “How much did I spend on groceries last quarter?” or “Which subscriptions increased this year?”, grounded in your own data, without sending telemetry elsewhere by default. |
+| **More import formats** | Additional bank/broker presets and smarter duplicate detection |
+| **Reporting** | Deeper budget vs. actual views built on categories and recurring patterns |
+
+Nothing here is committed or scheduled. If you want to contribute, open an issue or PR; see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Tech stack
 
