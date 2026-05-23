@@ -8,6 +8,7 @@ use App\Http\Requests\Categories\DeleteCategoryRequest;
 use App\Http\Requests\Categories\StoreCategoryRequest;
 use App\Http\Requests\Categories\UpdateCategoryRequest;
 use App\Models\Category;
+use App\Support\CategoryDisplayName;
 use App\Services\CategoryService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
@@ -124,7 +125,7 @@ class CategoryController extends Controller
         return [
             'id' => $category->id,
             'parent_id' => $category->parent_id,
-            'name' => $category->name,
+            'name' => CategoryDisplayName::forCategory($category),
             'color' => $category->color,
             'icon' => $category->icon,
             'sort_order' => (int) $category->sort_order,

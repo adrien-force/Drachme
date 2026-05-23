@@ -246,7 +246,7 @@ export default function Security({
 Security.layout = {
     breadcrumbs: [
         {
-            title: 'Security settings',
+            titleKey: 'settings.security',
             href: edit(),
         },
     ],

@@ -11,6 +11,7 @@ use App\Models\CategoryRule;
 use App\Services\CategoryMatcher;
 use App\Services\CategoryRuleService;
 use App\Services\CategoryService;
+use App\Support\CategoryDisplayName;
 use App\Support\LabelTokenizer;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
@@ -168,7 +169,7 @@ class CategoryRuleController extends Controller
             'tokens' => LabelTokenizer::tokenize($label),
             'category' => $matched !== null ? [
                 'id' => $matched->id,
-                'name' => $matched->name,
+                'name' => CategoryDisplayName::forCategory($matched),
                 'color' => $matched->color,
             ] : null,
         ]);
@@ -188,7 +189,7 @@ class CategoryRuleController extends Controller
             'priority' => $rule->priority,
             'is_active' => $rule->is_active,
             'category_id' => $rule->category_id,
-            'category_name' => $category?->name,
+            'category_name' => $category !== null ? CategoryDisplayName::forCategory($category) : null,
             'category_color' => $category?->color,
         ];
     }

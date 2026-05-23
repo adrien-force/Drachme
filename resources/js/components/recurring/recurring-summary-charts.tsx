@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Cell, Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 
 import { DashboardChartCard } from '@/components/dashboard/dashboard-chart-card';
@@ -13,10 +14,6 @@ import { formatCurrency } from '@/lib/format-currency';
 import { cn } from '@/lib/utils';
 import type { RecurringSummary } from '@/types/recurring.types';
 
-const topChartConfig = {
-    monthly: { label: 'Mensuel', color: 'var(--primary)' },
-} satisfies ChartConfig;
-
 const LABEL_MAX_LENGTH = 26;
 
 function truncateAxisLabel(value: string): string {
@@ -31,6 +28,16 @@ type RecurringSummaryChartsProps = {
 
 export function RecurringSummaryCharts({ summary }: RecurringSummaryChartsProps) {
     const { t } = useTranslation();
+    const topChartConfig = useMemo(
+        () =>
+            ({
+                monthly: {
+                    label: t('recurring.frequency_monthly'),
+                    color: 'var(--primary)',
+                },
+            }) satisfies ChartConfig,
+        [t],
+    );
 
     const topData = summary.top_items.map((item) => ({
         fullLabel: item.label,

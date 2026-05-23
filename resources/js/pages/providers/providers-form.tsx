@@ -728,6 +728,6 @@ export default function ProvidersForm({
 
 ProvidersForm.layout = {
     breadcrumbs: [
-        { title: 'Fournisseurs', href: '/providers' },
+        { titleKey: 'nav.providers', href: '/providers' },
     ],
 };

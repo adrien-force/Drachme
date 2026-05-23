@@ -209,7 +209,7 @@ export default function Profile({
 Profile.layout = {
     breadcrumbs: [
         {
-            title: 'Profile settings',
+            titleKey: 'settings.profile',
             href: edit(),
         },
     ],

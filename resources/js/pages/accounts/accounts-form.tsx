@@ -790,7 +790,7 @@ export default function AccountsForm({
 AccountsForm.layout = {
     breadcrumbs: [
         {
-            title: 'Comptes',
+            titleKey: 'nav.accounts',
             href: '/accounts',
         },
     ],

@@ -11,6 +11,7 @@ use App\Models\Account;
 use App\Models\RecurringPattern;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Support\CategoryDisplayName;
 use App\Support\RecurringMonthlyAmount;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -126,7 +127,9 @@ class RecurringPresenter
                 ? CarbonImmutable::parse($pattern->last_seen_at)->toDateString()
                 : null,
             'category_id' => $pattern->category_id,
-            'category_name' => $pattern->category?->name,
+            'category_name' => $pattern->category !== null
+                ? CategoryDisplayName::forCategory($pattern->category)
+                : null,
             'category_color' => $pattern->category?->color,
             'account_name' => $pattern->account?->name,
         ];

@@ -253,7 +253,7 @@ export default function AccountsIndex({
 AccountsIndex.layout = {
     breadcrumbs: [
         {
-            title: 'Comptes',
+            titleKey: 'nav.accounts',
             href: '/accounts',
         },
     ],

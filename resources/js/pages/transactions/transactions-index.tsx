@@ -92,5 +92,5 @@ export default function TransactionsIndex({
 }
 
 TransactionsIndex.layout = {
-    breadcrumbs: [{ title: 'Transactions', href: '/transactions' }],
+    breadcrumbs: [{ titleKey: 'nav.transactions', href: '/transactions' }],
 };

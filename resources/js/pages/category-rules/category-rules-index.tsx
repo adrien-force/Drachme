@@ -453,7 +453,7 @@ export default function CategoryRulesIndex({
 
 CategoryRulesIndex.layout = {
     breadcrumbs: [
-        { title: 'Paramétrage', href: '/categories' },
-        { title: 'Règles', href: '/category-rules' },
+        { titleKey: 'nav.configuration', href: '/categories' },
+        { titleKey: 'nav.category_rules', href: '/category-rules' },
     ],
 };

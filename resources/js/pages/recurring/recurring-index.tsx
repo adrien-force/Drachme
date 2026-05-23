@@ -301,5 +301,5 @@ export default function RecurringIndex({
 }
 
 RecurringIndex.layout = {
-    breadcrumbs: [{ title: 'Récurrences', href: '/recurring' }],
+    breadcrumbs: [{ titleKey: 'nav.recurring', href: '/recurring' }],
 };

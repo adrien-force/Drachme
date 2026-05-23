@@ -13,6 +13,7 @@ help:
 	@echo "Compose: $(COMPOSE)"
 	@echo "Targets: bootstrap, build, up, setup, dev, down, build-assets, quality, check"
 	@echo "  admin       - Create admin user (drachme:create-admin)"
+	@echo "  seed-demo   - Add demo user with sample data (drachme:seed-demo)"
 
 normalize:
 	@sed -i 's/\r$$//' Makefile scripts/*.sh 2>/dev/null || true
@@ -89,6 +90,12 @@ build-assets: normalize
 
 admin: normalize
 	$(COMPOSE) exec app php artisan drachme:create-admin
+
+seed-demo: normalize
+	$(COMPOSE) exec app php artisan drachme:seed-demo
+
+seed-demo-fresh: normalize
+	$(COMPOSE) exec app php artisan drachme:seed-demo --fresh
 
 db-backup: normalize
 	$(COMPOSE) exec app php artisan db:backup

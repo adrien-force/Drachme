@@ -10,6 +10,7 @@ use App\Enums\RecurringFrequency;
 use App\Enums\TransactionType;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Support\CategoryDisplayName;
 use App\Support\LabelTokenizer;
 use InvalidArgumentException;
 
@@ -131,7 +132,9 @@ class TransactionTriageService
                 : null,
             'label_tokens' => LabelTokenizer::tokenize($transaction->label),
             'suggested_category_id' => $suggested?->id,
-            'suggested_category_name' => $suggested?->name,
+            'suggested_category_name' => $suggested !== null
+                ? CategoryDisplayName::forCategory($suggested)
+                : null,
             'suggested_category_color' => $suggested?->color,
             'is_card_settlement' => (bool) $transaction->is_card_settlement,
         ];

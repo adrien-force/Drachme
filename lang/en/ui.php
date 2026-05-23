@@ -104,6 +104,9 @@ return [
         'verification_sent' => 'A new verification link has been sent to your email address.',
         'appearance_mode_title' => 'Display mode',
         'appearance_mode_description' => 'Choose light, dark, or system theme.',
+        'appearance_light' => 'Light',
+        'appearance_dark' => 'Dark',
+        'appearance_system' => 'System',
         'colors_title' => 'Colors',
         'colors_description' => 'Customize the primary color and chart colors.',
         'colors_primary' => 'Primary color',
@@ -448,6 +451,7 @@ return [
         'delete_confirm' => 'Delete « :name »?',
         'merge_into' => 'Merge transactions into',
         'merge_hint' => 'This category has transactions. Pick a target category.',
+        'defaults' => require __DIR__.'/category_defaults.php',
         'errors' => [
             'max_depth' => 'Maximum depth of 3 levels exceeded.',
             'merge_required' => 'Choose a merge target category.',
@@ -896,5 +900,37 @@ return [
         'logo_choose' => 'Choose image',
         'logo_remove' => 'Remove logo',
         'logo_hint' => 'PNG, JPG or WebP — 2 MB max.',
+    ],
+    'auth' => [
+        'login' => [
+            'title' => 'Log in to your account',
+            'description' => 'Enter your email and password below to log in',
+            'head' => 'Log in',
+        ],
+        'register' => [
+            'title' => 'Create an account',
+            'description' => 'Enter your details below to create your account',
+            'head' => 'Register',
+        ],
+        'forgot_password' => [
+            'title' => 'Forgot password',
+            'description' => 'Enter your email to receive a password reset link',
+            'head' => 'Forgot password',
+        ],
+        'reset_password' => [
+            'title' => 'Reset password',
+            'description' => 'Please enter your new password below',
+            'head' => 'Reset password',
+        ],
+        'confirm_password' => [
+            'title' => 'Confirm your password',
+            'description' => 'This is a secure area of the application. Please confirm your password before continuing.',
+            'head' => 'Confirm password',
+        ],
+        'verify_email' => [
+            'title' => 'Verify email',
+            'description' => 'Please verify your email address by clicking on the link we just emailed to you.',
+            'head' => 'Verify email',
+        ],
     ],
 ];

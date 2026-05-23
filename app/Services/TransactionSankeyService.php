@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\TransactionList\TransactionListFilterApplier;
+use App\Support\CategoryDisplayName;
 use Illuminate\Support\Facades\DB;
 
 class TransactionSankeyService
@@ -55,6 +56,7 @@ class TransactionSankeyService
                 'accounts.name as account_name',
                 'transactions.category_id',
                 'categories.name as category_name',
+                'categories.slug as category_slug',
                 'categories.color as category_color',
                 DB::raw('SUM(ABS(transactions.amount)) as total'),
             ])
@@ -63,6 +65,7 @@ class TransactionSankeyService
                 'accounts.name',
                 'transactions.category_id',
                 'categories.name',
+                'categories.slug',
                 'categories.color',
             )
             ->havingRaw('SUM(ABS(transactions.amount)) > 0')
@@ -104,7 +107,10 @@ class TransactionSankeyService
                 $categoryIndex[$categoryKey] = count($nodes);
                 $nodes[] = [
                     'name' => $row->category_name !== null
-                        ? (string) $row->category_name
+                        ? CategoryDisplayName::for(
+                            $row->category_slug !== null ? (string) $row->category_slug : null,
+                            (string) $row->category_name,
+                        )
                         : $uncategorizedLabel,
                     'category' => 'outcome',
                     'color' => $row->category_color !== null

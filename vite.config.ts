@@ -1,3 +1,6 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import inertia from '@inertiajs/vite';
 import { wayfinder } from '@laravel/vite-plugin-wayfinder';
 import tailwindcss from '@tailwindcss/vite';
@@ -5,6 +8,8 @@ import react from '@vitejs/plugin-react';
 import laravel from 'laravel-vite-plugin';
 import { bunny } from 'laravel-vite-plugin/fonts';
 import { defineConfig, type PluginOption } from 'vite';
+
+const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
 // Vite-only container has no PHP; routes are generated in the app container first.
 const skipWayfinderPlugin = process.env.WAYFINDER_SKIP_PLUGIN === '1';
@@ -37,6 +42,11 @@ if (!skipWayfinderPlugin) {
 }
 
 export default defineConfig({
+    resolve: {
+        alias: {
+            '@': path.resolve(projectRoot, 'resources/js'),
+        },
+    },
     server: {
         host: '0.0.0.0',
         port: 5173,

@@ -18,5 +18,7 @@ export type AuthLayoutProps = {
     children?: ReactNode;
     name?: string;
     title?: string;
+    titleKey?: string;
     description?: string;
+    descriptionKey?: string;
 };

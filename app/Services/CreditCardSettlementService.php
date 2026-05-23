@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Enums\AccountType;
 use App\Models\Account;
 use App\Models\Transaction;
+use App\Support\CategoryDisplayName;
 use App\Support\CreditCardPeriodResolver;
 use App\Support\SettlementLabelMatcher;
 use Carbon\CarbonImmutable;
@@ -319,7 +320,7 @@ class CreditCardSettlementService
                     'date' => $this->formatDate($tx->date),
                     'label' => $tx->label,
                     'amount' => (float) $tx->amount,
-                    'category_name' => $category?->name,
+                    'category_name' => $category !== null ? CategoryDisplayName::forCategory($category) : null,
                     'category_color' => $category?->color,
                 ];
             })

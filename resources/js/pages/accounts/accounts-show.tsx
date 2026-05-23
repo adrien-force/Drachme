@@ -329,5 +329,5 @@ export default function AccountsShow({
 }
 
 AccountsShow.layout = {
-    breadcrumbs: [{ title: 'Comptes', href: '/accounts' }],
+    breadcrumbs: [{ titleKey: 'nav.accounts', href: '/accounts' }],
 };

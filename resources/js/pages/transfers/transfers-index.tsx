@@ -287,5 +287,5 @@ export default function TransfersIndex({
 }
 
 TransfersIndex.layout = {
-    breadcrumbs: [{ title: 'Virements', href: '/transfers' }],
+    breadcrumbs: [{ titleKey: 'nav.transfers', href: '/transfers' }],
 };

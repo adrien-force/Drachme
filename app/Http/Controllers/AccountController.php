@@ -23,6 +23,7 @@ use App\Services\PortfolioValuationService;
 use App\Services\TransactionListService;
 use App\Services\CategoryService;
 use App\Services\TransactionCategoryRuleApplier;
+use App\Support\CategoryDisplayName;
 use App\Services\LoanAccountService;
 use App\Services\LoanMetricsService;
 use App\Services\TransactionFormPresenter;
@@ -456,7 +457,7 @@ class AccountController extends Controller
             'is_transfer_linked' => $transaction->transfer_pair_id !== null,
             'is_card_settlement' => (bool) $transaction->is_card_settlement,
             'category_id' => $transaction->category_id,
-            'category_name' => $category?->name,
+            'category_name' => $category !== null ? CategoryDisplayName::forCategory($category) : null,
             'category_color' => $category?->color,
         ];
     }

@@ -352,7 +352,7 @@ export default function CategoriesIndex({ categories }: CategoriesIndexPageProps
 
 CategoriesIndex.layout = {
     breadcrumbs: [
-        { title: 'Paramétrage', href: '/categories' },
-        { title: 'Catégories', href: '/categories' },
+        { titleKey: 'nav.configuration', href: '/categories' },
+        { titleKey: 'nav.categories', href: '/categories' },
     ],
 };

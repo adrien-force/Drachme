@@ -104,6 +104,6 @@ export default function ProvidersShow({
 
 ProvidersShow.layout = {
     breadcrumbs: [
-        { title: 'Fournisseurs', href: '/providers' },
+        { titleKey: 'nav.providers', href: '/providers' },
     ],
 };

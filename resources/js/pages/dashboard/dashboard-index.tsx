@@ -190,7 +190,7 @@ export default function DashboardIndex(props: DashboardPageProps) {
 
 const dashboardBreadcrumbs = [
     {
-        title: 'Tableau de bord',
+        titleKey: 'nav.dashboard',
         href: dashboard(),
     },
 ];

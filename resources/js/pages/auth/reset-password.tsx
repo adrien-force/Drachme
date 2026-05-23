@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { useTranslation } from '@/hooks/use-translation';
 import { update } from '@/routes/password';
 
 type Props = {
@@ -14,9 +15,11 @@ type Props = {
 };
 
 export default function ResetPassword({ token, email, passwordRules }: Props) {
+    const { t } = useTranslation();
+
     return (
         <>
-            <Head title="Reset password" />
+            <Head title={t('auth.reset_password.head')} />
 
             <Form
                 {...update.form()}
@@ -91,6 +94,6 @@ export default function ResetPassword({ token, email, passwordRules }: Props) {
 }
 
 ResetPassword.layout = {
-    title: 'Reset password',
-    description: 'Please enter your new password below',
+    titleKey: 'auth.reset_password.title',
+    descriptionKey: 'auth.reset_password.description',
 };

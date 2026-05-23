@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Category;
+use App\Support\CategoryDisplayName;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Support\DefaultCategoryTree;
@@ -367,7 +368,7 @@ class CategoryService
             $options[] = [
                 'id' => $category->id,
                 'parent_id' => $category->parent_id,
-                'name' => $category->name,
+                'name' => CategoryDisplayName::forCategory($category),
                 'depth' => $resolveDepth($category),
                 'color' => $category->color,
                 'is_system' => $category->is_system,

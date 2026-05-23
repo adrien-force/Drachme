@@ -87,5 +87,5 @@ export default function TransactionsForm({
 }
 
 TransactionsForm.layout = {
-    breadcrumbs: [{ title: 'Transactions', href: '/transactions' }],
+    breadcrumbs: [{ titleKey: 'nav.transactions', href: '/transactions' }],
 };

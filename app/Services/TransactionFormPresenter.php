@@ -9,6 +9,7 @@ use App\Enums\TransactionType;
 use App\Models\Account;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Support\CategoryDisplayName;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 
@@ -148,7 +149,9 @@ class TransactionFormPresenter
             'is_transfer_linked' => $transaction->transfer_pair_id !== null,
             'import_batch_id' => $transaction->import_batch_id,
             'category_id' => $transaction->category_id,
-            'category_name' => $transaction->category?->name,
+            'category_name' => $transaction->category !== null
+                ? CategoryDisplayName::forCategory($transaction->category)
+                : null,
             'category_color' => $transaction->category?->color,
             'recurring_pattern_id' => $recurringMatch?->id,
             'recurring_display_label' => $recurringMatch?->display_label,

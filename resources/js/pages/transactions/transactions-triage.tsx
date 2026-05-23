@@ -42,6 +42,6 @@ export default function TransactionsTriage(props: TransactionsTriagePageProps) {
 
 TransactionsTriage.layout = {
     breadcrumbs: [
-        { title: 'Transactions', href: '/transactions' },
+        { titleKey: 'nav.transactions', href: '/transactions' },
     ],
 };

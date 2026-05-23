@@ -1,4 +1,5 @@
 import { router } from '@inertiajs/react';
+import { useMemo } from 'react';
 import { Bar, BarChart, CartesianGrid, Legend, XAxis, YAxis } from 'recharts';
 
 import {
@@ -19,17 +20,6 @@ import { transactionsUrlForCashflowBar } from '@/lib/dashboard-cashflow-link';
 import { formatCurrency } from '@/lib/format-currency';
 import type { CashflowPoint, DashboardDateRange } from '@/types/dashboard.types';
 
-const chartConfig = {
-    income: {
-        label: 'Revenus',
-        color: 'var(--chart-income)',
-    },
-    expense: {
-        label: 'Dépenses',
-        color: 'var(--chart-expense)',
-    },
-} satisfies ChartConfig;
-
 const tooltipCursor = {
     fill: 'var(--muted)',
     fillOpacity: 0.18,
@@ -42,6 +32,20 @@ type CashflowChartProps = {
 
 export function CashflowChart({ data, dateRange }: CashflowChartProps) {
     const { t, locale } = useTranslation();
+    const chartConfig = useMemo(
+        () =>
+            ({
+                income: {
+                    label: t('dashboard.cashflow_income'),
+                    color: 'var(--chart-income)',
+                },
+                expense: {
+                    label: t('dashboard.cashflow_expense'),
+                    color: 'var(--chart-expense)',
+                },
+            }) satisfies ChartConfig,
+        [t],
+    );
     const dateLocale = locale === 'fr' ? fr : enUS;
     const rangeLabel = formatDashboardDateRangeLabel(dateRange, t, dateLocale);
 

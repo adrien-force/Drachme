@@ -165,7 +165,7 @@ export default function ProvidersIndex({ providers }: ProvidersIndexPageProps) {
 
 ProvidersIndex.layout = {
     breadcrumbs: [
-        { title: 'Paramétrage', href: '/categories' },
-        { title: 'Fournisseurs', href: '/providers' },
+        { titleKey: 'nav.configuration', href: '/categories' },
+        { titleKey: 'nav.providers', href: '/providers' },
     ],
 };

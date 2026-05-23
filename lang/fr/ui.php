@@ -104,6 +104,9 @@ return [
         'verification_sent' => 'Un nouveau lien de vérification a été envoyé à votre adresse e-mail.',
         'appearance_mode_title' => 'Mode d\'affichage',
         'appearance_mode_description' => 'Choisissez le thème clair, sombre ou système.',
+        'appearance_light' => 'Clair',
+        'appearance_dark' => 'Sombre',
+        'appearance_system' => 'Système',
         'colors_title' => 'Couleurs',
         'colors_description' => 'Personnalisez la couleur principale et les couleurs des graphiques.',
         'colors_primary' => 'Couleur principale',
@@ -448,6 +451,7 @@ return [
         'delete_confirm' => 'Supprimer « :name » ?',
         'merge_into' => 'Fusionner les transactions vers',
         'merge_hint' => 'Cette catégorie contient des transactions. Choisissez une catégorie de destination.',
+        'defaults' => require __DIR__.'/category_defaults.php',
         'errors' => [
             'max_depth' => 'Profondeur maximale de 3 niveaux dépassée.',
             'merge_required' => 'Choisissez une catégorie de fusion.',
@@ -896,5 +900,37 @@ return [
         'logo_choose' => 'Choisir une image',
         'logo_remove' => 'Supprimer le logo',
         'logo_hint' => 'PNG, JPG ou WebP — 2 Mo max.',
+    ],
+    'auth' => [
+        'login' => [
+            'title' => 'Connexion à votre compte',
+            'description' => 'Saisissez votre e-mail et votre mot de passe pour vous connecter',
+            'head' => 'Connexion',
+        ],
+        'register' => [
+            'title' => 'Créer un compte',
+            'description' => 'Saisissez vos informations pour créer votre compte',
+            'head' => 'Inscription',
+        ],
+        'forgot_password' => [
+            'title' => 'Mot de passe oublié',
+            'description' => 'Saisissez votre e-mail pour recevoir un lien de réinitialisation',
+            'head' => 'Mot de passe oublié',
+        ],
+        'reset_password' => [
+            'title' => 'Réinitialiser le mot de passe',
+            'description' => 'Choisissez un nouveau mot de passe',
+            'head' => 'Réinitialiser le mot de passe',
+        ],
+        'confirm_password' => [
+            'title' => 'Confirmer votre mot de passe',
+            'description' => 'Zone sécurisée : confirmez votre mot de passe pour continuer.',
+            'head' => 'Confirmer le mot de passe',
+        ],
+        'verify_email' => [
+            'title' => 'Vérifier votre e-mail',
+            'description' => 'Cliquez sur le lien reçu par e-mail pour vérifier votre adresse.',
+            'head' => 'Vérifier l\'e-mail',
+        ],
     ],
 ];
