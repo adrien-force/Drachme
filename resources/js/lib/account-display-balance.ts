@@ -3,7 +3,11 @@ import type { AccountRecord } from '@/types/account.types';
 export function accountDisplayBalance(
     account: Pick<
         AccountRecord,
-        'type' | 'current_balance' | 'amount_owed' | 'current_period_spend' | 'positions_value'
+        | 'type'
+        | 'current_balance'
+        | 'positions_value'
+        | 'amount_owed'
+        | 'current_period_spend'
     >,
 ): number {
     if (account.type === 'credit_card') {

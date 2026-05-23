@@ -83,7 +83,7 @@ index.form = indexForm
 
 /**
 * @see \App\Http\Controllers\InvestmentsController::refreshPrices
-* @see app/Http/Controllers/InvestmentsController.php:83
+* @see app/Http/Controllers/InvestmentsController.php:82
 * @route '/investments/refresh-prices'
 */
 export const refreshPrices = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -98,7 +98,7 @@ refreshPrices.definition = {
 
 /**
 * @see \App\Http\Controllers\InvestmentsController::refreshPrices
-* @see app/Http/Controllers/InvestmentsController.php:83
+* @see app/Http/Controllers/InvestmentsController.php:82
 * @route '/investments/refresh-prices'
 */
 refreshPrices.url = (options?: RouteQueryOptions) => {
@@ -107,7 +107,7 @@ refreshPrices.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\InvestmentsController::refreshPrices
-* @see app/Http/Controllers/InvestmentsController.php:83
+* @see app/Http/Controllers/InvestmentsController.php:82
 * @route '/investments/refresh-prices'
 */
 refreshPrices.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -117,7 +117,7 @@ refreshPrices.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => (
 
 /**
 * @see \App\Http\Controllers\InvestmentsController::refreshPrices
-* @see app/Http/Controllers/InvestmentsController.php:83
+* @see app/Http/Controllers/InvestmentsController.php:82
 * @route '/investments/refresh-prices'
 */
 const refreshPricesForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -127,7 +127,7 @@ const refreshPricesForm = (options?: RouteQueryOptions): RouteFormDefinition<'po
 
 /**
 * @see \App\Http\Controllers\InvestmentsController::refreshPrices
-* @see app/Http/Controllers/InvestmentsController.php:83
+* @see app/Http/Controllers/InvestmentsController.php:82
 * @route '/investments/refresh-prices'
 */
 refreshPricesForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

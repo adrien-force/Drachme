@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Enums\AccountType;
+use App\Enums\InvestKind;
 use App\Enums\TransactionType;
 use App\Http\Requests\Accounts\ShowAccountRequest;
 use App\Http\Requests\Accounts\StoreAccountRequest;
@@ -18,6 +19,7 @@ use App\DataTransferObjects\CreditCardSettlementSyncResult;
 use App\Services\CreditCardSettlementSyncService;
 use App\Enums\SettlementPeriodMode;
 use App\Services\BalanceEngine;
+use App\Services\PortfolioValuationService;
 use App\Services\TransactionListService;
 use App\Services\CategoryService;
 use App\Services\TransactionCategoryRuleApplier;
@@ -47,6 +49,7 @@ class AccountController extends Controller
         private readonly CreditCardSettlementSyncService $creditCardSettlementSync,
         private readonly LoanMetricsService $loanMetrics,
         private readonly LoanAccountService $loanAccounts,
+        private readonly PortfolioValuationService $portfolioValuation,
     ) {}
 
     public function index(Request $request): Response
@@ -63,9 +66,15 @@ class AccountController extends Controller
             $query->active();
         }
 
-        $accounts = $query
-            ->get()
-            ->map(fn (Account $account): array => $this->serializeAccount($account));
+        $accountModels = $query->get();
+        $portfolioTotals = $this->portfolioValuation->totalsByAccountId($accountModels);
+
+        $accounts = $accountModels->map(
+            fn (Account $account): array => $this->serializeAccount(
+                $account,
+                $portfolioTotals[$account->id] ?? null,
+            ),
+        );
 
         return Inertia::render('accounts/accounts-index', [
             'accounts' => $accounts,
@@ -96,6 +105,7 @@ class AccountController extends Controller
             : AccountType::from((string) $account->type);
         $isCreditCard = $accountType === AccountType::CreditCard;
         $isLoan = $accountType === AccountType::Loan;
+        $isInvest = $accountType === AccountType::Invest;
 
         if ($isLoan) {
             $account = $this->loanAccounts->syncBalances($account);
@@ -122,7 +132,7 @@ class AccountController extends Controller
             'transactionTypeOptions' => $this->transactionTypeOptions(),
             'categoryOptions' => $user !== null ? $this->categories->flatSelectableOptions($user) : [],
             'perPageOptions' => ShowAccountRequest::perPageOptions(),
-            'balanceHistory' => $isCreditCard || $isLoan
+            'balanceHistory' => $isCreditCard || $isLoan || $isInvest
                 ? null
                 : $this->balanceHistory->build(
                     $account,
@@ -178,6 +188,7 @@ class AccountController extends Controller
                 ? $this->settlementAccountOptions($user)
                 : [],
             'settlementPeriodModeOptions' => $this->settlementPeriodModeOptions(),
+            'investKindOptions' => $this->investKindOptions(),
         ]);
     }
 
@@ -223,6 +234,7 @@ class AccountController extends Controller
                 ? $this->settlementAccountOptions($user)
                 : [],
             'settlementPeriodModeOptions' => $this->settlementPeriodModeOptions(),
+            'investKindOptions' => $this->investKindOptions(),
         ]);
     }
 
@@ -314,7 +326,7 @@ class AccountController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function serializeAccount(Account $account): array
+    private function serializeAccount(Account $account, ?float $positionsValue = null): array
     {
         $type = $account->type instanceof AccountType
             ? $account->type
@@ -322,14 +334,24 @@ class AccountController extends Controller
         $openedAt = $account->opened_at;
         $currentBalance = (float) $account->current_balance;
 
+        if ($type === AccountType::Invest) {
+            $positionsValue = $positionsValue ?? $this->portfolioValuation->totalForAccount($account);
+        }
+
         return [
             'id' => $account->id,
             'name' => $account->name,
             'logo_url' => $this->accounts->logoUrl($account),
             'institution' => $account->institution,
             'type' => $type->value,
+            'invest_kind' => $type === AccountType::Invest
+                ? ($account->invest_kind instanceof InvestKind
+                    ? $account->invest_kind->value
+                    : (string) ($account->invest_kind ?? InvestKind::Securities->value))
+                : null,
             'initial_balance' => (float) $account->initial_balance,
             'current_balance' => $currentBalance,
+            'positions_value' => $type === AccountType::Invest ? $positionsValue : null,
             'amount_owed' => $type === AccountType::CreditCard
                 ? AccountNetWorth::creditCardAmountOwed($currentBalance)
                 : null,
@@ -372,6 +394,9 @@ class AccountController extends Controller
                     'id' => $account->settlementAccount->id,
                     'name' => $account->settlementAccount->name,
                 ]
+                : null,
+            'positions_value' => $type === AccountType::Invest
+                ? $this->portfolioValuation->totalForAccount($account)
                 : null,
         ];
     }
@@ -447,6 +472,20 @@ class AccountController extends Controller
                 'label' => (string) __("ui.accounts.types.{$type->value}"),
             ],
             AccountType::cases(),
+        ));
+    }
+
+    /**
+     * @return list<array{value: string, label: string}>
+     */
+    private function investKindOptions(): array
+    {
+        return array_values(array_map(
+            static fn (InvestKind $kind): array => [
+                'value' => $kind->value,
+                'label' => (string) __("ui.accounts.invest_kinds.{$kind->value}"),
+            ],
+            InvestKind::cases(),
         ));
     }
 

@@ -2,6 +2,7 @@ import DashboardController from './DashboardController'
 import AccountController from './AccountController'
 import PositionController from './PositionController'
 import TransactionController from './TransactionController'
+import TransactionTriageController from './TransactionTriageController'
 import TransferController from './TransferController'
 import RecurringController from './RecurringController'
 import CategoryController from './CategoryController'
@@ -16,6 +17,7 @@ const Controllers = {
     AccountController: Object.assign(AccountController, AccountController),
     PositionController: Object.assign(PositionController, PositionController),
     TransactionController: Object.assign(TransactionController, TransactionController),
+    TransactionTriageController: Object.assign(TransactionTriageController, TransactionTriageController),
     TransferController: Object.assign(TransferController, TransferController),
     RecurringController: Object.assign(RecurringController, RecurringController),
     CategoryController: Object.assign(CategoryController, CategoryController),

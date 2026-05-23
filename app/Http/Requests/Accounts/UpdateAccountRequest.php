@@ -6,6 +6,7 @@ namespace App\Http\Requests\Accounts;
 
 use App\Enums\AccountType;
 use App\Http\Requests\Accounts\Concerns\ValidatesCreditCardAccount;
+use App\Http\Requests\Accounts\Concerns\ValidatesInvestKind;
 use App\Http\Requests\Accounts\Concerns\ValidatesLoanAccount;
 use App\Http\Requests\Concerns\ValidatesEntityLogo;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -18,6 +19,7 @@ class UpdateAccountRequest extends FormRequest
     use ValidatesCreditCardAccount;
     use ValidatesLoanAccount;
     use ValidatesEntityLogo;
+    use ValidatesInvestKind;
     public function authorize(): bool
     {
         return $this->user()?->can('update', $this->route('account')) ?? false;
@@ -36,6 +38,7 @@ class UpdateAccountRequest extends FormRequest
             'actual_balance' => ['nullable', 'numeric'],
             ...$this->creditCardFieldRules(),
             ...$this->loanFieldRules(),
+            ...$this->investKindFieldRules(),
             ...$this->entityLogoRules(),
         ];
     }
@@ -44,5 +47,6 @@ class UpdateAccountRequest extends FormRequest
     {
         $this->withCreditCardValidator($validator);
         $this->withLoanValidator($validator);
+        $this->withInvestKindValidator($validator);
     }
 }

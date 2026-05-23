@@ -138,7 +138,7 @@ store.form = storeForm
 
 /**
 * @see \App\Http\Controllers\CategoryRuleController::storeFromLabel
-* @see app/Http/Controllers/CategoryRuleController.php:81
+* @see app/Http/Controllers/CategoryRuleController.php:82
 * @route '/category-rules/from-label'
 */
 export const storeFromLabel = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -153,7 +153,7 @@ storeFromLabel.definition = {
 
 /**
 * @see \App\Http\Controllers\CategoryRuleController::storeFromLabel
-* @see app/Http/Controllers/CategoryRuleController.php:81
+* @see app/Http/Controllers/CategoryRuleController.php:82
 * @route '/category-rules/from-label'
 */
 storeFromLabel.url = (options?: RouteQueryOptions) => {
@@ -162,7 +162,7 @@ storeFromLabel.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\CategoryRuleController::storeFromLabel
-* @see app/Http/Controllers/CategoryRuleController.php:81
+* @see app/Http/Controllers/CategoryRuleController.php:82
 * @route '/category-rules/from-label'
 */
 storeFromLabel.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -172,7 +172,7 @@ storeFromLabel.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => 
 
 /**
 * @see \App\Http\Controllers\CategoryRuleController::storeFromLabel
-* @see app/Http/Controllers/CategoryRuleController.php:81
+* @see app/Http/Controllers/CategoryRuleController.php:82
 * @route '/category-rules/from-label'
 */
 const storeFromLabelForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -182,7 +182,7 @@ const storeFromLabelForm = (options?: RouteQueryOptions): RouteFormDefinition<'p
 
 /**
 * @see \App\Http\Controllers\CategoryRuleController::storeFromLabel
-* @see app/Http/Controllers/CategoryRuleController.php:81
+* @see app/Http/Controllers/CategoryRuleController.php:82
 * @route '/category-rules/from-label'
 */
 storeFromLabelForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -194,7 +194,7 @@ storeFromLabel.form = storeFromLabelForm
 
 /**
 * @see \App\Http\Controllers\CategoryRuleController::testMatch
-* @see app/Http/Controllers/CategoryRuleController.php:147
+* @see app/Http/Controllers/CategoryRuleController.php:153
 * @route '/category-rules/test-match'
 */
 export const testMatch = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -209,7 +209,7 @@ testMatch.definition = {
 
 /**
 * @see \App\Http\Controllers\CategoryRuleController::testMatch
-* @see app/Http/Controllers/CategoryRuleController.php:147
+* @see app/Http/Controllers/CategoryRuleController.php:153
 * @route '/category-rules/test-match'
 */
 testMatch.url = (options?: RouteQueryOptions) => {
@@ -218,7 +218,7 @@ testMatch.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\CategoryRuleController::testMatch
-* @see app/Http/Controllers/CategoryRuleController.php:147
+* @see app/Http/Controllers/CategoryRuleController.php:153
 * @route '/category-rules/test-match'
 */
 testMatch.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -228,7 +228,7 @@ testMatch.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
 /**
 * @see \App\Http\Controllers\CategoryRuleController::testMatch
-* @see app/Http/Controllers/CategoryRuleController.php:147
+* @see app/Http/Controllers/CategoryRuleController.php:153
 * @route '/category-rules/test-match'
 */
 const testMatchForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -238,7 +238,7 @@ const testMatchForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'>
 
 /**
 * @see \App\Http\Controllers\CategoryRuleController::testMatch
-* @see app/Http/Controllers/CategoryRuleController.php:147
+* @see app/Http/Controllers/CategoryRuleController.php:153
 * @route '/category-rules/test-match'
 */
 testMatchForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -250,7 +250,7 @@ testMatch.form = testMatchForm
 
 /**
 * @see \App\Http\Controllers\CategoryRuleController::update
-* @see app/Http/Controllers/CategoryRuleController.php:112
+* @see app/Http/Controllers/CategoryRuleController.php:114
 * @route '/category-rules/{categoryRule}'
 */
 export const update = (args: { categoryRule: number | { id: number } } | [categoryRule: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -265,7 +265,7 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\CategoryRuleController::update
-* @see app/Http/Controllers/CategoryRuleController.php:112
+* @see app/Http/Controllers/CategoryRuleController.php:114
 * @route '/category-rules/{categoryRule}'
 */
 update.url = (args: { categoryRule: number | { id: number } } | [categoryRule: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -298,7 +298,7 @@ update.url = (args: { categoryRule: number | { id: number } } | [categoryRule: n
 
 /**
 * @see \App\Http\Controllers\CategoryRuleController::update
-* @see app/Http/Controllers/CategoryRuleController.php:112
+* @see app/Http/Controllers/CategoryRuleController.php:114
 * @route '/category-rules/{categoryRule}'
 */
 update.put = (args: { categoryRule: number | { id: number } } | [categoryRule: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -308,7 +308,7 @@ update.put = (args: { categoryRule: number | { id: number } } | [categoryRule: n
 
 /**
 * @see \App\Http\Controllers\CategoryRuleController::update
-* @see app/Http/Controllers/CategoryRuleController.php:112
+* @see app/Http/Controllers/CategoryRuleController.php:114
 * @route '/category-rules/{categoryRule}'
 */
 const updateForm = (args: { categoryRule: number | { id: number } } | [categoryRule: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -323,7 +323,7 @@ const updateForm = (args: { categoryRule: number | { id: number } } | [categoryR
 
 /**
 * @see \App\Http\Controllers\CategoryRuleController::update
-* @see app/Http/Controllers/CategoryRuleController.php:112
+* @see app/Http/Controllers/CategoryRuleController.php:114
 * @route '/category-rules/{categoryRule}'
 */
 updateForm.put = (args: { categoryRule: number | { id: number } } | [categoryRule: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -340,7 +340,7 @@ update.form = updateForm
 
 /**
 * @see \App\Http\Controllers\CategoryRuleController::destroy
-* @see app/Http/Controllers/CategoryRuleController.php:133
+* @see app/Http/Controllers/CategoryRuleController.php:139
 * @route '/category-rules/{categoryRule}'
 */
 export const destroy = (args: { categoryRule: number | { id: number } } | [categoryRule: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -355,7 +355,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\CategoryRuleController::destroy
-* @see app/Http/Controllers/CategoryRuleController.php:133
+* @see app/Http/Controllers/CategoryRuleController.php:139
 * @route '/category-rules/{categoryRule}'
 */
 destroy.url = (args: { categoryRule: number | { id: number } } | [categoryRule: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -388,7 +388,7 @@ destroy.url = (args: { categoryRule: number | { id: number } } | [categoryRule: 
 
 /**
 * @see \App\Http\Controllers\CategoryRuleController::destroy
-* @see app/Http/Controllers/CategoryRuleController.php:133
+* @see app/Http/Controllers/CategoryRuleController.php:139
 * @route '/category-rules/{categoryRule}'
 */
 destroy.delete = (args: { categoryRule: number | { id: number } } | [categoryRule: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -398,7 +398,7 @@ destroy.delete = (args: { categoryRule: number | { id: number } } | [categoryRul
 
 /**
 * @see \App\Http\Controllers\CategoryRuleController::destroy
-* @see app/Http/Controllers/CategoryRuleController.php:133
+* @see app/Http/Controllers/CategoryRuleController.php:139
 * @route '/category-rules/{categoryRule}'
 */
 const destroyForm = (args: { categoryRule: number | { id: number } } | [categoryRule: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -413,7 +413,7 @@ const destroyForm = (args: { categoryRule: number | { id: number } } | [category
 
 /**
 * @see \App\Http\Controllers\CategoryRuleController::destroy
-* @see app/Http/Controllers/CategoryRuleController.php:133
+* @see app/Http/Controllers/CategoryRuleController.php:139
 * @route '/category-rules/{categoryRule}'
 */
 destroyForm.delete = (args: { categoryRule: number | { id: number } } | [categoryRule: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

@@ -82,7 +82,7 @@ index.form = indexForm
 
 /**
 * @see \App\Http\Controllers\InvestmentsController::refreshPrices
-* @see app/Http/Controllers/InvestmentsController.php:83
+* @see app/Http/Controllers/InvestmentsController.php:82
 * @route '/investments/refresh-prices'
 */
 export const refreshPrices = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -97,7 +97,7 @@ refreshPrices.definition = {
 
 /**
 * @see \App\Http\Controllers\InvestmentsController::refreshPrices
-* @see app/Http/Controllers/InvestmentsController.php:83
+* @see app/Http/Controllers/InvestmentsController.php:82
 * @route '/investments/refresh-prices'
 */
 refreshPrices.url = (options?: RouteQueryOptions) => {
@@ -106,7 +106,7 @@ refreshPrices.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\InvestmentsController::refreshPrices
-* @see app/Http/Controllers/InvestmentsController.php:83
+* @see app/Http/Controllers/InvestmentsController.php:82
 * @route '/investments/refresh-prices'
 */
 refreshPrices.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -116,7 +116,7 @@ refreshPrices.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => (
 
 /**
 * @see \App\Http\Controllers\InvestmentsController::refreshPrices
-* @see app/Http/Controllers/InvestmentsController.php:83
+* @see app/Http/Controllers/InvestmentsController.php:82
 * @route '/investments/refresh-prices'
 */
 const refreshPricesForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -126,7 +126,7 @@ const refreshPricesForm = (options?: RouteQueryOptions): RouteFormDefinition<'po
 
 /**
 * @see \App\Http\Controllers\InvestmentsController::refreshPrices
-* @see app/Http/Controllers/InvestmentsController.php:83
+* @see app/Http/Controllers/InvestmentsController.php:82
 * @route '/investments/refresh-prices'
 */
 refreshPricesForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -138,7 +138,7 @@ refreshPrices.form = refreshPricesForm
 
 /**
 * @see \App\Http\Controllers\InvestmentsController::destroySnapshot
-* @see app/Http/Controllers/InvestmentsController.php:126
+* @see app/Http/Controllers/InvestmentsController.php:125
 * @route '/investments/snapshots/{portfolioSnapshot}'
 */
 export const destroySnapshot = (args: { portfolioSnapshot: number | { id: number } } | [portfolioSnapshot: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -153,7 +153,7 @@ destroySnapshot.definition = {
 
 /**
 * @see \App\Http\Controllers\InvestmentsController::destroySnapshot
-* @see app/Http/Controllers/InvestmentsController.php:126
+* @see app/Http/Controllers/InvestmentsController.php:125
 * @route '/investments/snapshots/{portfolioSnapshot}'
 */
 destroySnapshot.url = (args: { portfolioSnapshot: number | { id: number } } | [portfolioSnapshot: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -186,7 +186,7 @@ destroySnapshot.url = (args: { portfolioSnapshot: number | { id: number } } | [p
 
 /**
 * @see \App\Http\Controllers\InvestmentsController::destroySnapshot
-* @see app/Http/Controllers/InvestmentsController.php:126
+* @see app/Http/Controllers/InvestmentsController.php:125
 * @route '/investments/snapshots/{portfolioSnapshot}'
 */
 destroySnapshot.delete = (args: { portfolioSnapshot: number | { id: number } } | [portfolioSnapshot: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -196,7 +196,7 @@ destroySnapshot.delete = (args: { portfolioSnapshot: number | { id: number } } |
 
 /**
 * @see \App\Http\Controllers\InvestmentsController::destroySnapshot
-* @see app/Http/Controllers/InvestmentsController.php:126
+* @see app/Http/Controllers/InvestmentsController.php:125
 * @route '/investments/snapshots/{portfolioSnapshot}'
 */
 const destroySnapshotForm = (args: { portfolioSnapshot: number | { id: number } } | [portfolioSnapshot: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -211,7 +211,7 @@ const destroySnapshotForm = (args: { portfolioSnapshot: number | { id: number } 
 
 /**
 * @see \App\Http\Controllers\InvestmentsController::destroySnapshot
-* @see app/Http/Controllers/InvestmentsController.php:126
+* @see app/Http/Controllers/InvestmentsController.php:125
 * @route '/investments/snapshots/{portfolioSnapshot}'
 */
 destroySnapshotForm.delete = (args: { portfolioSnapshot: number | { id: number } } | [portfolioSnapshot: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

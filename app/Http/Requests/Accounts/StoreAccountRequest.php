@@ -6,6 +6,7 @@ namespace App\Http\Requests\Accounts;
 
 use App\Enums\AccountType;
 use App\Http\Requests\Accounts\Concerns\ValidatesCreditCardAccount;
+use App\Http\Requests\Accounts\Concerns\ValidatesInvestKind;
 use App\Http\Requests\Accounts\Concerns\ValidatesLoanAccount;
 use App\Http\Requests\Concerns\ValidatesEntityLogo;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -18,6 +19,7 @@ class StoreAccountRequest extends FormRequest
     use ValidatesCreditCardAccount;
     use ValidatesLoanAccount;
     use ValidatesEntityLogo;
+    use ValidatesInvestKind;
     public function authorize(): bool
     {
         return $this->user() !== null;
@@ -39,6 +41,7 @@ class StoreAccountRequest extends FormRequest
             ],
             ...$this->creditCardFieldRules(),
             ...$this->loanFieldRules(),
+            ...$this->investKindFieldRules(),
             ...$this->entityLogoRules(),
         ];
     }
@@ -47,5 +50,6 @@ class StoreAccountRequest extends FormRequest
     {
         $this->withCreditCardValidator($validator);
         $this->withLoanValidator($validator);
+        $this->withInvestKindValidator($validator);
     }
 }

@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\InvestmentsController::destroy
-* @see app/Http/Controllers/InvestmentsController.php:126
+* @see app/Http/Controllers/InvestmentsController.php:125
 * @route '/investments/snapshots/{portfolioSnapshot}'
 */
 export const destroy = (args: { portfolioSnapshot: number | { id: number } } | [portfolioSnapshot: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -16,7 +16,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\InvestmentsController::destroy
-* @see app/Http/Controllers/InvestmentsController.php:126
+* @see app/Http/Controllers/InvestmentsController.php:125
 * @route '/investments/snapshots/{portfolioSnapshot}'
 */
 destroy.url = (args: { portfolioSnapshot: number | { id: number } } | [portfolioSnapshot: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -49,7 +49,7 @@ destroy.url = (args: { portfolioSnapshot: number | { id: number } } | [portfolio
 
 /**
 * @see \App\Http\Controllers\InvestmentsController::destroy
-* @see app/Http/Controllers/InvestmentsController.php:126
+* @see app/Http/Controllers/InvestmentsController.php:125
 * @route '/investments/snapshots/{portfolioSnapshot}'
 */
 destroy.delete = (args: { portfolioSnapshot: number | { id: number } } | [portfolioSnapshot: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -59,7 +59,7 @@ destroy.delete = (args: { portfolioSnapshot: number | { id: number } } | [portfo
 
 /**
 * @see \App\Http\Controllers\InvestmentsController::destroy
-* @see app/Http/Controllers/InvestmentsController.php:126
+* @see app/Http/Controllers/InvestmentsController.php:125
 * @route '/investments/snapshots/{portfolioSnapshot}'
 */
 const destroyForm = (args: { portfolioSnapshot: number | { id: number } } | [portfolioSnapshot: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -74,7 +74,7 @@ const destroyForm = (args: { portfolioSnapshot: number | { id: number } } | [por
 
 /**
 * @see \App\Http\Controllers\InvestmentsController::destroy
-* @see app/Http/Controllers/InvestmentsController.php:126
+* @see app/Http/Controllers/InvestmentsController.php:125
 * @route '/investments/snapshots/{portfolioSnapshot}'
 */
 destroyForm.delete = (args: { portfolioSnapshot: number | { id: number } } | [portfolioSnapshot: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

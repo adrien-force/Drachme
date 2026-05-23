@@ -17,6 +17,7 @@ import { TransactionEditModal } from '@/components/transactions/transaction-edit
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
 import { buildAccountShowQuery } from '@/lib/account-show-query';
+import { accountDisplayBalance } from '@/lib/account-display-balance';
 import { formatCurrency } from '@/lib/format-currency';
 import type { AccountsShowPageProps } from '@/types/account.types';
 
@@ -36,6 +37,7 @@ export default function AccountsShow({
     const { t } = useTranslation();
     const isCreditCard = account.type === 'credit_card';
     const isLoan = account.type === 'loan';
+    const isInvest = account.type === 'invest';
     const [syncingSettlements, setSyncingSettlements] = useState(false);
 
     const syncSettlements = () => {
@@ -248,7 +250,22 @@ export default function AccountsShow({
                     </FadeIn>
                 ) : null}
 
-                {!isCreditCard && !isLoan && balanceHistory !== null ? (
+                {isInvest ? (
+                    <FadeIn>
+                        <GlassPanel className="p-6">
+                            <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+                                {t('investments.positions_value')}
+                            </p>
+                            <p className="mt-2 text-3xl font-semibold tabular-nums">
+                                {formatCurrency(accountDisplayBalance(account), {
+                                    precise: true,
+                                })}
+                            </p>
+                        </GlassPanel>
+                    </FadeIn>
+                ) : null}
+
+                {!isCreditCard && !isLoan && !isInvest && balanceHistory !== null ? (
                     <>
                         <FadeIn>
                             <GlassPanel className="p-6">
