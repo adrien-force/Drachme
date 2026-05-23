@@ -81,9 +81,14 @@ class TransactionBulkTest extends TestCase
             'transfer_pair_id' => null,
         ]);
 
-        $linked = Transaction::factory()->for($user)->for($account)->create([
-            'transfer_pair_id' => 999,
+        $pair = Transaction::factory()->for($user)->for($account)->create([
+            'transfer_pair_id' => null,
         ]);
+
+        $linked = Transaction::factory()->for($user)->for($account)->create([
+            'transfer_pair_id' => $pair->id,
+        ]);
+        $pair->update(['transfer_pair_id' => $linked->id]);
 
         $this
             ->actingAs($user)

@@ -1,11 +1,15 @@
 FROM php:8.4-fpm-bookworm
 
+RUN curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /usr/share/keyrings/postgresql.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/postgresql.gpg] http://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list
+
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
     curl \
     ca-certificates \
     gnupg \
+    postgresql-client-16 \
     libpq-dev \
     libzip-dev \
     libicu-dev \

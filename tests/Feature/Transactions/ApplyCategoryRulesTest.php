@@ -26,12 +26,12 @@ class ApplyCategoryRulesTest extends TestCase
             'pattern' => 'carrefour',
         ]);
 
-        Transaction::factory()->for($user)->for($account)->create([
+        $carrefour = Transaction::factory()->for($user)->for($account)->create([
             'label' => 'CB CARREFOUR',
             'category_id' => null,
         ]);
 
-        Transaction::factory()->for($user)->for($account)->create([
+        $salary = Transaction::factory()->for($user)->for($account)->create([
             'label' => 'SALAIRE',
             'category_id' => null,
         ]);
@@ -42,13 +42,8 @@ class ApplyCategoryRulesTest extends TestCase
             ->assertRedirect();
 
         $this->assertSame(1, Transaction::query()->whereNotNull('category_id')->count());
-        $this->assertSame(
-            $category->id,
-            Transaction::query()->where('label', 'CB CARREFOUR')->value('category_id'),
-        );
-        $this->assertNull(
-            Transaction::query()->where('label', 'SALAIRE')->value('category_id'),
-        );
+        $this->assertSame($category->id, $carrefour->fresh()?->category_id);
+        $this->assertNull($salary->fresh()?->category_id);
     }
 
     public function test_apply_rules_can_be_scoped_to_account(): void

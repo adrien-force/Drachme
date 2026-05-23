@@ -43,7 +43,9 @@ class RecurringDetector
             ->whereDate('date', '>=', $since->toDateString())
             ->orderBy('date')
             ->orderBy('id')
-            ->get(['id', 'user_id', 'account_id', 'date', 'label', 'amount', 'type', 'category_id']);
+            ->get(Transaction::mergeEncryptedAttributeColumns([
+                'id', 'user_id', 'account_id', 'date', 'label', 'amount', 'type', 'category_id',
+            ]));
 
         if ($transactions->count() < self::MIN_OCCURRENCES) {
             return [];

@@ -16,6 +16,7 @@ use App\Models\PortfolioSnapshot;
 use App\Models\Position;
 use App\Models\RecurringPattern;
 use App\Models\Transaction;
+use App\Observers\TransactionLabelTokenObserver;
 use App\Policies\AccountPolicy;
 use App\Policies\CategoryPolicy;
 use App\Policies\CategoryRulePolicy;
@@ -63,6 +64,8 @@ class AppServiceProvider extends ServiceProvider
 
         Event::listen(TransactionChanged::class, RecalculateAccountBalance::class);
         Event::listen(TransactionChanged::class, SyncCreditCardSettlements::class);
+
+        Transaction::observe(TransactionLabelTokenObserver::class);
 
         View::composer('app', function ($view): void {
             $colors = ThemeColors::resolveForRequest(request());

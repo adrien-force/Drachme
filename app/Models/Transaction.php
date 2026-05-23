@@ -6,11 +6,19 @@ namespace App\Models;
 
 use App\Enums\TransactionType;
 use App\Models\Concerns\BelongsToUser;
+use App\Models\Concerns\SelectsEncryptedAttributes;
+use App\Support\TransactionLabelIndex;
 use Database\Factories\TransactionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use ParagonIE\CipherSweet\BlindIndex;
+use ParagonIE\CipherSweet\EncryptedRow;
+use ParagonIE\CipherSweet\Transformation\Lowercase;
+use Spatie\LaravelCipherSweet\Contracts\CipherSweetEncrypted;
+use Spatie\LaravelCipherSweet\Concerns\UsesCipherSweet;
 
 #[Fillable([
     'user_id',
@@ -27,10 +35,21 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'import_hash',
     'notes',
 ])]
-class Transaction extends Model
+class Transaction extends Model implements CipherSweetEncrypted
 {
     /** @use HasFactory<TransactionFactory> */
-    use BelongsToUser, HasFactory;
+    use BelongsToUser, HasFactory, SelectsEncryptedAttributes, UsesCipherSweet;
+
+    public static function configureCipherSweet(EncryptedRow $encryptedRow): void
+    {
+        $encryptedRow
+            ->addTextField('label')
+            ->addBlindIndex(
+                'label',
+                new BlindIndex(TransactionLabelIndex::BLIND_INDEX_NAME, [new Lowercase()]),
+            )
+            ->addOptionalTextField('notes');
+    }
 
     /**
      * @return array<string, string>
@@ -76,5 +95,13 @@ class Transaction extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    /**
+     * @return HasMany<TransactionLabelToken, $this>
+     */
+    public function labelTokens(): HasMany
+    {
+        return $this->hasMany(TransactionLabelToken::class);
     }
 }

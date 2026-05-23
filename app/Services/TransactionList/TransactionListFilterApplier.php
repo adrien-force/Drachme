@@ -6,12 +6,16 @@ namespace App\Services\TransactionList;
 
 use App\Models\User;
 use App\Services\CategoryService;
+use App\Support\TransactionLabelIndex;
 use Illuminate\Database\Eloquent\Builder;
+use ParagonIE\CipherSweet\Exception\CipherSweetException;
 
 class TransactionListFilterApplier
 {
     public function __construct(
         private readonly CategoryService $categories,
+        private readonly TransactionLabelIndex $labelIndex,
+        private readonly TransactionListLabelSortApplier $labelSort,
     ) {}
 
     /**
@@ -31,8 +35,7 @@ class TransactionListFilterApplier
     public function apply(Builder $query, User $user, array $filters): void
     {
         if (! empty($filters['search'])) {
-            $term = '%'.addcslashes(mb_strtolower((string) $filters['search']), '%_\\').'%';
-            $query->whereRaw('LOWER(label) LIKE ?', [$term]);
+            $this->applyLabelSearch($query, (string) $filters['search']);
         }
 
         if (! empty($filters['date_from'])) {
@@ -81,7 +84,7 @@ class TransactionListFilterApplier
         $order = ($filters['order'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
 
         match ($sort) {
-            'label' => $query->orderBy('label', $order)->orderBy('id', $order),
+            'label' => $this->labelSort->apply($query, $order),
             'amount' => $query->orderBy('amount', $order)->orderBy('id', $order),
             'type' => $query->orderBy('type', $order)->orderBy('id', $order),
             'account' => $query
@@ -123,5 +126,33 @@ class TransactionListFilterApplier
         }
 
         $query->whereIn('category_id', $ids);
+    }
+
+    /**
+     * @param  Builder<\App\Models\Transaction>  $query
+     */
+    private function applyLabelSearch(Builder $query, string $search): void
+    {
+        $tokens = $this->labelIndex->tokenizeSearch($search);
+
+        if ($tokens === []) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        foreach ($tokens as $token) {
+            try {
+                $hash = $this->labelIndex->hashToken($token);
+            } catch (CipherSweetException) {
+                $query->whereRaw('1 = 0');
+
+                return;
+            }
+
+            $query->whereHas('labelTokens', static function (Builder $tokenQuery) use ($hash): void {
+                $tokenQuery->where('token_hash', $hash);
+            });
+        }
     }
 }

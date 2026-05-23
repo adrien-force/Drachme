@@ -90,6 +90,12 @@ build-assets: normalize
 admin: normalize
 	$(COMPOSE) exec app php artisan drachme:create-admin
 
+db-backup: normalize
+	$(COMPOSE) exec app php artisan db:backup
+
+encrypt-financial-data: normalize
+	$(COMPOSE) exec app php artisan drachme:encrypt-financial-data
+
 quality: normalize
 	$(COMPOSE) exec -T app git config --global --add safe.directory /var/www/html
 	$(COMPOSE) exec app composer analyse

@@ -162,7 +162,7 @@ class TransactionListTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->has('transactions.data', 25)
                 ->where('listSummary.count', 30)
-                ->where('listSummary.amount_total', -300.0));
+                ->where('listSummary.amount_total', -300));
 
         $this
             ->actingAs($user)
@@ -170,7 +170,7 @@ class TransactionListTest extends TestCase
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->where('listSummary.count', 0)
-                ->where('listSummary.amount_total', 0.0));
+                ->where('listSummary.amount_total', 0));
     }
 
     public function test_sankey_reflects_all_filtered_transactions_not_current_page(): void
