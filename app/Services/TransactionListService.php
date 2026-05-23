@@ -68,7 +68,7 @@ class TransactionListService
      */
     public function sumAmountForUser(User $user, array $filterParams): float
     {
-        $sum = $this->filteredQueryForUser($user, $filterParams)->sum('amount');
+        $sum = $this->filteredQueryForUser($user, $filterParams)->sum('transactions.amount');
 
         return (float) $sum;
     }
@@ -90,7 +90,7 @@ class TransactionListService
      */
     private function filteredQueryForUser(User $user, array $filterParams): Builder
     {
-        $query = Transaction::query()->where('user_id', $user->id);
+        $query = Transaction::query()->where('transactions.user_id', $user->id);
         $this->filters->apply($query, $user, $filterParams);
 
         return $query;

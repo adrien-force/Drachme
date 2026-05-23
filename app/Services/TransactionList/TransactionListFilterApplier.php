@@ -12,6 +12,8 @@ use ParagonIE\CipherSweet\Exception\CipherSweetException;
 
 class TransactionListFilterApplier
 {
+    private const TRANSACTIONS_TABLE = 'transactions';
+
     public function __construct(
         private readonly CategoryService $categories,
         private readonly TransactionLabelIndex $labelIndex,
@@ -39,36 +41,36 @@ class TransactionListFilterApplier
         }
 
         if (! empty($filters['date_from'])) {
-            $query->where('date', '>=', $filters['date_from']);
+            $query->where(self::TRANSACTIONS_TABLE.'.date', '>=', $filters['date_from']);
         }
 
         if (! empty($filters['date_to'])) {
-            $query->where('date', '<=', $filters['date_to']);
+            $query->where(self::TRANSACTIONS_TABLE.'.date', '<=', $filters['date_to']);
         }
 
         if (! empty($filters['type'])) {
-            $query->where('type', $filters['type']);
+            $query->where(self::TRANSACTIONS_TABLE.'.type', $filters['type']);
         }
 
         if (($filters['flow'] ?? null) === 'credit') {
-            $query->where('amount', '>', 0);
+            $query->where(self::TRANSACTIONS_TABLE.'.amount', '>', 0);
         }
 
         if (($filters['flow'] ?? null) === 'debit') {
-            $query->where('amount', '<', 0);
+            $query->where(self::TRANSACTIONS_TABLE.'.amount', '<', 0);
         }
 
         $accountId = $filters['account_id'] ?? null;
         if (is_numeric($accountId)) {
-            $query->where('account_id', (int) $accountId);
+            $query->where(self::TRANSACTIONS_TABLE.'.account_id', (int) $accountId);
         }
 
         if (array_key_exists('amount_min', $filters) && $filters['amount_min'] !== null) {
-            $query->where('amount', '>=', (float) $filters['amount_min']);
+            $query->where(self::TRANSACTIONS_TABLE.'.amount', '>=', (float) $filters['amount_min']);
         }
 
         if (array_key_exists('amount_max', $filters) && $filters['amount_max'] !== null) {
-            $query->where('amount', '<=', (float) $filters['amount_max']);
+            $query->where(self::TRANSACTIONS_TABLE.'.amount', '<=', (float) $filters['amount_max']);
         }
 
         $this->applyCategoryFilter($query, $user, $filters['category_id'] ?? null);
@@ -85,8 +87,8 @@ class TransactionListFilterApplier
 
         match ($sort) {
             'label' => $this->labelSort->apply($query, $order),
-            'amount' => $query->orderBy('amount', $order)->orderBy('id', $order),
-            'type' => $query->orderBy('type', $order)->orderBy('id', $order),
+            'amount' => $query->orderBy(self::TRANSACTIONS_TABLE.'.amount', $order)->orderBy(self::TRANSACTIONS_TABLE.'.id', $order),
+            'type' => $query->orderBy(self::TRANSACTIONS_TABLE.'.type', $order)->orderBy(self::TRANSACTIONS_TABLE.'.id', $order),
             'account' => $query
                 ->leftJoin('accounts', 'transactions.account_id', '=', 'accounts.id')
                 ->orderBy('accounts.name', $order)
@@ -97,7 +99,7 @@ class TransactionListFilterApplier
                 ->orderBy('categories.name', $order)
                 ->select('transactions.*')
                 ->orderBy('transactions.id', $order),
-            default => $query->orderBy('date', $order)->orderBy('id', $order),
+            default => $query->orderBy(self::TRANSACTIONS_TABLE.'.date', $order)->orderBy(self::TRANSACTIONS_TABLE.'.id', $order),
         };
     }
 
@@ -107,7 +109,7 @@ class TransactionListFilterApplier
     private function applyCategoryFilter(Builder $query, User $user, mixed $categoryFilter): void
     {
         if ($categoryFilter === 'uncategorized') {
-            $query->whereNull('category_id');
+            $query->whereNull(self::TRANSACTIONS_TABLE.'.category_id');
 
             return;
         }
@@ -125,7 +127,7 @@ class TransactionListFilterApplier
             return;
         }
 
-        $query->whereIn('category_id', $ids);
+        $query->whereIn(self::TRANSACTIONS_TABLE.'.category_id', $ids);
     }
 
     /**

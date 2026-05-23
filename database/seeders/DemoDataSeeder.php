@@ -10,6 +10,7 @@ use App\Enums\TransactionType;
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\NetWorthSnapshot;
+use App\Models\PortfolioSnapshot;
 use App\Models\Position;
 use App\Models\Transaction;
 use App\Models\User;
@@ -87,6 +88,7 @@ class DemoDataSeeder extends Seeder
 
         $this->seedTransactions($user, $checking, $savings);
         $this->seedPosition($user, $brokerage);
+        $this->seedPortfolioSnapshots($user, $brokerage);
 
         foreach ([$checking, $savings, $brokerage] as $account) {
             $this->balanceEngine->recalculateAccount($account->fresh());
@@ -128,6 +130,7 @@ class DemoDataSeeder extends Seeder
             Position::query()->where('user_id', $user->id)->delete();
             Account::query()->where('user_id', $user->id)->delete();
             NetWorthSnapshot::query()->where('user_id', $user->id)->delete();
+            PortfolioSnapshot::query()->where('user_id', $user->id)->delete();
             Category::query()->where('user_id', $user->id)->delete();
         });
     }
@@ -161,6 +164,7 @@ class DemoDataSeeder extends Seeder
 
         $today = CarbonImmutable::today();
         $start = $today->subMonths(5)->startOfMonth();
+        $currentMonth = $today->startOfMonth();
 
         /** @var list<array{day: int, label: string, amount: string, type: TransactionType, slug: string|null, account: Account}> $templates */
         $templates = [
@@ -177,13 +181,11 @@ class DemoDataSeeder extends Seeder
             ['day' => 25, 'label' => 'ACME Pharmacy', 'amount' => '-18.25', 'type' => TransactionType::Expense, 'slug' => 'personal_care', 'account' => $checking],
             ['day' => 27, 'label' => 'Metro Transit pass', 'amount' => '-42.00', 'type' => TransactionType::Expense, 'slug' => 'public_transport', 'account' => $checking],
             ['day' => 28, 'label' => 'Acme Corp payroll', 'amount' => '2650.00', 'type' => TransactionType::Income, 'slug' => 'salary_income', 'account' => $checking],
-            ['day' => 29, 'label' => 'Transfer to savings', 'amount' => '-200.00', 'type' => TransactionType::Transfer, 'slug' => null, 'account' => $checking],
-            ['day' => 29, 'label' => 'Transfer from checking', 'amount' => '200.00', 'type' => TransactionType::Transfer, 'slug' => null, 'account' => $savings],
+            ['day' => 29, 'label' => 'Internal transfer to savings', 'amount' => '-200.00', 'type' => TransactionType::Expense, 'slug' => 'internal_transfer', 'account' => $checking],
+            ['day' => 29, 'label' => 'Internal transfer from checking', 'amount' => '200.00', 'type' => TransactionType::Income, 'slug' => 'internal_transfer', 'account' => $savings],
         ];
 
-        for ($monthOffset = 0; $monthOffset < 5; $monthOffset++) {
-            $month = $start->addMonths($monthOffset);
-
+        for ($month = $start; $month->lessThanOrEqualTo($currentMonth); $month = $month->addMonth()) {
             foreach ($templates as $template) {
                 $day = min($template['day'], $month->daysInMonth);
                 $date = $month->day($day);
@@ -231,5 +233,48 @@ class DemoDataSeeder extends Seeder
             'last_price' => '91.250000',
             'last_price_at' => now(),
         ]);
+    }
+
+    private function seedPortfolioSnapshots(User $user, Account $brokerage): void
+    {
+        $today = CarbonImmutable::today();
+        $quantity = 8.0;
+        $averagePrice = 82.5;
+
+        /** @var list<array{months_ago: int, price: float}> $imports */
+        $imports = [
+            ['months_ago' => 4, 'price' => 78.0],
+            ['months_ago' => 3, 'price' => 82.0],
+            ['months_ago' => 2, 'price' => 85.0],
+            ['months_ago' => 1, 'price' => 88.0],
+            ['months_ago' => 0, 'price' => 91.25],
+        ];
+
+        foreach ($imports as $import) {
+            $importedAt = $today->subMonths($import['months_ago'])->day(12)->setTime(10, 30);
+
+            if ($importedAt->greaterThan($today->endOfDay())) {
+                $importedAt = $today->setTime(10, 30);
+            }
+
+            $marketValue = round($quantity * $import['price'], 2);
+
+            PortfolioSnapshot::query()->create([
+                'user_id' => $user->id,
+                'account_id' => $brokerage->id,
+                'imported_at' => $importedAt,
+                'original_filename' => 'brokerage-statement-'.$importedAt->format('Y-m').'.csv',
+                'total_market_value' => number_format($marketValue, 2, '.', ''),
+                'positions_count' => 1,
+                'lines' => [[
+                    'isin' => 'IE00B4L5Y983',
+                    'label' => 'iShares Core MSCI World',
+                    'quantity' => $quantity,
+                    'average_price' => $averagePrice,
+                    'last_price' => $import['price'],
+                    'market_value' => $marketValue,
+                ]],
+            ]);
+        }
     }
 }

@@ -18,6 +18,7 @@ const UNCATEGORIZED_NODE_COLOR = 'var(--muted-foreground)';
 type DrachmeSankeyNode = SankeyNodeDatum & {
     color?: string | null;
     kind?: 'account' | 'category';
+    depth?: 1 | 2;
 };
 
 type TransactionsSankeyChartProps = {
@@ -25,7 +26,10 @@ type TransactionsSankeyChartProps = {
 };
 
 function resolveNodeColor(node: D3SankeyNode<DrachmeSankeyNode, { value: number }>): string {
-    const datum = node as DrachmeSankeyNode & { color?: string | null; kind?: string };
+    const datum = node as DrachmeSankeyNode & {
+        color?: string | null;
+        kind?: string;
+    };
 
     if (datum.color) {
         return datum.color;
@@ -48,19 +52,15 @@ export function TransactionsSankeyChart({ flow }: TransactionsSankeyChartProps) 
     const formatValue = (value: number) => formatCurrency(value, { precise: true });
 
     return (
-        <section className="flex flex-col gap-3" aria-label={t('transactions.sankey_title')}>
-            <div>
-                <h2 className="text-sm font-medium">{t('transactions.sankey_title')}</h2>
-                <p className="text-muted-foreground text-xs">{t('transactions.sankey_description')}</p>
-            </div>
+        <section aria-label={t('transactions.sankey_title')}>
             <div className="rounded-xl border border-white/10 bg-black/10 p-2 md:p-4">
                 <SankeyChart
                     data={flow}
                     aspectRatio="2 / 1"
                     maxHeight="50vh"
                     nodeWidth={16}
-                    nodePadding={20}
-                    margin={{ top: 16, right: 24, bottom: 16, left: 24 }}
+                    nodePadding={16}
+                    margin={{ top: 16, right: 32, bottom: 16, left: 32 }}
                     className="w-full"
                 >
                     <SankeyLink

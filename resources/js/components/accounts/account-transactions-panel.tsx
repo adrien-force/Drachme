@@ -173,26 +173,32 @@ export function AccountTransactionsPanel({
                 className="flex flex-col gap-3"
             >
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                    <CollapsibleTrigger asChild>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="gap-2"
-                            aria-expanded={filtersOpen}
-                        >
-                            <ListFilter className="size-4" />
-                            {filtersOpen
-                                ? t('accounts.transactions_list.hide_filters')
-                                : t('accounts.transactions_list.show_filters')}
-                            {hasActiveFilters ? (
-                                <span
-                                    className="bg-primary size-2 shrink-0 rounded-full"
-                                    aria-hidden
-                                />
-                            ) : null}
-                        </Button>
-                    </CollapsibleTrigger>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <CollapsibleTrigger asChild>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="gap-2"
+                                aria-expanded={filtersOpen}
+                            >
+                                <ListFilter className="size-4" />
+                                {filtersOpen
+                                    ? t('accounts.transactions_list.hide_filters')
+                                    : t('accounts.transactions_list.show_filters')}
+                                {hasActiveFilters ? (
+                                    <span
+                                        className="bg-primary size-2 shrink-0 rounded-full"
+                                        aria-hidden
+                                    />
+                                ) : null}
+                            </Button>
+                        </CollapsibleTrigger>
+                        <ApplyCategoryRulesButton
+                            uncategorizedCount={uncategorizedCount}
+                            accountId={accountId}
+                        />
+                    </div>
                     <div className="flex flex-wrap items-center gap-2">
                         {hasActiveFilters ? (
                             <Button
@@ -361,12 +367,6 @@ export function AccountTransactionsPanel({
                 </CollapsibleContent>
             </Collapsible>
 
-            <div className="flex flex-wrap items-center gap-2">
-                <ApplyCategoryRulesButton
-                    uncategorizedCount={uncategorizedCount}
-                    accountId={accountId}
-                />
-            </div>
             {transactions.data.length === 0 ? (
                 <p className="text-muted-foreground text-sm">
                     {hasActiveFilters

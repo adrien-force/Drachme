@@ -34,6 +34,24 @@ class TransactionListTest extends TestCase
                 ->where('filters.per_page', 50));
     }
 
+    public function test_transactions_index_can_sort_by_account_without_ambiguous_user_id(): void
+    {
+        $user = User::factory()->create();
+        $accountA = Account::factory()->for($user)->create(['name' => 'Alpha']);
+        $accountB = Account::factory()->for($user)->create(['name' => 'Beta']);
+
+        Transaction::factory()->for($user)->for($accountA)->create();
+        Transaction::factory()->for($user)->for($accountB)->create();
+
+        $this
+            ->actingAs($user)
+            ->get(route('transactions.index', ['sort' => 'account', 'order' => 'asc']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('transactions.meta.total', 2)
+                ->where('transactions.data.0.account_name', 'Alpha'));
+    }
+
     public function test_search_filters_by_label(): void
     {
         $user = User::factory()->create();
@@ -175,16 +193,27 @@ class TransactionListTest extends TestCase
 
     public function test_sankey_reflects_all_filtered_transactions_not_current_page(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['locale' => 'en']);
+        app()->setLocale('en');
+        app(\App\Services\CategoryService::class)->seedDefaultsForUser($user);
+
         $account = Account::factory()->for($user)->create();
-        $category = Category::factory()->for($user)->create([
-            'name' => 'Courses',
-            'color' => '#22c55e',
-        ]);
+        $salary = Category::query()
+            ->where('user_id', $user->id)
+            ->where('slug', 'salary_income')
+            ->firstOrFail();
+        $groceries = Category::query()
+            ->where('user_id', $user->id)
+            ->where('slug', 'groceries')
+            ->firstOrFail();
 
         Transaction::factory()->for($user)->for($account)->count(30)->create([
+            'amount' => 10,
+            'category_id' => $salary->id,
+        ]);
+        Transaction::factory()->for($user)->for($account)->count(30)->create([
             'amount' => -10,
-            'category_id' => $category->id,
+            'category_id' => $groceries->id,
         ]);
 
         $this
@@ -193,7 +222,7 @@ class TransactionListTest extends TestCase
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->has('transactions.data', 25)
-                ->where('transactions.meta.total', 30)
+                ->where('transactions.meta.total', 60)
                 ->where('sankeyFlow.links.0.value', 300));
 
         $this

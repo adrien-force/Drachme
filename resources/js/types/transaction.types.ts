@@ -90,9 +90,10 @@ export type TransactionListSummary = {
 
 export type TransactionSankeyNode = {
     name: string;
-    category: 'source' | 'outcome';
+    category: 'source' | 'landing' | 'outcome';
     color: string | null;
     kind: 'account' | 'category';
+    depth?: 1 | 2;
 };
 
 export type TransactionSankeyFlow = {
