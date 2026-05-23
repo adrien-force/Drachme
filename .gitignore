@@ -3,6 +3,7 @@
 /public/build
 /public/hot
 /public/storage
+/.vite
 /storage/*.key
 /storage/backups/
 /storage/pail
@@ -29,6 +30,7 @@ yarn-error.log
 
 # Drachme
 /docs/
+/resources/js/actions/Native/
 .DS_Store
 Thumbs.db
 *.log
