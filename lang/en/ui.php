@@ -220,7 +220,7 @@ return [
             'toggle' => 'How does it work?',
             'step_1' => 'Enter borrowed amount, annual rate, start and end dates: payment, balance and chart are computed automatically.',
             'step_2' => 'Record the monthly payment on your checking account (expense). Loan balance follows the amortization schedule.',
-            'step_3' => 'Use internal transfers (SUB-14) to link checking and loan entries.',
+            'step_3' => 'Use internal transfers to link checking and loan entries.',
         ],
         'loan_start_date' => 'Loan start date',
         'loan_balance_computed_hint' => 'Outstanding principal from the amortization schedule as of today.',

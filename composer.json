@@ -1,13 +1,15 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/react-starter-kit",
+    "name": "adrien-force/drachme",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "Self-hosted personal finance and net worth tracker.",
     "keywords": [
         "laravel",
-        "framework"
+        "finance",
+        "net-worth",
+        "inertia"
     ],
-    "license": "MIT",
+    "license": "AGPL-3.0-or-later",
     "require": {
         "php": "^8.3",
         "inertiajs/inertia-laravel": "^3.0",

@@ -16,7 +16,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Dashboard cashflow must match transaction list filters (SUB-50) on the same date range.
+ * Dashboard cashflow must match transaction list filters on the same date range.
  */
 class CashflowTransactionListConsistencyTest extends TestCase
 {

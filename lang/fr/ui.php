@@ -220,7 +220,7 @@ return [
             'toggle' => 'Comment ça marche ?',
             'step_1' => 'Renseignez le montant emprunté, le taux annuel, la date de début et la date de fin : la mensualité, le capital dû et le graphique sont calculés automatiquement.',
             'step_2' => 'Enregistrez la mensualité sur votre compte courant (dépense). Le solde du prêt suit le tableau d\'amortissement.',
-            'step_3' => 'Pour rapprocher avec le courant, utilisez les virements internes (SUB-14).',
+            'step_3' => 'Pour rapprocher avec le courant, utilisez les virements internes.',
         ],
         'loan_start_date' => 'Date de début du prêt',
         'loan_balance_computed_hint' => 'Capital restant dû calculé selon le tableau d\'amortissement à la date du jour.',
