@@ -46,6 +46,11 @@ export const appNavSections: AppNavSection[] = [
                 icon: Landmark,
             },
             {
+                titleKey: 'nav.investments',
+                href: '/investments',
+                icon: TrendingUp,
+            },
+            {
                 titleKey: 'nav.transactions',
                 href: '/transactions',
                 icon: ArrowLeftRight,
@@ -94,16 +99,6 @@ export const appNavSections: AppNavSection[] = [
                 titleKey: 'nav.providers',
                 href: '/providers',
                 icon: Plug,
-            },
-        ],
-    },
-    {
-        labelKey: 'nav.investments_section',
-        items: [
-            {
-                titleKey: 'nav.investments',
-                href: '/investments',
-                icon: TrendingUp,
             },
         ],
     },
